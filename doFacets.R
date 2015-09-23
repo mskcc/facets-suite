@@ -66,10 +66,6 @@ PURITY_SNP_NBHD=args$purity_snp_nbhd
 PURITY_NDEPTH=args$purity_ndepth
 PURITY_MIN_NHET=args$purity_min_nhet
 
-if(PURITY_CVAL==-99){
-    PURITY_CVAL=NULL
-}
-
 COUNTS_FILE=args$counts_file
 TAG=args$TAG
 DIRECTORY=args$directory
