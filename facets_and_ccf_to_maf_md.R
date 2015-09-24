@@ -69,7 +69,7 @@ integer_cn_table = function(out, fit, em=FALSE){
 ################################################################################################################################
 ################################################################################################################################
 
-annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iMaster_ID=NULL){
+annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iTumor_Sample_Barcode=NULL){
 
   #' Alex Penson's function and notes
   #' believe it or not, the most elegant way i could find
@@ -89,8 +89,8 @@ annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iMaster_ID=NULL){
 
   dt = integer_cn_table(out, fit)
 
-  if(is.null(iMaster_ID)){maf_ann = foverlaps(maf, dt, mult="first",nomatch=NA)}
-  else{maf_ann = foverlaps(maf[Master_ID == iMaster_ID], dt, mult="first",nomatch=)}
+  if(is.null(iTumor_Sample_Barcode)){maf_ann = foverlaps(maf, dt, mult="first",nomatch=NA)}
+  else{maf_ann = foverlaps(maf[Tumor_Sample_Barcode == iTumor_Sample_Barcode], dt, mult="first",nomatch=)}
 
   maf_ann[,c(maf_cols, 'dipLogR', 'seg.mean', 'cf', 'tcn', 'lcn', 'purity', 'ploidy'), with=F]
 }
@@ -131,18 +131,18 @@ main = function(maf,facets_files){
   #Adapted from Alex's code
   maf = as.data.table(maf)
 
-  maf_Master_IDs = unique(maf$Master_ID)
-  #cat(maf_Master_IDs)
-  #cat('\n')
-  #cat(names(facets.files))
-  #cat('\n')
-  #cat(paste(c("Master_IDs missing in maf:", setdiff(maf_Master_IDs, names(facets_files))), collapse=" "))
-  #cat('\n')
-  # facets_files = facets_files[names(facets_files) %in% maf_Master_IDs]
-  no.facets = setdiff(maf_Master_IDs, names(facets_files))
-  no.facets.data = maf[maf$Master_ID %in% no.facets,]
-  idi = intersect(names(facets_files), maf_Master_IDs)
-  maf = maf[maf$Master_ID %in% idi]
+  maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
+  cat(maf_Tumor_Sample_Barcodes)
+  cat('\n')
+  cat(names(facets_files))
+  cat('\n')
+  cat(paste(c("Tumor_Sample_Barcodes missing in maf:", setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))), collapse=" "))
+  cat('\n')
+  # facets_files = facets_files[names(facets_files) %in% maf_Tumor_Sample_Barcodes]
+  no.facets = setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
+  no.facets.data = maf[maf$Tumor_Sample_Barcode %in% no.facets,]
+  idi = intersect(names(facets_files), maf_Tumor_Sample_Barcodes)
+  maf = maf[maf$Tumor_Sample_Barcode %in% idi]
   maf_list = lapply(idi, function(x){load(facets_files[x]);
                                      maf = annotate_maf_with_facets_cf_tcn_lcn(maf, out, fit, x)})
   if(length(no.facets)){
@@ -187,7 +187,7 @@ if(!interactive()){
   maf_file <- args[1]; args <- args[-1]
   facets_samples_file <- args[1]; args <- args[-1]
 
-  maf <- fread(maf_file)
+  maf <- fread(paste0('grep -v "^#" ', maf_file))
   facets_samples <- fread(facets_samples_file)
 
   facets_files <- with(facets_samples, structure(CNCF_filename, .Names = Tumor_Sample_Barcode))
@@ -206,7 +206,7 @@ if(!interactive()){
 #facets_files = Sys.glob('TCGA*/*100*.Rdata')
 #names(facets_files) = matrix(unlist(strsplit(facets_files,'/')),byrow=T,nc=2)[,1]
 #maf = fread('AKT1_UCEC.maf')
-#maf$Master_ID = maf$pid
+#maf$Tumor_Sample_Barcode = maf$pid
 #maf_ = main(maf,facets_files)
 
 #nCCF = 1000
