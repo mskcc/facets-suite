@@ -132,9 +132,9 @@ main = function(maf,facets_files){
   maf = as.data.table(maf)
 
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
-  cat(maf_Tumor_Sample_Barcodes)
+  cat(sort(maf_Tumor_Sample_Barcodes))
   cat('\n')
-  cat(names(facets_files))
+  cat(sort(names(facets_files)))
   cat('\n')
   cat(paste(c("Tumor_Sample_Barcodes missing in maf:", setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))), collapse=" "))
   cat('\n')
@@ -150,25 +150,25 @@ main = function(maf,facets_files){
   }
   maf = rbindlist(maf_list,fill=T)
 
-  maf[,ccf_1copy_:=as.numeric(estimated_af_life_history(purity,
-                                                       t_alt_count,
-                                                       t_ref_count,
-                                                       lcn,
-                                                       tcn-lcn,
-                                                       copies=1,
-                                                       limit=TRUE)),by = 1: nrow(maf)]
+  ## maf[,ccf_1copy_:=as.numeric(estimated_af_life_history(purity,
+  ##                                                      t_alt_count,
+  ##                                                      t_ref_count,
+  ##                                                      lcn,
+  ##                                                      tcn-lcn,
+  ##                                                      copies=1,
+  ##                                                      limit=TRUE)),by = 1: nrow(maf)]
 
-  maf[,ccf_Mcopies_:=as.numeric(estimated_af_life_history(purity,
-                                                         t_alt_count,
-                                                         t_ref_count,
-                                                         lcn,
-                                                         tcn-lcn,
-                                                         copies='M',
-                                                         limit=TRUE)), by = 1:nrow(maf)]
+  ## maf[,ccf_Mcopies_:=as.numeric(estimated_af_life_history(purity,
+  ##                                                        t_alt_count,
+  ##                                                        t_ref_count,
+  ##                                                        lcn,
+  ##                                                        tcn-lcn,
+  ##                                                        copies='M',
+  ##                                                        limit=TRUE)), by = 1:nrow(maf)]
 
 
   #mine
-  maf[,c("ccf_Mcopy", "ccf_Mcopy_lower", "ccf_Mcopy_upper", "ccf_Mcopy_prob95", "ccf_Mcopy_prob90"):=ccf.likelihood(purity,
+  maf[,c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90"):=ccf.likelihood(purity,
                                                                                                                     tcn,
                                                                                                                     t_alt_count,
                                                                                                                     (t_alt_count + t_ref_count),
