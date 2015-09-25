@@ -52,7 +52,7 @@ parser$add_argument("TAG",nargs=1,help="output prefix")
 parser$add_argument("directory",nargs=1,help="output prefix")
 parser$add_argument("-r", "--R_lib", type="character", default="latest", help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
-parse$add_argument("-g", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
+parser$add_argument("-g", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
 args=parser$parse_args()
 
 CVAL=args$cval
