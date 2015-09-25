@@ -186,8 +186,8 @@ facets_iteration <- function(COUNTS_FILE = COUNTS_FILE,
         filename = paste0(DIRECTORY, "/", TAG,".CNCF.png")
         h = 1100
         w = 850
-        if(purity_cval == -99): main = paste(TAG, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
-        if(purity_cval != -99): main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+        if(purity_cval == -99){main = paste(TAG, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')}
+        if(purity_cval != -99){main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')}
 
         if(ggplot2 == 'F'){
             library(Cairo)
