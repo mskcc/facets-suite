@@ -6,7 +6,6 @@
 ### dipLogR from the first iteration is used for the second
 ### output files for both iterations are retained
 
-library(Cairo)
 
 getSDIR <- function(){
     args=commandArgs(trailing=F)
@@ -21,7 +20,6 @@ getSDIR <- function(){
 }
 
 source(file.path(getSDIR(),"funcs.R"))
-source(file.path(getSDIR(),"fPlots.R"))
 source(file.path(getSDIR(),"nds.R"))
 
 #buildData=installed.packages()["facets",]
@@ -54,6 +52,7 @@ parser$add_argument("TAG",nargs=1,help="output prefix")
 parser$add_argument("directory",nargs=1,help="output prefix")
 parser$add_argument("-r", "--R_lib", type="character", default="latest", help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
+parse$add_argument("-g", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
 args=parser$parse_args()
 
 CVAL=args$cval
@@ -91,6 +90,7 @@ write(paste('Version of facets library installed:', RLIB_VERSION), stdout())
 
 SINGLE_CHROM = args$single_chrom
 GENOME=args$genome
+GGPLOT=args$ggplot2
 
 facets_iteration <- function(COUNTS_FILE = COUNTS_FILE,
                              TAG = TAG,
@@ -183,10 +183,26 @@ facets_iteration <- function(COUNTS_FILE = COUNTS_FILE,
 
     if(SINGLE_CHROM == 'F'){
 
-        CairoPNG(file=paste0(DIRECTORY, "/", TAG,".CNCF.png"),height=1100,width=850)
-        #plotSampleCNCF(out$jointseg,out$out,fit)
-        plotSampleCNCF.custom(out$jointseg,out$out,fit, main=paste(TAG,"cval =",CVAL))
-        dev.off()
+        filename = paste0(DIRECTORY, "/", TAG,".CNCF.png")
+        h = 1100
+        w = 850
+        if(purity_cval == -99): main = paste(TAG, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+        if(purity_cval != -99): main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+
+        if(ggplot2 == 'F'){
+            library(Cairo)
+            source(file.path(getSDIR(),"fPlots.R"))
+            base graphics version
+            CairoPNG(file=filename, height=h, width=w)
+            plotSampleCNCF.custom(out$jointseg, out$out,fit, main=main)
+            dev.off()
+        }
+
+        if(ggplot2 == 'T'){
+            source(file.path(getSDIR(),"fPlots_ggplot2.R"))
+            plot.facets.all.output(out, fit, type='png', main=main, plotname=filename)
+        }
+        
     }
 
     return(fit$dipLogR)
