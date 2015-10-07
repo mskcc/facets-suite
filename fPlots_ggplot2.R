@@ -10,13 +10,15 @@ copy.number.log.ratio = function(mat, cncf, mid, dipLogR, col.1="#0080FF", col.2
     cnlr.median = rep(cncf$cnlr.median, cncf$num.mark)
     
     cnlr = ggplot(mat, aes(y=cnlr,x=chr.maploc), environment = environment()) + 
-    geom_point(colour=c(col.1, col.2)[col.rep], size=.8) + 
+    geom_point(size=.8) +
+    #geom_point(aes(colour=c(col.1, col.2)[col.rep]), size=.8) +
     scale_x_continuous(breaks=mid, labels=names(mid)) + 
     xlab('') +
     ylim(-3,3) +
     ylab('Log-Ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = 1) + 
-    geom_point(aes(x=chr.maploc,y=cnlr.median),size=.8,colour='red3') +
+    geom_segment(data=cncf, aes(x=loc.start, xend=loc.end, y=cnlr.median, yend=cnlr.median), col="red", size=1) +
+    #geom_point(aes(x=chr.maploc,y=cnlr.median),size=.8,colour='red3') +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
           text = element_text(size=10))
@@ -106,6 +108,30 @@ get.cumlative.chr.maploc = function(mat, load.genome=FALSE){
   list(mat=mat, mid=mid)
 }
 
+get.cumlative.chr.maploc.cncf = function(cncf, load.genome=FALSE){
+
+  if(load.genome){
+    require(BSgenome.Hsapiens.UCSC.hg19)
+    genome = BSgenome.Hsapiens.UCSC.hg19
+    chrom.lengths = seqlengths(genome)[1:22]
+  }
+  else{
+    chrom.lengths = c(249250621, 243199373, 198022430, 191154276, 180915260, 171115067, 159138663, 146364022, 141213431, 135534747,135006516,
+                      133851895, 115169878, 107349540, 102531392, 90354753,  81195210,  78077248,  59128983,  63025520, 48129895,  51304566) #hg19
+  }
+  cum.chrom.lengths = cumsum(as.numeric(chrom.lengths))
+  mid = cum.chrom.lengths - (chrom.lengths/2)
+  names(mid) = 1:22
+
+  cum.chrom.lengths0 = c(0, cumsum(as.numeric(chrom.lengths)))
+  names(cum.chrom.lengths0) = 1:23
+
+  chr.maploc.to.gen.maploc = function(chrom, maploc){maploc + cum.chrom.lengths0[chrom]}
+  cncf$loc.start <- with(cncf, chr.maploc.to.gen.maploc(chr = chrom, maploc = loc.start))
+  cncf$loc.end <- with(cncf, chr.maploc.to.gen.maploc(chr = chrom, maploc = loc.end))
+  cncf
+}
+
 get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sapiens.GRCh37.75.canonical_exons.bed',load.genome=FALSE){
   
   if(load.genome){
@@ -141,8 +167,9 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
   mid = mat$mid
   mat = mat$mat
   
-  cncf = fit$cncf
+  cncf = cbind(out$IGV, fit$cncf)
   cncf = subset(cncf, chrom < 23)
+  cncf <- get.cumlative.chr.maploc.cncf(cncf)
   dipLogR = out$dipLogR
   sample = out$IGV$ID[1]
   
