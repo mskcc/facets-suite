@@ -153,6 +153,7 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
   icnem = integer.copy.number(mat, cncf, mid, 'em') #; icnem
   icncncf = integer.copy.number(mat, cncf, mid, 'cncf') #; icncncf
   
+  if(type == 'svg'){plotname = paste(plotname, '.svg', sep=''); RSvgDevice::devSVG(width = 8.854167, height=11.458333, plotname)}
   if(type == 'pdf'){plotname = paste(plotname, '.pdf', sep=''); CairoPDF(width = 8.854167, height=11.458333, file=plotname)}
   if(type == 'png'){plotname = paste(plotname, '.png', sep=''); CairoPNG(width = w, height=h, file=plotname, units='px')}
   
