@@ -190,7 +190,7 @@ if(!interactive()){
   maf <- fread(paste0('grep -v "^#" ', maf_file))
   facets_samples <- fread(facets_samples_file)
 
-  facets_files <- with(facets_samples, structure(CNCF_filename, .Names = Tumor_Sample_Barcode))
+  facets_files <- with(facets_samples, structure(Rdata_filename, .Names = Tumor_Sample_Barcode))
 
   maf <- main(maf, facets_files)
 
