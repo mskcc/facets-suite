@@ -67,9 +67,8 @@ def call(args):
 ##    facets_cncf_files = os.path.abspath(args.facets_cncf_files)
     output_file = os.path.abspath(args.output_file)
     cmd = [ os.path.join(FACETS_DIR, "get_gene_level_calls.R"), output_file] + args.facets_cncf_files
-    try:
-        print " ".join(cmd)
-        rv = subprocess.call(" ".join(cmd), shell=True)
+    print " ".join(cmd)
+    rv = subprocess.call(" ".join(cmd), shell=True)
     if rv!=0:
         print >>sys.stderr, "Error executing %s", cmd
         sys.exit(rv)
