@@ -123,11 +123,9 @@ def norm(args):
         print >>sys.stderr, "Error executing %s", cmd
         sys.exit(1)
 
-if __name__ =='__main__':
-
-    ### ARGUMENTS
-
-    parser = argparse.ArgumentParser(description="run FACETS analysis")
+def create_parser(parser=None):
+    if not parser:
+        parser = argparse.ArgumentParser(description="run FACETS analysis")
     subparsers = parser.add_subparsers(help='sub-command help')
 
     ### ./facets.py run
@@ -172,9 +170,17 @@ if __name__ =='__main__':
     parser_call.add_argument('-o', '--output_file', 
                             help='annotated call file output filename')
     parser_call.set_defaults(func=call)
+    return parser
 
+
+
+
+if __name__ =='__main__':
+
+    ### ARGUMENTS
+    parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
-    FACETS_DIR = os.path.realpath(__file__)
+    FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
         
     args_dict= vars(args)
     args_dict['facets_args']=facets_args
