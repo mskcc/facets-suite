@@ -51,7 +51,7 @@ parser$add_argument("--genome",type="character",default="hg19",help="Genome of c
 parser$add_argument("counts_file",nargs=1,help="Paired Counts File")
 parser$add_argument("TAG",nargs=1,help="output prefix")
 parser$add_argument("directory",nargs=1,help="output prefix")
-parser$add_argument("-r", "--R_lib", type="character", default="latest", help="Which version of FACETs to load into R")
+parser$add_argument("-r", "--R_lib", type="character", default='latest', help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
 parser$add_argument("-g", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
 parser$add_argument("--seed", type="integer", default=-99, help="Set the seed for reproducability")
@@ -76,7 +76,7 @@ DIRECTORY=args$directory
 DIPLOGR=args$dipLogR
 
 RLIB_PATH=args$R_lib
-if(exists('RLIB_PATH')){
+if(RLIB_PATH != "latest"){
     library(facets, lib.loc=RLIB_PATH)
 } else{
     library(facets)
