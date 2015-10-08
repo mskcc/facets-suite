@@ -1,5 +1,5 @@
 ## Helper scripts that wrap the FACETS CRAN Library
-
+![Facets is Great](https://i.imgur.com/vP2tUvM.jpg "Aww Yeah FACETS Time!")
 ```
 usage: facets [-h] {call,mergeTN,run,norm,maf} ...
 
