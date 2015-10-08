@@ -158,7 +158,7 @@ def create_parser(parser=None):
     parser_maf.add_argument('maf_file', 
                             help='maf file for anntation, Tumor_Sample_Barcodes must correspond to FACETS sample file')
     parser_maf.add_argument('facets_sample_file', 
-                            help='Tab-delimited file listing FACETS Rdata objects')
+                            help='file mapping each "Tumor_Sample_Barcode" from the maf file to an Rdata_filename FACETS result (tab-delimited with header)')
     parser_maf.add_argument('output_file', 
                             help='annotated maf file output filename')
     parser_maf.set_defaults(func=maf)
