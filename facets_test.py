@@ -119,7 +119,7 @@ def test_facets_gene_call():
                   test_seg_output]
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
-    assert rv==0, "facets failed to run :("
+    assert rv==0, "facets failed to run :(, exit code %s" % rv
     expected_seg_output = expected_outputs['gene_level_calls']
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
     rv = subprocess.call(diff_cmd, stdout=DEV_NULL)
