@@ -24,7 +24,9 @@ usage: facets maf [-h] maf_file facets_sample_file output_file
 positional arguments:
   maf_file            maf file for anntation, Tumor_Sample_Barcodes must
                       correspond to FACETS sample file
-  facets_sample_file  Tab-delimited file listing FACETS Rdata objects
+  facets_sample_file  file mapping each "Tumor_Sample_Barcode" from the maf
+                      file to an Rdata_filename FACETS result (tab-delimited
+                      with header)
   output_file         annotated maf file output filename
 ```
 
