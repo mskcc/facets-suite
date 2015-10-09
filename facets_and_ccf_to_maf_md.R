@@ -184,17 +184,19 @@ main = function(maf,facets_files){
 
 if(!interactive()){
   args <- commandArgs(TRUE)
+  if(length(args) != 3) stop("usage: facets_and_ccf_to_maf_md.R maf_file facets_samples_file output_maf_file")
+    
   maf_file <- args[1]; args <- args[-1]
   facets_samples_file <- args[1]; args <- args[-1]
+  output_maf_file <- args[1]; args <- args[-1]
+
 
   maf <- fread(paste0('grep -v "^#" ', maf_file))
   facets_samples <- fread(facets_samples_file)
 
-  facets_files <- with(facets_samples, structure(CNCF_filename, .Names = Tumor_Sample_Barcode))
+  facets_files <- with(facets_samples, structure(Rdata_filename, .Names = Tumor_Sample_Barcode))
 
   maf <- main(maf, facets_files)
-
-  output_maf_file <- gsub(".maf$", ".ann.maf", maf_file)
 
   write.table(maf, file = output_maf_file,
               quote = F, col.names = T, row.names = F, sep = "\t")
