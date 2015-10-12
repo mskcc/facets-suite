@@ -2,7 +2,7 @@
 
 import argparse, os, sys, re
 import subprocess, itertools, errno, csv, gzip
-import imp
+import imp, glob
 ## import cmo
 
 FACETS_DIR = None 
@@ -35,140 +35,47 @@ def slugify(value):
 
 
 
-def run(args):
-    #fuck R calling python to do work what a piece of shit
-    try:
-        import cmo
-        os.environ['PYTHON2']=cmo.util.programs['python']['default']
-    except:
-        os.environ['PYTHON2']="/usr/bin/env python"
-    count_file = os.path.abspath(args.count_file)
-    ### BUILD COMMAND LISTi
+def run(script, args):
+    print script, vars(args)
 
-    cmd = [ os.path.join(FACETS_DIR, "doFacets.R"), " ".join(args.facets_args), count_file, args.tag, args.output_directory]
-    try:
-        print " ".join(cmd)
-        subprocess.check_call(" ".join(cmd), shell=True)
-    except subprocess.CalledProcessError, e:
-        print >>sys.stderr, "Error executing %s" % " ".join(cmd)
-        sys.exit(1)
+dev_null = open("/dev/null", "w")
+help_regex = re.compile("[ \t]+(-\S) (?:\S+)?, (--\S+) (?:\S+)? +(.*)$")
+def add_subparser(file, subparsers):
+    print file
+    R_script = open(file, "r")
+    arguments_found = 0
+    finished = 1
+    parser = None
+    for line in R_script:
+        add_argument_index = line.find("add_argument")
+        if finished== 0:
+            python_code += line.rstrip()
+            if line.find(")") > -1:
+                finished = 1
+                exec python_code
+        if add_argument_index > -1:
+            arguments_found = 1
+            if not parser:
+                parser = subparsers.add_parser(name=os.path.basename(file).replace(".R",""))
+            python_code = line[add_argument_index:].rstrip()
+            python_code =  "parser."+re.sub("""type=['"]\S+['"],""","", python_code)
+            if python_code.find(")") == -1:
+                #multiline shit
+                finished=0
+            else:
+                exec python_code
+    if parser:
+        parser.set_defaults(script=file)
 
-
- 
-# def norm(args):
-#     print "run " + FACETS_DIR + "/norm_normal_depth.R"
-            
-def check(args):
-    print "check output files"
-
-def call(args):
-    print args.facets_cncf_files
-    print args.output_file
-##    facets_cncf_files = os.path.abspath(args.facets_cncf_files)
-    output_file = os.path.abspath(args.output_file)
-    cmd = [ os.path.join(FACETS_DIR, "get_gene_level_calls.R"), output_file] + args.facets_cncf_files
-    print " ".join(cmd)
-    rv = subprocess.call(" ".join(cmd), shell=True)
-    if rv!=0:
-        print >>sys.stderr, "Error executing %s", cmd
-        sys.exit(rv)
+     
 
 
-def merge(args):
-    pass 
-
-def maf(args):
-    print args.maf_file
-    print args.facets_sample_file
-    maf_file = os.path.abspath(args.maf_file)
-    facets_sample_file = os.path.abspath(args.facets_sample_file)
-    output_file = os.path.abspath(args.output_file)
-    # if args.output_file:
-    #     output_file = os.path.abspath(args.output_file)
-    # else:
-    #     output_file = os.path.basename(tumor_file).replace(".bam","") + "_"  + os.path.basename(normal_file).replace(".bam","") + ".dat.gz"
-    cmd = [ os.path.join(FACETS_DIR, "facets_and_ccf_to_maf_md.R"), maf_file, facets_sample_file, output_file]
-    try:
-        print " ".join(cmd)
-        subprocess.check_call(" ".join(cmd), shell=True)
-    except subprocess.CalledProcessError, e:
-        print >>sys.stderr, "Error executing %s", cmd
-        sys.exit(1)
-
-def mergeTN(args):
-    print args.tumor_counts_file
-    tumor_file = os.path.abspath(args.tumor_counts_file)
-    normal_file = os.path.abspath(args.normal_counts_file)
-    if args.output_file:
-        output_file = os.path.abspath(args.output_file)
-    else:
-        output_file = os.path.basename(tumor_file).replace(".bam","") + "_"  + os.path.basename(normal_file).replace(".bam","") + ".dat.gz"
-    cmd = [ os.path.join(FACETS_DIR, "mergeTN.R"), tumor_file, normal_file, "| gzip -9 -c >", output_file]
-    try:
-        print " ".join(cmd)
-        subprocess.check_call(" ".join(cmd), shell=True)
-    except subprocess.CalledProcessError, e:
-        print >>sys.stderr, "Error executing %s", cmd
-        sys.exit(1)
-
-
-def norm(args):
-    counts_file = os.path.abspath(args.counts_file)
-    cmd = [os.path.join(FACETS_DIR, "norm_normal_depth.R"), counts_file]
-    try:
-        print " ".join(cmd)
-        subprocess.check_call(" ".join(cmd), shell=True)
-    except subprocess.CalledProcessError, e:
-        print >>sys.stderr, "Error executing %s", cmd
-        sys.exit(1)
-
-def create_parser(parser=None):
+def create_parser(FACETS_DIR, parser=None):
     if not parser:
         parser = argparse.ArgumentParser(description="run FACETS analysis")
     subparsers = parser.add_subparsers(help='sub-command help')
-
-    ### ./facets.py run
-
-    
-    ### ./facets.py fromcounts
-    parser_fromcounts = subparsers.add_parser('run', help='run FACETS from merged counts files')
-    parser_fromcounts.add_argument("--lib-version", help="path to facets library, if you don't want to use default")
-    parser_fromcounts.add_argument('count_file',   help='merged tumor/normal count file')
-    parser_fromcounts.add_argument('tag',   help='merged tumor/normal count file')
-    parser_fromcounts.add_argument('output_directory',   help='merged tumor/normal count file')
- 
-    parser_fromcounts.set_defaults(func=run)
-    
-    parser_mergeTN = subparsers.add_parser("mergeTN", help="merge tumor and normal outputs")
-    parser_mergeTN.add_argument('tumor_counts_file', help='tumor output file')
-    parser_mergeTN.add_argument('normal_counts_file', help="normal output file")
-    parser_mergeTN.add_argument('output_file', nargs='?',  help="output filename")
-    parser_mergeTN.set_defaults(func=mergeTN)
-
-    ### ./facets.py norm
-    parser_norm = subparsers.add_parser('norm', help='run FACETS from merged counts files')
-    parser_norm.add_argument('counts_file', help='merge counts files counts/countsMerged__*.dat.gz')
-    parser_norm.set_defaults(func=norm)
-
-    parser_maf = subparsers.add_parser('maf', help='use FACETS results to annotate a maf file')
-    # parser_maf.add_argument('-m', '--maf_file', type=argparse.FileType('r'),
-    #                         help='maf file for anntation, Tumor_Sample_Barcodes must correspond to FACETS sample file')
-    # parser_maf.add_argument('-f', '--facets_sample_file', type=argparse.FileType('r'),
-    #                         help='Specification of FACETS output, including Purity')
-    parser_maf.add_argument('maf_file', 
-                            help='maf file for anntation, Tumor_Sample_Barcodes must correspond to FACETS sample file')
-    parser_maf.add_argument('facets_sample_file', 
-                            help='file mapping each "Tumor_Sample_Barcode" from the maf file to an Rdata_filename FACETS result (tab-delimited with header)')
-    parser_maf.add_argument('output_file', 
-                            help='annotated maf file output filename')
-    parser_maf.set_defaults(func=maf)
-
-    parser_call = subparsers.add_parser('call', help='extract gene copy number status from FACETS results')
-    parser_call.add_argument('facets_cncf_files', nargs="+", 
-                            help='FACETS cncf.txt files')
-    parser_call.add_argument('-o', '--output_file', 
-                            help='annotated call file output filename')
-    parser_call.set_defaults(func=call)
+    for file in glob.glob(os.path.join(FACETS_DIR, "*.R")):
+        add_subparser(file, subparsers)
     return parser
 
 
@@ -177,15 +84,13 @@ def create_parser(parser=None):
 if __name__ =='__main__':
 
     ### ARGUMENTS
-    parser = create_parser()
-    (args, facets_args) = parser.parse_known_args()
     FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
-        
+    parser = create_parser(FACETS_DIR)
+    (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
     args_dict['facets_args']=facets_args
-    print args_dict 
-
+    print args_dict
+    run(args.script, args)
 ##    print args
-    args.func(args)
     
 
