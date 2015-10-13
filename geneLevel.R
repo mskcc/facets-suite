@@ -32,7 +32,7 @@ setkey(IMPACT341_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-WGD_CALL_table <- fread("
+FACETS_CALL_table <- fread("
 WGD	mcn	lcn	FACETS_CNA	FACETS_CALL
 no WGD	0	0	-2	HOMDEL
 no WGD	1	0	-1	HETLOSS
@@ -79,7 +79,7 @@ WGD	4	3	2	AMP
 WGD	5	3	2	AMP
 WGD	6	3	2	AMP
 ")
-setkey(WGD_CALL_table, WGD, mcn, lcn)
+setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
 #############################################
@@ -99,7 +99,7 @@ annotate_integer_copy_number <- function(gene_level){
   if("FACETS_CNA" %in% names(gene_level)) gene_level[, FACETS_CNA := NULL]
   if("FACETS_CALL" %in% names(gene_level)) gene_level[, FACETS_CALL := NULL]
 
-  gene_level <- merge(gene_level, WGD_CALL_table, sort = F, all.x = T)
+  gene_level <- merge(gene_level, FACETS_CALL_table, sort = F, all.x = T)
 
   gene_level[tcn >= AMP_thresh_tcn, FACETS_CNA := 2]
   gene_level[tcn >= AMP_thresh_tcn, FACETS_CALL := "AMP"]
