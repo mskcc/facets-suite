@@ -70,7 +70,7 @@ def test_mergeTN():
     test_output = test_output.replace(".gz", "")
     diff_cmd = ["diff", test_output, temp_expected_output]
     rv = subprocess.call(diff_cmd)
-    assert rv==0, "cmo_facets mergeTN output does not match expected output"
+    assert rv==0, "cmo_facets mergeTN output does not match expected output, diff exit code: %s" % str(rv)
 
 def test_facets():
     output_dir = os.path.join(TEST_TEMP_DIR)
@@ -88,7 +88,7 @@ def test_facets():
     test_seg_output = os.path.join(TEST_TEMP_DIR, "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.seg")
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
     rv = subprocess.call(diff_cmd)
-    assert rv==0, "facets test seg output differs from expected output!"
+    assert rv==0, "facets test seg output differs from expected output- diff exit code: %s" % str(rv)
 
 def test_facets_maf():
     output_dir = os.path.join(TEST_TEMP_DIR)
@@ -106,7 +106,7 @@ def test_facets_maf():
     test_seg_output = os.path.join(TEST_TEMP_DIR, "TCGA-A8-A094-01A-11W-A019-09.ann.maf")
     diff_cmd = ["diff", expected_annmaf_output, test_seg_output]
     rv = subprocess.check_call(diff_cmd)
-    assert rv==0, "facets test seg output differs from expected output!"
+    assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
 
 def test_facets_gene_call():
     output_dir = os.path.join(TEST_TEMP_DIR)
@@ -122,6 +122,6 @@ def test_facets_gene_call():
     assert rv==0, "facets failed to run :(, exit code %s" % rv
     expected_seg_output = expected_outputs['gene_level_calls']
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
-    rv = subprocess.call(diff_cmd, stdout=DEV_NULL)
-    assert rv==0, "facets test seg output differs from expected output!"
+    rv = subprocess.call(diff_cmd)
+    assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
 
