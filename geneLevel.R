@@ -32,53 +32,7 @@ setkey(IMPACT341_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread("
-WGD	mcn	lcn	FACETS_CNA	FACETS_CALL
-no WGD	0	0	-2	HOMDEL
-no WGD	1	0	-1	HETLOSS
-no WGD	2	0	-1	CNLOH
-no WGD	3	0	1	CNLOH & GAIN
-no WGD	4	0	1	CNLOH & GAIN
-no WGD	5	0	2	AMP (LOH)
-no WGD	6	0	2	AMP (LOH)
-no WGD	1	1	0	DIPLOID
-no WGD	2	1	1	GAIN
-no WGD	3	1	1	GAIN
-no WGD	4	1	2	AMP
-no WGD	5	1	2	AMP
-no WGD	6	1	2	AMP
-no WGD	2	2	1	TETRAPLOID
-no WGD	3	2	2	AMP
-no WGD	4	2	2	AMP
-no WGD	5	2	2	AMP
-no WGD	6	2	2	AMP
-no WGD	3	3	2	AMP (BALANCED)
-no WGD	4	3	2	AMP
-no WGD	5	3	2	AMP
-no WGD	6	3	2	AMP
-WGD	0	0	-2	HOMDEL
-WGD	1	0	-1	LOSS BEFORE & AFTER
-WGD	2	0	-1	LOSS BEFORE
-WGD	3	0	-1	CNLOH BEFORE & LOSS
-WGD	4	0	-1	CNLOH BEFORE
-WGD	5	0	1	CNLOH BEFORE & GAIN
-WGD	6	0	2	AMP (LOH)
-WGD	1	1	-1	DOUBLE LOSS AFTER
-WGD	2	1	-1	LOSS AFTER
-WGD	3	1	-1	CNLOH AFTER
-WGD	4	1	1	LOSS & GAIN
-WGD	5	1	2	AMP
-WGD	6	1	2	AMP
-WGD	2	2	0	TETRAPLOID
-WGD	3	2	1	GAIN
-WGD	4	2	2	AMP
-WGD	5	2	2	AMP
-WGD	6	2	2	AMP
-WGD	3	3	2	AMP (BALANCED)
-WGD	4	3	2	AMP
-WGD	5	3	2	AMP
-WGD	6	3	2	AMP
-")
+FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.txt"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
@@ -208,7 +162,7 @@ if(!interactive()){
 
   filenames = args$filenames
   outfile = args$outfile
-  
+
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
   gene_level_calls = get_gene_level_calls(filenames)
   write.text(gene_level_calls, outfile)
