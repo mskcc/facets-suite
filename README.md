@@ -43,7 +43,7 @@ optional arguments:
                         Perform analysis on single chromosome
   -G GGPLOT2, --ggplot2 GGPLOT2
                         Plots using ggplot2
-  --seed SEED           Set the seed for reproducabilityusage: facets [-h] {call,mergeTN,run,norm,maf} ...
+  --seed SEED           Set the seed for reproducability
 
 
 ```
