@@ -35,34 +35,54 @@ def slugify(value):
 
 
 
-def run(script, args):
-    print script, vars(args)
+def run(args):
 
-dev_null = open("/dev/null", "w")
-help_regex = re.compile("[ \t]+(-\S) (?:\S+)?, (--\S+) (?:\S+)? +(.*)$")
+    cmd = [args.script]
+    del vars(args)['script']
+    for key, value in vars(args).items():
+        if value != None:
+            cmd = cmd + ["--"+key, str(value)]
+    print >>sys.stderr, "Executing %s" % " ".join(cmd)
+    try:
+        rv = subprocess.call(cmd)
+    except:
+        print >>sys.stderr, "Error executing command, returncode %s" % rv
+        sys.exit(rv)
+
 def add_subparser(file, subparsers):
-    print file
     R_script = open(file, "r")
     arguments_found = 0
     finished = 1
     parser = None
     for line in R_script:
+        #begin perversion of all that is right and holy
+        #take parser$add_argument lines out of R scripts
+        #strip out the "type" field, which doesn't match pythons datatypes
+        #and interpret the result as a line of python code
+        #we do this in the name of good, i.e. so our subparsers can reproduce the help
+        #but what have we really wrought?
+        #behold I am become monkey, mixer of languages
         add_argument_index = line.find("add_argument")
         if finished== 0:
             python_code += line.rstrip()
             if line.find(")") > -1:
                 finished = 1
+                #boosh R to python
                 exec python_code
         if add_argument_index > -1:
             arguments_found = 1
             if not parser:
+                #parser name will be filename without .R
                 parser = subparsers.add_parser(name=os.path.basename(file).replace(".R",""))
+            #take "add_argument" to end of line
             python_code = line[add_argument_index:].rstrip()
+            #take out "type" argument from R
             python_code =  "parser."+re.sub("""type=['"]\S+['"],""","", python_code)
             if python_code.find(")") == -1:
                 #multiline shit
                 finished=0
             else:
+                #boosh R to python
                 exec python_code
     if parser:
         parser.set_defaults(script=file)
@@ -88,9 +108,7 @@ if __name__ =='__main__':
     parser = create_parser(FACETS_DIR)
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
-    args_dict['facets_args']=facets_args
-    print args_dict
-    run(args.script, args)
+    run(args)
 ##    print args
     
 

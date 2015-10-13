@@ -57,7 +57,7 @@ def test_mergeTN():
     input_tumor = test_inputs['tumor_basecounts']
     input_normal = test_inputs['normal_basecounts']
     test_output = os.path.join(TEST_TEMP_DIR, "test_countsmerged.gz")
-    cmd = [FACETS_SCRIPT, "mergeTN", input_tumor, input_normal, test_output]
+    cmd = [FACETS_SCRIPT, "mergeTN", "-t", input_tumor, "-n",input_normal, "-o", test_output]
     rv = subprocess.call(cmd)
     expected_output= expected_outputs['mergeTN']
     shutil.copy(expected_output, TEST_TEMP_DIR)
@@ -76,11 +76,11 @@ def test_facets():
     output_dir = os.path.join(TEST_TEMP_DIR)
     merged_count_input = test_inputs['merged_counts']
     facets_cmd = [FACETS_SCRIPT,
-                  "run",
+                  "doFacets",
                   "--seed=1587443596", 
-                  merged_count_input,
-                  "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
-                  TEST_TEMP_DIR,
+                  "-f", merged_count_input,
+                  "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
+                  "-D", TEST_TEMP_DIR,
                   "-c 200"]
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :("
@@ -95,10 +95,10 @@ def test_facets_maf():
     input_maf = test_inputs['maf']
     input_rdata_pairing = test_inputs['facets_rdata_pairing']
     facets_cmd = [FACETS_SCRIPT,
-                  "maf",
-                  input_maf,
-                  input_rdata_pairing,
-                  os.path.join(TEST_TEMP_DIR, "TCGA-A8-A094-01A-11W-A019-09.ann.maf")]
+                  "mafAnno",
+                  "-m", input_maf,
+                  "-f", input_rdata_pairing,
+                  "-o", os.path.join(TEST_TEMP_DIR, "TCGA-A8-A094-01A-11W-A019-09.ann.maf")]
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :("
@@ -113,9 +113,9 @@ def test_facets_gene_call():
     cncf_input = test_inputs['cncf_file']
     test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_gene_level_calls.txt")
     facets_cmd = [FACETS_SCRIPT,
-                  "call",
-                  cncf_input,
-                  "--output_file",
+                  "geneLevel",
+                  "-f", cncf_input,
+                  "-o",
                   test_seg_output]
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)

@@ -211,7 +211,7 @@ if(!interactive()){
   
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
   gene_level_calls = get_gene_level_calls(filenames)
-  write.text(gene_level_calls, outputfile)
+  write.text(gene_level_calls, outfile)
 }
 
 
