@@ -2,7 +2,9 @@
 
 #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
 
+library(argparse)
 library(data.table)
+
 
 write.text <- function (...) {
   write.table(..., quote = F, col.names = T, row.names = F,
@@ -193,12 +195,20 @@ get_gene_level_calls <- function(cncf_files,
   gene_level
 }
 
+#####################################################################################
+#####################################################################################
+
 
 if(!interactive()){
-  args <- commandArgs(TRUE)
+
+  parser = ArgumentParser()
+  parser$add_argument('-f', '--file', type='character', help='list of filenames to be processed')
+  parser$add_argument('-o', '--outfile', type='character', help='Output filename')
+
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
-  output_file <- args[1]; args <- args[-1]
-  filenames <- args
-  gene_level_calls <- get_gene_level_calls(filenames)
+  gene_level_calls = get_gene_level_calls(filenames)
   write.text(gene_level_calls, output_file)
 }
+
+
+
