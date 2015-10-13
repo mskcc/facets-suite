@@ -36,11 +36,11 @@ def slugify(value):
 
 
 def run(args):
-     try:
-         import cmo
-         os.environ['PYTHON2']=cmo.util.programs['python']['default']
-     except:
-         os.environ['PYTHON2']="/usr/bin/env python"
+    try:
+        import cmo
+        os.environ['PYTHON2']=cmo.util.programs['python']['default']
+    except:
+        os.environ['PYTHON2']="/usr/bin/env python"
     cmd = [args.script]
     del vars(args)['script']
     for key, value in vars(args).items():
