@@ -2,7 +2,9 @@
 
 #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
 
+library(argparse)
 library(data.table)
+
 
 write.text <- function (...) {
   write.table(..., quote = F, col.names = T, row.names = F,
@@ -30,54 +32,8 @@ setkey(IMPACT341_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-WGD_CALL_table <- fread("
-WGD	mcn	lcn	FACETS_CNA	FACETS_CALL
-no WGD	0	0	-2	HOMDEL
-no WGD	1	0	-1	HETLOSS
-no WGD	2	0	-1	CNLOH
-no WGD	3	0	1	CNLOH & GAIN
-no WGD	4	0	1	CNLOH & GAIN
-no WGD	5	0	2	AMP (LOH)
-no WGD	6	0	2	AMP (LOH)
-no WGD	1	1	0	DIPLOID
-no WGD	2	1	1	GAIN
-no WGD	3	1	1	GAIN
-no WGD	4	1	2	AMP
-no WGD	5	1	2	AMP
-no WGD	6	1	2	AMP
-no WGD	2	2	1	TETRAPLOID
-no WGD	3	2	2	AMP
-no WGD	4	2	2	AMP
-no WGD	5	2	2	AMP
-no WGD	6	2	2	AMP
-no WGD	3	3	2	AMP (BALANCED)
-no WGD	4	3	2	AMP
-no WGD	5	3	2	AMP
-no WGD	6	3	2	AMP
-WGD	0	0	-2	HOMDEL
-WGD	1	0	-1	LOSS BEFORE & AFTER
-WGD	2	0	-1	LOSS BEFORE
-WGD	3	0	-1	CNLOH BEFORE & LOSS
-WGD	4	0	-1	CNLOH BEFORE
-WGD	5	0	1	CNLOH BEFORE & GAIN
-WGD	6	0	2	AMP (LOH)
-WGD	1	1	-1	DOUBLE LOSS AFTER
-WGD	2	1	-1	LOSS AFTER
-WGD	3	1	-1	CNLOH AFTER
-WGD	4	1	1	LOSS & GAIN
-WGD	5	1	2	AMP
-WGD	6	1	2	AMP
-WGD	2	2	0	TETRAPLOID
-WGD	3	2	1	GAIN
-WGD	4	2	2	AMP
-WGD	5	2	2	AMP
-WGD	6	2	2	AMP
-WGD	3	3	2	AMP (BALANCED)
-WGD	4	3	2	AMP
-WGD	5	3	2	AMP
-WGD	6	3	2	AMP
-")
-setkey(WGD_CALL_table, WGD, mcn, lcn)
+FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.txt"))
+setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
 #############################################
@@ -97,7 +53,7 @@ annotate_integer_copy_number <- function(gene_level){
   if("FACETS_CNA" %in% names(gene_level)) gene_level[, FACETS_CNA := NULL]
   if("FACETS_CALL" %in% names(gene_level)) gene_level[, FACETS_CALL := NULL]
 
-  gene_level <- merge(gene_level, WGD_CALL_table, sort = F, all.x = T)
+  gene_level <- merge(gene_level, FACETS_CALL_table, sort = F, all.x = T)
 
   gene_level[tcn >= AMP_thresh_tcn, FACETS_CNA := 2]
   gene_level[tcn >= AMP_thresh_tcn, FACETS_CALL := "AMP"]
@@ -193,12 +149,24 @@ get_gene_level_calls <- function(cncf_files,
   gene_level
 }
 
+#####################################################################################
+#####################################################################################
+
 
 if(!interactive()){
-  args <- commandArgs(TRUE)
+
+  parser = ArgumentParser()
+  parser$add_argument('-f', '--filenames', type='character', help='list of filenames to be processed.')
+  parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
+  args=parser$parse_args()
+
+  filenames = args$filenames
+  outfile = args$outfile
+
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
-  output_file <- args[1]; args <- args[-1]
-  filenames <- args
-  gene_level_calls <- get_gene_level_calls(filenames)
-  write.text(gene_level_calls, output_file)
+  gene_level_calls = get_gene_level_calls(filenames)
+  write.text(gene_level_calls, outfile)
 }
+
+
+

@@ -1,13 +1,22 @@
 #!/opt/common/CentOS_6-dev/R/R-3.1.3/bin/Rscript
+
+library(argparse)
 library(data.table)
 
-args <- commandArgs(TRUE)
-TUMOR <- args[1]; args <- args[-1]
-NORMAL <- args[1]; args <- args[-1]
+parser = ArgumentParser()
+parser$add_argument('-t', '--tumor_counts', type='character', help='Tumor counts file name')
+parser$add_argument('-n', '--normal_counts', type='character', help='Normal counts file name')
+parser$add_argument('-o', '--outfile', type='character', help='output file (gzipped')
+args=parser$parse_args()
+
+
+TUMOR = args$tumor_counts
+NORMAL = args$normal_counts
+GZOUT = gzfile(args$outfile)
 MINCOV_NORMAL=25
 
 read_counts <- function(file){
-  dt <- fread(paste0("gunzip --stdout ", file), showProgress=FALSE)
+  dt = fread(paste0("gunzip --stdout ", file), showProgress=FALSE)
   setkeyv(dt, c("Chrom", "Pos", "Ref", "Alt"))
   dt[,Refidx := NULL]
   dt[,TOTAL_depth := NULL]
@@ -19,15 +28,15 @@ read_counts <- function(file){
 }
 
 write("Reading normal ...", stderr())
-NORMAL_dt <- read_counts(NORMAL)
-NORMAL_dt <- NORMAL_dt[BASEQ_depth >= MINCOV_NORMAL]
+NORMAL_dt = read_counts(NORMAL)
+NORMAL_dt = NORMAL_dt[BASEQ_depth >= MINCOV_NORMAL]
 write("done ...", stderr())
 
 write("Reading tumor ...", stderr())
-TUMOR_dt <- read_counts(TUMOR)
+TUMOR_dt = read_counts(TUMOR)
 write("done ...", stderr())
 
-mergeTN <- merge(TUMOR_dt, NORMAL_dt, suffixes = c(".TUM", ".NOR"))
+mergeTN = merge(TUMOR_dt, NORMAL_dt, suffixes = c(".TUM", ".NOR"))
 
 setnames(mergeTN,
          c("Chrom", "Pos", "Ref", "Alt", "TUM.DP", "TUM.Ap", "TUM.Cp", 
@@ -36,9 +45,9 @@ setnames(mergeTN,
            "NOR.Tn"))
 
 mergeTN[, Chrom := factor(Chrom, levels=c(c(1:22, "X", "Y", "MT"), paste0("chr", c(1:22, "X", "Y", "M"))))]
-mergeTN <- mergeTN[order(Chrom, Pos)]
+mergeTN = mergeTN[order(Chrom, Pos)]
 
-write.table(mergeTN, file=stdout(), 
+write.table(mergeTN, file=GZOUT, 
             quote = F, 
             col.names = T, 
             row.names = F, 
