@@ -191,7 +191,8 @@ if(!interactive()){
 
   parser=ArgumentParser()
   parser$add_argument('-m','--maf', type='character', help='file name of maf file to be annotated.')
-  parser$add_argument('-f','--facets_files', type='character', help='file name contains names of facets files.')
+  parser$add_argument('-f','--facets_files', type='character',
+                      help='Mapping of "Tumor_Sample_Barcode" from maf and "Rdata_filename" from FACETS (tab-delimited with header)')
   parser$add_argument('-o','--out_maf', type='character', help='file name of CN annotated maf.')
   args=parser$parse_args()
 

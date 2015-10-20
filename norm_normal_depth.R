@@ -24,7 +24,7 @@ library(data.table)
 
 
 normalize_facets_depth <- function(filename){
-  countsMerged <- fread(paste0('gunzip --stdout ', filename))
+  countsMerged <- suppressWarnings(fread(paste0('gunzip --stdout ', filename), showProgress = FALSE))
   countsMerged$Chrom <- factor(countsMerged$Chrom, levels=c(1:22, "X", "Y"))
   dt <- with(countsMerged[TUM.DP>0][order(NOR.DP)], 
              data.table(Chrom, 
