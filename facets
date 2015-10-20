@@ -93,8 +93,8 @@ def add_subparser(file, subparsers):
 
      
 
-
-def create_parser(FACETS_DIR, parser=None):
+FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
+def create_parser(parser=None):
     if not parser:
         parser = argparse.ArgumentParser(description="run FACETS analysis")
     subparsers = parser.add_subparsers(help='sub-command help')
@@ -108,8 +108,7 @@ def create_parser(FACETS_DIR, parser=None):
 if __name__ =='__main__':
 
     ### ARGUMENTS
-    FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
-    parser = create_parser(FACETS_DIR)
+    parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
     run(args)
