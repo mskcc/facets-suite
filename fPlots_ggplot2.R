@@ -235,7 +235,8 @@ get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sap
 
 #Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL){
-  
+
+  if(is.null(gene.name)){gene.pos = NULL}
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
   
   cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos)
