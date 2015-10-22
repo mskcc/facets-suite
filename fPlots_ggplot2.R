@@ -8,7 +8,7 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -57,7 +57,7 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -105,7 +105,7 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -142,7 +142,7 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -182,7 +182,7 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   icn
 }
 
-get.cumlative.chr.maploc = function(mat, load.genome=FALSE){
+get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
 
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
