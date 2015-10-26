@@ -34,11 +34,13 @@ DEV_NULL = open("/dev/null", "w")
 def setup_module():
     global TEST_TEMP_DIR
     TEST_TEMP_DIR = tempfile.mkdtemp();
+
 FACETS_SCRIPT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "facets")
-#def teardown_module():
-#    if TEST_TEMP_DIR is not None:
-#        shutil.rmtree(TEST_TEMP_DIR)
-#        pass
+
+def teardown_module():
+    if TEST_TEMP_DIR is not None:
+        #shutil.rmtree(TEST_TEMP_DIR)
+        pass
 
 #def test_getbasecounts():
 #    input_bam_file = test_inputs['tumor_bam']
@@ -95,13 +97,14 @@ def test_facets_with_pcval():
     output_dir = os.path.join(TEST_TEMP_DIR)
     merged_count_input = test_inputs['merged_counts']
     facets_cmd = [FACETS_SCRIPT,
-                  "run",
+                  "doFacets",
                   "--seed=1587443596", 
-                  merged_count_input,
-                  "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
-                  TEST_TEMP_DIR,
+                  "-f", merged_count_input,
+                  "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
+                  "-D", TEST_TEMP_DIR,
                   "-pc 300",
                   "-c 200"]
+    print >>sys.stderr ," ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :("
     expected_seg_output = expected_outputs['seeded.seg.pcval']
