@@ -144,11 +144,16 @@ results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM,
         filename = paste0(DIRECTORY, "/", TAG,".CNCF")
         h = 1100
         w = 850
+        fit$dipLogR = tryCatch({round(fit$dipLogR,2)},error=function(cond){return(fit$dipLogR)})
+        fit$ploidy = tryCatch({round(fit$ploidy,2)},error=function(cond){return(fit$ploidy)})
+        fit$purity = tryCatch({round(fit$purity,2)},error=function(cond){return(fit$purity)})
+        TAG = tryCatch({unlist(strsplit(TAG,'__'))[1]},error=function(cond){return(TAG)})
+
         if(is.null(GIVE_PCVAL)){
-          main = paste(TAG, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+          main = paste(TAG, ' | cval=', CVAL, ' | purity=', fit$purity, ' | ploidy= ', fit$ploidy, ' | dipLogR=', fit$dipLogR, sep='')
         }
         if(!is.null(GIVE_PCVAL)){
-          main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+          main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', fit$purity, ' | ploidy= ', fit$ploidy, ' | dipLogR=', fit$dipLogR, sep='')
         }
 
         if(GGPLOT == 'F'){
