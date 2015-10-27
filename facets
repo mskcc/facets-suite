@@ -45,7 +45,10 @@ def run(args):
     del vars(args)['script']
     for key, value in vars(args).items():
         if value != None:
-            cmd = cmd + ["--"+key, str(value)]
+            if type(value) is list:
+                cmd = cmd + ["--"+key, ",".join(value)]
+            else:
+                cmd = cmd + ["--"+key, str(value)]
     print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd)
