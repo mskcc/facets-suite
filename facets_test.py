@@ -102,8 +102,8 @@ def test_facets_with_pcval():
                   "-f", merged_count_input,
                   "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
                   "-D", TEST_TEMP_DIR,
-                  "-pc 300",
-                  "-c 200"]
+                  "--purity_cval=300",
+                  "-c=200"]
     print >>sys.stderr ," ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :("
