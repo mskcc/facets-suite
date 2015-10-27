@@ -156,7 +156,7 @@ get_gene_level_calls <- function(cncf_files,
 if(!interactive()){
 
   parser = ArgumentParser()
-  parser$add_argument('-f', '--filenames', type='character', help='list of filenames to be processed.')
+  parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
   args=parser$parse_args()
 
