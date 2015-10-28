@@ -4,11 +4,11 @@ require(grid)
 require(gridExtra)
 
 
-copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL){
+copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt'){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -44,9 +44,9 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
     scale_x_continuous(breaks=mid, labels=names(mid)) + 
     xlab('') +
     ylim(-3,3) +
-    ylab('Log-Ratio') +
+    ylab('Log ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) + 
-    geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1) +
+    geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend) +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
           text = element_text(size=10),
@@ -55,11 +55,11 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   cnlr
 }
 
-var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL){
+var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt'){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -94,9 +94,9 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
     scale_x_continuous(breaks=mid, labels=names(mid)) +  
     xlab('') +
     ylim(-4,4) +
-    ylab('Log-Odds-Ratio') +
-    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$mafR, y=my.starts$mafR), col='red3', size=1) +
-    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1) +
+    ylab('Log odds ratio') +
+    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$mafR, y=my.starts$mafR), col='red3', size=1, lineend=lend) +
+    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1, lineend=lend) +
     theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
           text = element_text(size=10),
@@ -105,11 +105,11 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   valor
 }
 
-cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main=''){
+cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt'){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -131,7 +131,7 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   }
   
   cf = cf +
-    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$cf, y=my.starts$cf), col='black', size=1) +
+    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$cf, y=my.starts$cf), col='black', size=1, lineend=lend) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
     ylim(0,1) +
@@ -144,11 +144,11 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   cf
 }
 
-integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main=''){
+integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt'){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumlative.chr.maploc(mat, load.genome)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -176,8 +176,8 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   }
   
   icn = icn + 
-    geom_segment(data=cncf, aes(x=my.tcn.starts$chr.maploc, xend=my.tcn.ends$chr.maploc, y=my.tcn.starts$tcn_, yend=my.tcn.ends$tcn_), col='black', size=1) +
-    geom_segment(data=cncf, aes(x=my.lcn.starts$chr.maploc, xend=my.lcn.ends$chr.maploc, y=my.lcn.starts$lcn_, yend=my.lcn.ends$lcn_), col='red', size=1) +
+    geom_segment(data=cncf, aes(x=my.tcn.starts$chr.maploc, xend=my.tcn.ends$chr.maploc, y=my.tcn.starts$tcn_, yend=my.tcn.ends$tcn_), col='black', size=1,lineend=lend) +
+    geom_segment(data=cncf, aes(x=my.lcn.starts$chr.maploc, xend=my.lcn.ends$chr.maploc, y=my.lcn.starts$lcn_, yend=my.lcn.ends$lcn_), col='red', size=1, lineend=lend) +
     scale_y_continuous(breaks=c(0:5, 5 + (1:35)/3), labels=0:40,limits = c(0, NA)) + 
     scale_x_continuous(breaks=mid, labels=names(mid)) + 
     ylab(my.ylab) +
@@ -190,7 +190,7 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   icn
 }
 
-get.cumlative.chr.maploc = function(mat, load.genome=FALSE){
+get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
   
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
@@ -242,17 +242,17 @@ get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sap
 }
 
 #Standard facets output plot
-plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL){
+plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL, lend='butt'){
   
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
   if(is.null(gene.name)){gene.pos = NULL}
   
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos)
-  cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos)
-  cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos)
-  icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos)
-  icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos)
+  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+  cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+  cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+  icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+  icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
   
   if(type == 'pdf'){plotname = paste(plotname, '.pdf', sep=''); CairoPDF(width = 8.854167, height=11.458333, file=plotname)}
   if(type == 'png'){plotname = paste(plotname, '.png', sep=''); CairoPNG(width = w, height=h, file=plotname, units='px')}
@@ -270,7 +270,7 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
 }
 
 #Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
-close.up = function(out, fit, chrom.range, method=NULL, gene.name=NULL){
+close.up = function(out, fit, chrom.range, method=NULL, gene.name=NULL, lend='butt'){
   
   out$out = out$out[out$out$chrom %in% chrom.range,]
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,] 
@@ -279,12 +279,12 @@ close.up = function(out, fit, chrom.range, method=NULL, gene.name=NULL){
   
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
   
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos)
-  cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos)
-  cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos)
-  icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos)
-  icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos)
+  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+  cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+  cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+  icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+  icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
   
   list(cnlr=cnlr,valor=valor,cfem=cfem,cfcncf=cfcncf,icnem=icnem,icncncf=icncncf)
 }
@@ -325,7 +325,7 @@ akt1.close.ups = function(chrom.range = 13:15, gene.name ='AKT1', w=13, h=8, plo
 akt1.wxs = function(){
   
   load('~/work//AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N.Rdata')
-  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N_hisens.Rdata')
   plot.facets.all.output(out, fit, type='pdf', main='TS01 | cval: 100', plotname='TS01', gene.name='AKT1')
   
   load('~/work//AKT1_UCEC//my_r_003//s_TS02_T/s_TS02_T__s_TS02_N/facets_p300c100/s_TS02_T__s_TS02_N.Rdata')
