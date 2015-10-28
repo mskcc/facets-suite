@@ -8,7 +8,7 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumulative.chr.maploc(mat, load.genome)
+  mat = get.cumlative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -49,7 +49,9 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
     geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1) +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10))
+          text = element_text(size=10),
+          panel.grid.minor.x=element_line(colour='white', size=.5),
+          panel.grid.major.x=element_line(colour='white', size=0))
   cnlr
 }
 
@@ -57,7 +59,7 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumulative.chr.maploc(mat, load.genome)
+  mat = get.cumlative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -97,7 +99,9 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
     geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1) +
     theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10))
+          text = element_text(size=10),
+          panel.grid.minor.x=element_line(colour='white', size=.5),
+          panel.grid.major.x=element_line(colour='white', size=0))
   valor
 }
 
@@ -105,7 +109,7 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumulative.chr.maploc(mat, load.genome)
+  mat = get.cumlative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -134,7 +138,9 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
     ylab(my.ylab) +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10))
+          text = element_text(size=10),
+          panel.grid.minor.x=element_line(colour='white', size=.5),
+          panel.grid.major.x=element_line(colour='white', size=0))
   cf
 }
 
@@ -142,7 +148,7 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
-  mat = get.cumulative.chr.maploc(mat, load.genome)
+  mat = get.cumlative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
@@ -178,12 +184,14 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
     xlab('') +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
           axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10))
+          text = element_text(size=10),
+          panel.grid.minor.x=element_line(colour='white', size=.5),
+          panel.grid.major.x=element_line(colour='white', size=0))
   icn
 }
 
-get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
-
+get.cumlative.chr.maploc = function(mat, load.genome=FALSE){
+  
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
     genome = BSgenome.Hsapiens.UCSC.hg19
@@ -235,9 +243,9 @@ get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sap
 
 #Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL){
-
-  if(is.null(gene.name)){gene.pos = NULL}
+  
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
+  if(is.null(gene.name)){gene.pos = NULL}
   
   cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos)
   valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos)
@@ -250,13 +258,13 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
   if(type == 'png'){plotname = paste(plotname, '.png', sep=''); CairoPNG(width = w, height=h, file=plotname, units='px')}
   
   if(main != ''){grid.arrange(cnlr, valor, cfem, icnem, cfcncf, icncncf,
-                                  ncol=1,
-                                  nrow=6,
-                                  top=textGrob(main))}
+                              ncol=1,
+                              nrow=6,
+                              top=textGrob(main))}
   
   if(main == ''){grid.arrange(cnlr, valor, cfem, icnem, cfcncf, icncncf,
-                                  ncol=1,
-                                  nrow=6)}
+                              ncol=1,
+                              nrow=6)}
   dev.off()
   
 }
@@ -279,4 +287,60 @@ close.up = function(out, fit, chrom.range, method=NULL, gene.name=NULL){
   icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos)
   
   list(cnlr=cnlr,valor=valor,cfem=cfem,cfcncf=cfcncf,icnem=icnem,icncncf=icncncf)
+}
+
+############################################################################################################################################
+############################################################################################################################################
+
+#Example Plot
+akt1.close.ups = function(chrom.range = 13:15, gene.name ='AKT1', w=13, h=8, plotname='proj_5513_wxs.pdf',type='pdf',method='cncf'){
+
+  load('~/work//AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N_hisens.Rdata')
+  ts01 = close.up(out, fit, chrom.range=chrom.range, method=method, gene.name=gene.name)
+
+  load('~/work//AKT1_UCEC//my_r_003//s_TS02_T/s_TS02_T__s_TS02_N/facets_p300c100/s_TS02_T__s_TS02_N_hisens.Rdata')
+  ts02 = close.up(out, fit, chrom.range=chrom.range, method=method, gene.name=gene.name)
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS03_T/s_TS03_T__s_TS03_N/facets_p300c100/s_TS03_T__s_TS03_N_hisens.Rdata')
+  ts03 = close.up(out, fit, chrom.range=chrom.range, method=method, gene.name=gene.name)
+
+  load('~/work//AKT1_UCEC//my_r_003//s_TS04_T/s_TS04_T__s_TS04_N/facets_p300c100/s_TS04_T__s_TS04_N_hisens.Rdata')
+  ts04 = close.up(out, fit, chrom.range=chrom.range, method=method, gene.name=gene.name)
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS05_T/s_TS05_T__s_TS05_N/facets_p300c100/s_TS05_T__s_TS05_N_hisens.Rdata')
+  ts05 = close.up(out, fit, chrom.range=chrom.range, method=method, gene.name=gene.name)
+  
+  layout = matrix(1:15, nrow = 3)
+  if(type == 'pdf'){CairoPDF(width = w, height=h, file=plotname)}
+  if(type == 'png'){CairoPNG(width = w, height=h, file=plotname, units='px')}
+  grid.arrange(ts01$cnlr, ts02$cnlr, ts03$cnlr, ts04$cnlr, ts05$cnlr,
+               ts01$valor, ts02$valor, ts03$valor,  ts04$valor, ts05$valor,
+               ts01$icncncf, ts02$icncncf, ts03$icncncf, ts04$icncncf, ts05$icncncf, 
+               ncol=5, nrow=3)
+  dev.off() 
+}
+
+
+#Example Plots
+akt1.wxs = function(){
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS01_T/s_TS01_T__s_TS01_N/facets_p300c100/s_TS01_T__s_TS01_N.Rdata')
+  plot.facets.all.output(out, fit, type='pdf', main='TS01 | cval: 100', plotname='TS01', gene.name='AKT1')
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS02_T/s_TS02_T__s_TS02_N/facets_p300c100/s_TS02_T__s_TS02_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS02_T/s_TS02_T__s_TS02_N/facets_p300c100/s_TS02_T__s_TS02_N.Rdata')
+  plot.facets.all.output(out, fit, type='pdf', main='TS02 | cval: 100', plotname='TS02', gene.name='AKT1')
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS03_T/s_TS03_T__s_TS03_N/facets_p300c100/s_TS03_T__s_TS03_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS03_T/s_TS03_T__s_TS03_N/facets_p300c100/s_TS03_T__s_TS03_N.Rdata')
+  plot.facets.all.output(out, fit, type='pdf', main='TS03 | cval: 100', plotname='TS03', gene.name='AKT1')
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS04_T/s_TS04_T__s_TS04_N/facets_p300c100/s_TS04_T__s_TS04_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS04_T/s_TS04_T__s_TS04_N/facets_p300c100/s_TS04_T__s_TS04_N.Rdata')
+  plot.facets.all.output(out, fit, type='pdf', main='TS04 | cval: 100', plotname='TS04', gene.name='AKT1')
+  
+  load('~/work//AKT1_UCEC//my_r_003//s_TS05_T/s_TS05_T__s_TS05_N/facets_p300c100/s_TS05_T__s_TS05_N.Rdata')
+  #load('/ifs/work/taylorlab/donoghum/AKT1_UCEC//my_r_003//s_TS05_T/s_TS05_T__s_TS05_N/facets_p300c100/s_TS05_T__s_TS05_N.Rdata')
+  plot.facets.all.output(out, fit, type='pdf', main='TS05 | cval: 100', plotname='TS05', gene.name='AKT1')
 }
