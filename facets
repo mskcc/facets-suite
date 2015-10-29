@@ -81,7 +81,10 @@ def add_subparser(file, subparsers):
             #take "add_argument" to end of line
             python_code = line[add_argument_index:].rstrip()
             #take out "type" argument from R
-            python_code =  "parser."+re.sub("""type=['"]\S+['"],""","", python_code)
+            fixed_code =re.sub("""type=['"]\S+['"],""","", python_code)
+            fixed_code = re.sub("""required=T""", """required=True""", python_code)
+            fixed_code = re.sub("""required=F""", """required=False""", python_code)
+            python_code =  "parser." +fixed_code
             if python_code.find(")") == -1:
                 #multiline shit
                 finished=0
@@ -111,6 +114,9 @@ if __name__ =='__main__':
     parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
+    if not len(sys.argv) > 2:
+        parser.print_help()
+        sys.exit(1)
     run(args)
 ##    print args
     
