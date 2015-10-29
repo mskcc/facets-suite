@@ -225,9 +225,9 @@ parser$add_argument("-pm", "--purity_min_nhet",type="integer",default=25,
 
 parser$add_argument("-d", "--dipLogR",type="double",help="diploid log ratio")
 parser$add_argument("-g", "--genome",type="character",default="hg19",help="Genome of counts file")
-parser$add_argument("-f", "--counts_file", type="character", help="paired Counts File")
-parser$add_argument("-t", "--TAG", type="character", help="output prefix")
-parser$add_argument("-D", "--directory", type="character", help="output prefix")
+parser$add_argument("-f", "--counts_file", type="character", required=T, help="paired Counts File")
+parser$add_argument("-t", "--TAG", type="character", required=T, help="output prefix")
+parser$add_argument("-D", "--directory", type="character", required=T, help="output prefix")
 parser$add_argument("-r", "--R_lib", type="character", default='latest', help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
 parser$add_argument("-G", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
