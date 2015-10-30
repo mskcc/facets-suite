@@ -73,5 +73,5 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--file', type='character', help='Filename of counts file to be normalized.')
   args=parser$parse_args()
-  normalize_facets_depth(filename)
+  normalize_facets_depth(args$file)
 }
