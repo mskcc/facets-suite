@@ -97,6 +97,10 @@ def add_subparser(file, subparsers):
                 exec python_code
     if parser:
         parser.set_defaults(script=file)
+    #extra special sprinkle of shit-magic to get subparser help to print if no args
+    if len(sys.argv) ==2 and sys.argv[1] == os.path.basename(file).replace(".R",""):
+        parser.print_help()
+        sys.exit(1)
 
      
 
@@ -118,9 +122,6 @@ if __name__ =='__main__':
     parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
-    if not len(sys.argv) > 2:
-        parser.print_help()
-        sys.exit(1)
     run(args)
 ##    print args
     
