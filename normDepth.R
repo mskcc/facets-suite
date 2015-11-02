@@ -23,8 +23,8 @@ library(data.table)
 library(argparse)
 
 
-normalize_facets_depth <- function(filename){
-  countsMerged <- fread(paste0('gunzip --stdout ', filename))
+normalize_facets_depth <- function(args){
+  countsMerged <- fread(paste0('gunzip --stdout ', args$file))
   countsMerged$Chrom <- factor(countsMerged$Chrom, levels=c(1:22, "X", "Y"))
   dt <- with(countsMerged[TUM.DP>0][order(NOR.DP)], 
              data.table(Chrom, 
@@ -59,9 +59,9 @@ normalize_facets_depth <- function(filename){
   ## gz = gzfile(output_filename,"w");
   ## write.maf(countsMerged_merge, gz)
 
-  output_filename <- gsub(".dat.gz$", ".norm_normal_depth.dat", filename)
-
-  write.table(countsMerged_merge, file=stdout(), 
+##  output_filename <- gsub(".dat.gz$", ".norm_normal_depth.dat", filename)
+  GZOUT = gzfile(args$outfile)
+  write.table(countsMerged_merge, file=GZOUT, 
               quote = F, 
               col.names = T, 
               row.names = F, 
@@ -71,7 +71,8 @@ normalize_facets_depth <- function(filename){
 
 if(!interactive()){
   parser = ArgumentParser()
-  parser$add_argument('-f', '--file', type='character', help='Filename of counts file to be normalized.')
+  parser$add_argument('-f', '--file', type='character', help='Name of counts file to be normalized.')
+  parser$add_argument('-o', '--outfile', type='character', help='Normalized counts file')
   args=parser$parse_args()
-  normalize_facets_depth(filename)
+  normalize_facets_depth(args)
 }
