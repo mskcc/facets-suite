@@ -40,11 +40,11 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   }
   
   cnlr = cnlr + 
-    geom_point(aes(y=cnlr,x=chr.maploc), colour=c(col.1, col.2)[col.rep], size=.8) + 
+    geom_point(aes(y=cnlr,x=chr.maploc), colour=c(col.1, col.2)[col.rep], size=.4) + 
     scale_x_continuous(breaks=mid, labels=names(mid)) + 
     xlab('') +
     ylim(-3,3) +
-    ylab('Log ratio') +
+    ylab('Copy number log ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) + 
     geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend) +
     theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
@@ -90,11 +90,11 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   }
   
   valor = valor +
-    geom_point(aes(y=valor,x=chr.maploc), colour=c(col.1,col.2)[col.rep], size=.8) +
+    geom_point(aes(y=valor,x=chr.maploc), colour=c(col.1,col.2)[col.rep], size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +  
     xlab('') +
     ylim(-4,4) +
-    ylab('Log odds ratio') +
+    ylab('Variant allele log odds ratio') +
     geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$mafR, y=my.starts$mafR), col='red3', size=1, lineend=lend) +
     geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1, lineend=lend) +
     theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
@@ -278,6 +278,7 @@ close.up = function(out, fit, chrom.range, method=NULL, gene.name=NULL, lend='bu
   fit$cncf = fit$cncf[fit$cncf$chrom %in% chrom.range,]
   
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
+  if(is.null(gene.name)){gene.pos = NULL}
   
   cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
   valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
