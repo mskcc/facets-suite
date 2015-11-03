@@ -81,9 +81,6 @@ get_gene_level_calls <- function(cncf_files,
   names(cncf_txt_list) <- cncf_files
   concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename")
 
-  ### fix bug where lcn == NA even when tcn is 1
-  concat_cncf_txt[tcn == 1 & is.na(lcn), lcn := 0]
-
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
   concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
@@ -115,6 +112,9 @@ get_gene_level_calls <- function(cncf_files,
                                frac_elev_major_cn=unique(frac_elev_major_cn),
                                Nprobes = .N),
                           keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
+
+  ### fix bug where lcn == NA even when tcn is 1
+  gene_level[tcn == 1 & is.na(lcn), lcn := 0]
 
   ### apply WGD threshold
   gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
