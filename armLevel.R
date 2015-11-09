@@ -24,10 +24,12 @@ getSDIR <- function(){
 }
 
 ### get IMPACT341 loci and gene names
-msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
-IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list')))
-setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
-setkey(IMPACT341_targets, chr, start, end)
+arm_definitions <- suppressWarnings(fread(file.path(getSDIR(), 'CytobandTableRed.Ensemblgrch37.txt')))
+setnames(arm_definitions, c("chr", "start", "end", "arm"))
+arm_definitions <- arm_definitions[chr != "Y"]
+arm_definitions[, arm := factor(arm, levels = unique(arm))]
+arm_definitions[, chr := factor(chr, levels = unique(chr))]
+setkey(arm_definitions, chr, start, end)
 
 
 #############################################
@@ -99,38 +101,33 @@ get_gene_level_calls <- function(cncf_files,
     by=Tumor_Sample_Barcode]
 
   ### Extract integer copy number for each probe from concat_cncf_txt
-  fo_impact <- foverlaps(IMPACT341_targets, concat_cncf_txt, nomatch=NA)
-  fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
+  fo_impact <- foverlaps(arm_definitions, concat_cncf_txt, nomatch=NA)
+  ### Truncate segments that span two arms
+  fo_impact[, loc.start := ifelse(loc.start < start, start, loc.start)]
+  fo_impact[, loc.end := ifelse(loc.end > end, end, loc.end)]
+  fo_impact[, arm := factor(arm, levels = levels(arm_definitions$arm))]
+  #fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
-  gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP"),
-                          list(chr = unique(chr),
-                               seg.start=unique(loc.start),
-                               seg.end=unique(loc.end),
-#                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
-#                                end=unique(end),
-                               frac_elev_major_cn=unique(frac_elev_major_cn),
-                               Nprobes = .N),
-                          keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
+  gene_level <- fo_impact[,
+                          list(frac_elev_major_cn=unique(frac_elev_major_cn),
+                               Nsegments = .N,
+                               length_CN = sum(as.numeric(loc.end - loc.start))),
+                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
+  setkey(gene_level, Tumor_Sample_Barcode, arm)
+  ### for each CN status, calculate fraction of arm covered
+  setkey(arm_definitions, arm)
+  gene_level[, arm_frac:= round(length_CN / arm_definitions[as.character(gene_level$arm), as.numeric(end - start)], digits = 4)]
+  setkey(arm_definitions, chr, start, end)
+  ### ignore CN status valuesif present in less than 10% of arm
+  ## gene_level <- gene_level[arm_frac >= 0.1 ]
+  gene_level <- gene_level[order(Tumor_Sample_Barcode, arm, -arm_frac)]
+  ### estimate WGD from frac_elev_major_cn
+  gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
 
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
 
-  ### apply WGD threshold
-  gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
-  setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
-
-  ### focality requirement
-  ### get (weighted) mean total copy number for the chromosome
-#   mean_tcn_per_chr <- concat_cncf_txt[, list(mean_tcn =
-#                                                sum(tcn * as.numeric(loc.end - loc.start)) /
-#                                                sum(as.numeric(loc.end - loc.start))),
-#                                       keyby=list(Tumor_Sample_Barcode, chrom)]
-#   mean_tcn_per_chr_v <- with(mean_tcn_per_chr,
-#                              structure(mean_tcn,
-#                                        .Names = paste(Tumor_Sample_Barcode,
-#                                                       chrom)))
-#   gene_level[, mean_tcn_per_chr := mean_tcn_per_chr_v[paste(Tumor_Sample_Barcode, chr)]]
 
   ### annotate integer copy number
   gene_level <- annotate_integer_copy_number(gene_level)
@@ -139,13 +136,21 @@ get_gene_level_calls <- function(cncf_files,
   ### the lower value is chosen on the basis that a
   ### partial deletion is a deletion but a
   ### partial amplification is not an amplification
-  gene_level <- gene_level[order(FACETS_CNA, -Nprobes)]
-  gene_level <- gene_level[!duplicated(gene_level, by=c("Tumor_Sample_Barcode", "Hugo_Symbol"))]
+#   gene_level <- gene_level[order(FACETS_CNA, -Nprobes)]
+#   gene_level <- gene_level[!duplicated(gene_level, by=c("Tumor_Sample_Barcode", "Hugo_Symbol"))]
 
-  ### Sort & set column classes
-  gene_level[, FACETS_CNA := factor(FACETS_CNA, levels = c(-2:2))]
-  gene_level[, chr := factor(chr, levels = c(1:22, "X", "Y"))]
-  setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
+  gene_level <- gene_level[order(Tumor_Sample_Barcode, arm, -arm_frac)]
+  gene_level[,primary := as.integer(!duplicated(gene_level, by=c("Tumor_Sample_Barcode", "arm")))]
+
+  setkey(gene_level, Tumor_Sample_Barcode, arm)
+  gene_level[, tcn_summary := as.character(tcn)]
+  gene_level[duplicated(gene_level) | duplicated(gene_level, fromLast = T),
+             tcn_summary := paste(collapse = " ",
+                                  paste(sep = ":",
+                                        paste0(
+                                          round(arm_frac*100, 0), "%"),
+                                        tcn)),
+             by = list(Tumor_Sample_Barcode, arm)]
   gene_level
 }
 
