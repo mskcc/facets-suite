@@ -4,6 +4,8 @@ library(argparse)
 library(data.table)
 
 parser = ArgumentParser()
+
+
 parser$add_argument('-t', '--tumor_counts', type='character', help='Tumor counts file name')
 parser$add_argument('-n', '--normal_counts', type='character', help='Normal counts file name')
 parser$add_argument('-o', '--outfile', type='character', help='output file (gzipped')
@@ -27,7 +29,7 @@ read_counts <- function(file){
   dt[Ref != "N" & nchar(Ref) == 1 & nchar(Alt) == 1]
 }
 
-write("Reading normal ...", stderr())
+write("Reading normal ...", stdout())
 NORMAL_dt = read_counts(NORMAL)
 NORMAL_dt = NORMAL_dt[BASEQ_depth >= MINCOV_NORMAL]
 write("done ...", stderr())
@@ -47,7 +49,7 @@ setnames(mergeTN,
 mergeTN[, Chrom := factor(Chrom, levels=c(c(1:22, "X", "Y", "MT"), paste0("chr", c(1:22, "X", "Y", "M"))))]
 mergeTN = mergeTN[order(Chrom, Pos)]
 
-write.table(mergeTN, file=GZOUT, 
+write.table(mergeTN, file=GZOUT,
             quote = F, 
             col.names = T, 
             row.names = F, 

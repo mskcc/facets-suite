@@ -55,7 +55,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -m MAF, --maf MAF     file name of maf file to be annotated.
   -f FACETS_FILES, --facets_files FACETS_FILES
-                        file name contains names of facets files.
+                        Mapping of "Tumor_Sample_Barcode" from maf and
+                        "Rdata_filename" from FACETS (tab-delimited with
+                        header)
   -o OUT_MAF, --out_maf OUT_MAF
                         file name of CN annotated maf.
 ```

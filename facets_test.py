@@ -20,6 +20,7 @@ for key, value in test_inputs.items():
 expected_outputs = {"tumor_basecounts":"H_LS-A8-A094-01A-11W-A019-09-1.dat.gz",
                     "mergeTN":"countsMerged____H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.dat.gz",
                     'seeded.seg':"H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.seg",
+                    'seeded.seg.pcval':'H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1_hisens.seg',
                     'ann_maf':"TCGA-A8-A094-01A-11W-A019-09.ann.maf",
                     'gene_level_calls':"facets_gene_level_calls.txt"
                     }
@@ -33,10 +34,12 @@ DEV_NULL = open("/dev/null", "w")
 def setup_module():
     global TEST_TEMP_DIR
     TEST_TEMP_DIR = tempfile.mkdtemp();
+
 FACETS_SCRIPT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "facets")
+
 def teardown_module():
     if TEST_TEMP_DIR is not None:
-        shutil.rmtree(TEST_TEMP_DIR)
+        #shutil.rmtree(TEST_TEMP_DIR)
         pass
 
 #def test_getbasecounts():
@@ -89,6 +92,26 @@ def test_facets():
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
     rv = subprocess.call(diff_cmd)
     assert rv==0, "facets test seg output differs from expected output- diff exit code: %s" % str(rv)
+
+def test_facets_with_pcval():
+    output_dir = os.path.join(TEST_TEMP_DIR)
+    merged_count_input = test_inputs['merged_counts']
+    facets_cmd = [FACETS_SCRIPT,
+                  "doFacets",
+                  "--seed=1587443596", 
+                  "-f", merged_count_input,
+                  "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
+                  "-D", TEST_TEMP_DIR,
+                  "--purity_cval=300",
+                  "-c=200"]
+    print >>sys.stderr ," ".join(facets_cmd)
+    rv = subprocess.call(facets_cmd)
+    assert rv==0, "facets failed to run :("
+    expected_seg_output = expected_outputs['seeded.seg.pcval']
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1_hisens.seg")
+    diff_cmd = ["diff", expected_seg_output, test_seg_output]
+    rv = subprocess.call(diff_cmd)
+    assert rv==0, "facets test seg output differs from expected output!"
 
 def test_facets_maf():
     output_dir = os.path.join(TEST_TEMP_DIR)

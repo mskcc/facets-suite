@@ -45,7 +45,10 @@ def run(args):
     del vars(args)['script']
     for key, value in vars(args).items():
         if value != None:
-            cmd = cmd + ["--"+key, str(value)]
+            if type(value) is list:
+                cmd = cmd + ["--"+key, ",".join(value)]
+            else:
+                cmd = cmd + ["--"+key, str(value)]
     print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd)
@@ -81,7 +84,11 @@ def add_subparser(file, subparsers):
             #take "add_argument" to end of line
             python_code = line[add_argument_index:].rstrip()
             #take out "type" argument from R
-            python_code =  "parser."+re.sub("""type=['"]\S+['"],""","", python_code)
+            fixed_code =re.sub("""type=['"]\S+['"],""","", python_code)
+            fixed_code = re.sub("""required=T""", """required=True""", fixed_code)
+            #problaly not needed unless someone is a jackass
+            fixed_code = re.sub("""required=F""", """required=False""", fixed_code)
+            python_code =  "parser." +fixed_code
             if python_code.find(")") == -1:
                 #multiline shit
                 finished=0
@@ -90,11 +97,15 @@ def add_subparser(file, subparsers):
                 exec python_code
     if parser:
         parser.set_defaults(script=file)
+    #extra special sprinkle of shit-magic to get subparser help to print if no args
+    if len(sys.argv) ==2 and sys.argv[1] == os.path.basename(file).replace(".R",""):
+        parser.print_help()
+        sys.exit(1)
 
      
 
-
-def create_parser(FACETS_DIR, parser=None):
+FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
+def create_parser(parser=None):
     if not parser:
         parser = argparse.ArgumentParser(description="run FACETS analysis")
     subparsers = parser.add_subparsers(help='sub-command help')
@@ -108,8 +119,7 @@ def create_parser(FACETS_DIR, parser=None):
 if __name__ =='__main__':
 
     ### ARGUMENTS
-    FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
-    parser = create_parser(FACETS_DIR)
+    parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
     run(args)

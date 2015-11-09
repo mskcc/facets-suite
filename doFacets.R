@@ -144,11 +144,16 @@ results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM,
         filename = paste0(DIRECTORY, "/", TAG,".CNCF")
         h = 1100
         w = 850
+        fit$dipLogR = tryCatch({round(fit$dipLogR,2)},error=function(cond){return(fit$dipLogR)})
+        fit$ploidy = tryCatch({round(fit$ploidy,2)},error=function(cond){return(fit$ploidy)})
+        fit$purity = tryCatch({round(fit$purity,2)},error=function(cond){return(fit$purity)})
+        TAG = tryCatch({unlist(strsplit(TAG,'__'))[1]},error=function(cond){return(TAG)})
+
         if(is.null(GIVE_PCVAL)){
-          main = paste(TAG, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+          main = paste(TAG, ' | cval=', CVAL, ' | purity=', fit$purity, ' | ploidy= ', fit$ploidy, ' | dipLogR=', fit$dipLogR, sep='')
         }
         if(!is.null(GIVE_PCVAL)){
-          main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', round(fit$purity,2), ' | ploidy= ', round(fit$ploidy,2), ' | dipLogR=', round(fit$dipLogR,2), sep='')
+          main = paste(TAG, ' | purity_cval=', PURITY_CVAL, ' | cval=', CVAL, ' | purity=', fit$purity, ' | ploidy= ', fit$ploidy, ' | dipLogR=', fit$dipLogR, sep='')
         }
 
         if(GGPLOT == 'F'){
@@ -220,9 +225,9 @@ parser$add_argument("-pm", "--purity_min_nhet",type="integer",default=25,
 
 parser$add_argument("-d", "--dipLogR",type="double",help="diploid log ratio")
 parser$add_argument("-g", "--genome",type="character",default="hg19",help="Genome of counts file")
-parser$add_argument("-f", "--counts_file", type="character", help="paired Counts File")
-parser$add_argument("-t", "--TAG", type="character", help="output prefix")
-parser$add_argument("-D", "--directory", type="character", help="output prefix")
+parser$add_argument("-f", "--counts_file", type="character", required=T, help="paired Counts File")
+parser$add_argument("-t", "--TAG", type="character", required=T, help="output prefix")
+parser$add_argument("-D", "--directory", type="character", required=T, help="output prefix")
 parser$add_argument("-r", "--R_lib", type="character", default='latest', help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
 parser$add_argument("-G", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
