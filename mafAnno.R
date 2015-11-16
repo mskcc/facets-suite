@@ -128,40 +128,22 @@ main = function(maf,facets_files){
   maf = as.data.table(maf)
 
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
-  cat(sort(maf_Tumor_Sample_Barcodes))
-  cat('\n')
-  cat(sort(names(facets_files)))
-  cat('\n')
-  cat(paste(c("Tumor_Sample_Barcodes missing in maf:", setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))), collapse=" "))
-  cat('\n')
-  # facets_files = facets_files[names(facets_files) %in% maf_Tumor_Sample_Barcodes]
+
+  setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
+  setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
+
+  
   no.facets = setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
   no.facets.data = maf[maf$Tumor_Sample_Barcode %in% no.facets,]
+  maf_Tumor_Sample_Barcodes = maf_Tumor_Sample_Barcodes[!maf_Tumor_Sample_Barcodes %in% no.facets]
+  
   idi = intersect(names(facets_files), maf_Tumor_Sample_Barcodes)
   maf = maf[maf$Tumor_Sample_Barcode %in% idi]
   maf_list = lapply(idi, function(x){load(facets_files[x]);
                                      maf = annotate_maf_with_facets_cf_tcn_lcn(maf, out, fit, x)})
-  if(length(no.facets)){
-      maf_list <- c(maf_list, no.facets.data)
-  }
+  
+  if(length(no.facets)){maf_list = c(maf_list, list(no.facets.data))}
   maf = rbindlist(maf_list,fill=T)
-
-  ## maf[,ccf_1copy_:=as.numeric(estimated_af_life_history(purity,
-  ##                                                      t_alt_count,
-  ##                                                      t_ref_count,
-  ##                                                      lcn,
-  ##                                                      tcn-lcn,
-  ##                                                      copies=1,
-  ##                                                      limit=TRUE)),by = 1: nrow(maf)]
-
-  ## maf[,ccf_Mcopies_:=as.numeric(estimated_af_life_history(purity,
-  ##                                                        t_alt_count,
-  ##                                                        t_ref_count,
-  ##                                                        lcn,
-  ##                                                        tcn-lcn,
-  ##                                                        copies='M',
-  ##                                                        limit=TRUE)), by = 1:nrow(maf)]
-
 
   #mine
   maf[,c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90"):=ccf.likelihood(purity,
