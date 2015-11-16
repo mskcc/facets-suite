@@ -1,16 +1,9 @@
 #!/usr/bin/env Rscript
 
-
-
 ################################################################################################################################
 ################################################################################################################################
 
 estimated_af_life_history = function(purity, ns, nw, m, M, copies=1, limit=TRUE){
-  #Alex's Penson's code and notes
-  # taken from The life history of 21 breast cancers page S1.
-  # but assuming the mutation is present at M copies rather than 1
-
-  #m = minor allele#; M = major allele#; ns = number of success (t_alt_count); nw = number of failures (t_ref_count)
 
   if(any(is.na(c(purity, ns, nw, m, M)))){return(NA)}
 
@@ -31,8 +24,7 @@ estimated_af_life_history = function(purity, ns, nw, m, M, copies=1, limit=TRUE)
 ################################################################################################################################
 
 integer_cn_table = function(out, fit, em=FALSE){
-  #Alex Penson's function and notes with a couple of minor edits from me.
-  ### replace facets chr 23 with "X"
+
   df = out$IGV
   df[df$chrom == 23,]$chrom = "X"
   df$chrom = factor(df$chrom)
@@ -57,7 +49,6 @@ integer_cn_table = function(out, fit, em=FALSE){
                     dipLogR=out$dipLogR)
   }
   setkey(dt, chrom, loc.start, loc.end)
-  #print(dt)
   dt
 }
 
@@ -67,22 +58,10 @@ integer_cn_table = function(out, fit, em=FALSE){
 
 annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iTumor_Sample_Barcode=NULL){
 
-  #' Alex Penson's function and notes
-  #' believe it or not, the most elegant way i could find
-  #' to assign NA to mutations that fall outside of segmented
-  #' regions is to fill in the gaps in the GRanges object
-  #' this requires pulling the chromosome lengths and also
-
   maf = as.data.table(maf)
   maf_cols = colnames(maf)
   maf$Chromosome = factor(maf$Chromosome)
   setkey(maf,Chromosome,Start_Position,End_Position)
-
-  ## #seqlevelsStyle(BSgenome.Hsapiens.UCSC.hg19) = "NCBI" ### without "chr", "MT" for mitochondrial
-  ## sl = seqlengths(BSgenome.Hsapiens.UCSC.hg19)
-  ## sl = sl[!grepl("_", names(sl))]
-  #names(sl) <- gsub("chr", "", names(sl))
-
   dt = integer_cn_table(out, fit)
 
   if(is.null(iTumor_Sample_Barcode)){maf_ann = foverlaps(maf, dt, mult="first",nomatch=NA)}
@@ -124,14 +103,11 @@ ccf.likelihood = function(purity, absCN, alt_allele, coverage, copies){
 
 main = function(maf,facets_files){
 
-  #Adapted from Alex's code
   maf = as.data.table(maf)
-
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
 
   setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
   setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
-
   
   no.facets = setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
   no.facets.data = maf[maf$Tumor_Sample_Barcode %in% no.facets,]
@@ -145,7 +121,6 @@ main = function(maf,facets_files){
   if(length(no.facets)){maf_list = c(maf_list, list(no.facets.data))}
   maf = rbindlist(maf_list,fill=T)
 
-  #mine
   maf[,c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90"):=ccf.likelihood(purity,
                                                                                                                     tcn,
                                                                                                                     t_alt_count,
@@ -163,7 +138,6 @@ main = function(maf,facets_files){
 
 ################################################################################################################################
 ################################################################################################################################
-
 
 suppressPackageStartupMessages(library(data.table))
 library(argparse)
@@ -192,23 +166,4 @@ if(!interactive()){
   write.table(maf, file = output_maf_file,
               quote = F, col.names = T, row.names = F, sep = "\t")
 }
-
-
-#facets_files = Sys.glob('TCGA*/*100*.Rdata')
-#names(facets_files) = matrix(unlist(strsplit(facets_files,'/')),byrow=T,nc=2)[,1]
-#maf = fread('AKT1_UCEC.maf')
-#maf$Tumor_Sample_Barcode = maf$pid
-#maf_ = main(maf,facets_files)
-
-#nCCF = 1000
-#CCFs = seq(0.001,1,0.001)
-#alt_allele = 52   #4     #52
-#ref_allele = 13   #29    #13
-#coverage = 65     #33    #65
-#absCN = 3         #2     #3
-#m=0
-#M=3
-#r=3
-#purity= 0.693104435 #0.410028
-
 
