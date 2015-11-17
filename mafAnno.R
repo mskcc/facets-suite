@@ -26,7 +26,10 @@ estimated_af_life_history = function(purity, ns, nw, m, M, copies=1, limit=TRUE)
 integer_cn_table = function(out, fit, em=FALSE){
 
   df = out$IGV
-  df[df$chrom == 23,]$chrom = "X"
+  n.xchr <- nrow(df[df$chrom == 23,])
+  if(n.xchr > 0) {
+    df[df$chrom == 23,]$chrom = "X"
+  }
   df$chrom = factor(df$chrom)
   if(em==TRUE){
     dt = data.table(df,
