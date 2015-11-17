@@ -11,7 +11,9 @@ test_inputs = {"tumor_bam":"Chr22_hg19_TCGA-A8-A094-01A-11W-A019-09.tumor.bam",
                'maf':"TCGA-A8-A094-01A-11W-A019-09.maf",
                'facets_rdata_pairing':"facets_files.txt",
                'merged_counts':"countsMerged____TCGA-A8-A094-01A-11W-A019-09____TCGA-A8-A094-10A-01W-A021-09.dat.gz",
-               'cncf_file':'H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.cncf.txt'
+               'cncf_file':'H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.cncf.txt',
+               'big_maf_rdata_pairing':"rdata_big_mafanno/facets_data_file",
+               'big_maf':"rdata_big_mafanno/Proj_04525_J___SOMATIC.vep.maf"
                }
 
 for key, value in test_inputs.items():
@@ -22,7 +24,8 @@ expected_outputs = {"tumor_basecounts":"H_LS-A8-A094-01A-11W-A019-09-1.dat.gz",
                     'seeded.seg':"H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.seg",
                     'seeded.seg.pcval':'H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1_hisens.seg',
                     'ann_maf':"TCGA-A8-A094-01A-11W-A019-09.ann.maf",
-                    'gene_level_calls':"facets_gene_level_calls.txt"
+                    'gene_level_calls':"facets_gene_level_calls.txt",
+                    'big_ann_maf':"Proj_04525_J___SOMATIC.vep.facets_anno.maf"
                     }
 
 for key, value in expected_outputs.items():
@@ -130,6 +133,26 @@ def test_facets_maf():
     diff_cmd = ["diff", expected_annmaf_output, test_seg_output]
     rv = subprocess.check_call(diff_cmd)
     assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
+
+def test_facets_big_maf():
+    output_dir = os.path.join(TEST_TEMP_DIR)
+    input_maf = test_inputs['big_maf']
+    input_rdata_pairing = test_inputs['big_maf_rdata_pairing']
+    facets_cmd = [FACETS_SCRIPT,
+                  "mafAnno",
+                  "-m", input_maf,
+                  "-f", input_rdata_pairing,
+                  "-o", os.path.join(TEST_TEMP_DIR, "big.ann.maf")]
+    print " ".join(facets_cmd)
+    rv = subprocess.call(facets_cmd)
+    assert rv==0, "facets failed to run :("
+    expected_annmaf_output = expected_outputs['big_ann_maf']
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "big.ann.maf")
+    diff_cmd = ["diff", expected_annmaf_output, test_seg_output]
+    rv = subprocess.check_call(diff_cmd)
+    assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
+
+
 
 def test_facets_gene_call():
     output_dir = os.path.join(TEST_TEMP_DIR)
