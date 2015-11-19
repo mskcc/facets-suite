@@ -26,7 +26,10 @@ estimated_af_life_history = function(purity, ns, nw, m, M, copies=1, limit=TRUE)
 integer_cn_table = function(out, fit, em=FALSE){
 
   df = out$IGV
-  df[df$chrom == 23,]$chrom = "X"
+  n.xchr <- nrow(df[df$chrom == 23,])
+  if(n.xchr > 0) {
+    df[df$chrom == 23,]$chrom = "X"
+  }
   df$chrom = factor(df$chrom)
   if(em==TRUE){
     dt = data.table(df,
@@ -106,13 +109,15 @@ main = function(maf,facets_files){
   maf = as.data.table(maf)
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
 
-  setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
-  setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
-  
+  not.in.maf = setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
   no.facets = setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
+
   no.facets.data = maf[maf$Tumor_Sample_Barcode %in% no.facets,]
   maf_Tumor_Sample_Barcodes = maf_Tumor_Sample_Barcodes[!maf_Tumor_Sample_Barcodes %in% no.facets]
-  
+
+  write(paste('Missing facets data:', no.facets), stderr())
+  write(paste('Not in MAF:', not.in.maf), stderr())
+
   idi = intersect(names(facets_files), maf_Tumor_Sample_Barcodes)
   maf = maf[maf$Tumor_Sample_Barcode %in% idi]
   maf_list = lapply(idi, function(x){load(facets_files[x]);
