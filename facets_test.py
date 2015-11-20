@@ -24,9 +24,11 @@ expected_outputs = {"tumor_basecounts":"H_LS-A8-A094-01A-11W-A019-09-1.dat.gz",
         'seeded.seg':"H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1.seg",
         'seeded.seg.pcval':'H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1_hisens.seg',
         'ann_maf':"TCGA-A8-A094-01A-11W-A019-09.ann.maf",
-        'gene_level_calls':"facets_gene_level_calls.txt",
+        'gene_level_calls_em':"facets_gene_level_calls_em.txt",
+        'gene_level_calls_cncf':"facets_gene_level_calls_cncf.txt",
         'big_ann_maf':"Proj_04525_J___SOMATIC.vep.facets_anno.maf",
-        'arm_level_calls':"facets_arm_level_calls.txt"
+        'arm_level_calls_em':"facets_arm_level_calls_em.txt",
+        'arm_level_calls_cncf':"facets_arm_level_calls_cncf.txt"
         }
 
 for key, value in expected_outputs.items():
@@ -155,10 +157,10 @@ def test_facets_big_maf():
 
 
 
-def test_facets_gene_call():
+def test_facets_gene_call_em():
     output_dir = os.path.join(TEST_TEMP_DIR)
     cncf_input = test_inputs['cncf_file']
-    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_gene_level_calls.txt")
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_gene_level_calls_em.txt")
     facets_cmd = [FACETS_SCRIPT,
             "geneLevel",
             "-f", cncf_input,
@@ -169,16 +171,16 @@ def test_facets_gene_call():
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :(, exit code %s" % rv
-    expected_seg_output = expected_outputs['gene_level_calls']
+    expected_seg_output = expected_outputs['gene_level_calls_em']
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
     rv = subprocess.call(diff_cmd)
     assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
 
 
-def test_facets_arm_call():
+def test_facets_arm_call_em():
     output_dir = os.path.join(TEST_TEMP_DIR)
     cncf_input = test_inputs['cncf_file']
-    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_arm_level_calls.txt")
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_arm_level_calls_em.txt")
     facets_cmd = [FACETS_SCRIPT,
             "armLevel",
             "-f", cncf_input,
@@ -189,7 +191,48 @@ def test_facets_arm_call():
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :(, exit code %s" % rv
-    expected_seg_output = expected_outputs['arm_level_calls']
+    expected_seg_output = expected_outputs['arm_level_calls_em']
+    diff_cmd = ["diff", expected_seg_output, test_seg_output]
+    rv = subprocess.call(diff_cmd)
+    assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
+
+
+
+def test_facets_gene_call_cncf():
+    output_dir = os.path.join(TEST_TEMP_DIR)
+    cncf_input = test_inputs['cncf_file']
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_gene_level_calls_cncf.txt")
+    facets_cmd = [FACETS_SCRIPT,
+            "geneLevel",
+            "-f", cncf_input,
+            "-o",
+            test_seg_output,
+            "-m",
+            "cncf"]
+    print " ".join(facets_cmd)
+    rv = subprocess.call(facets_cmd)
+    assert rv==0, "facets failed to run :(, exit code %s" % rv
+    expected_seg_output = expected_outputs['gene_level_calls_cncf']
+    diff_cmd = ["diff", expected_seg_output, test_seg_output]
+    rv = subprocess.call(diff_cmd)
+    assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
+
+
+def test_facets_arm_call_cncf():
+    output_dir = os.path.join(TEST_TEMP_DIR)
+    cncf_input = test_inputs['cncf_file']
+    test_seg_output = os.path.join(TEST_TEMP_DIR, "facets_arm_level_calls_cncf.txt")
+    facets_cmd = [FACETS_SCRIPT,
+            "armLevel",
+            "-f", cncf_input,
+            "-o",
+            test_seg_output,
+            "-m",
+            "cncf"]
+    print " ".join(facets_cmd)
+    rv = subprocess.call(facets_cmd)
+    assert rv==0, "facets failed to run :(, exit code %s" % rv
+    expected_seg_output = expected_outputs['arm_level_calls_cncf']
     diff_cmd = ["diff", expected_seg_output, test_seg_output]
     rv = subprocess.call(diff_cmd)
     assert rv==0, "facets test seg output differs from expected output, diff exit code: %s" % str(rv)
