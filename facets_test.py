@@ -163,7 +163,9 @@ def test_facets_gene_call():
             "geneLevel",
             "-f", cncf_input,
             "-o",
-            test_seg_output]
+            test_seg_output,
+            "-m",
+            "em"]
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :(, exit code %s" % rv
@@ -181,7 +183,9 @@ def test_facets_arm_call():
             "armLevel",
             "-f", cncf_input,
             "-o",
-            test_seg_output]
+            test_seg_output,
+            "-m",
+            "em"]
     print " ".join(facets_cmd)
     rv = subprocess.call(facets_cmd)
     assert rv==0, "facets failed to run :(, exit code %s" % rv
