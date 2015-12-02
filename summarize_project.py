@@ -5,6 +5,7 @@ import argparse, subprocess, os, re, glob
 parser = argparse.ArgumentParser(description = descr, formatter_class = argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--cncfFiles', help = 'List cncf files', nargs = '+', required = False)
 parser.add_argument('-o', '--outFiles', help = 'List out files', nargs = '+', required = False)
+parser.add_argument('-s', '--segFiles', help = 'List seg files', nargs = '+', required = False)
 parser.add_argument('-p', '--outPrefix', help = 'Prefix output', required = False)
 args = parser.parse_args()
 
@@ -14,6 +15,11 @@ if args.cncfFiles is None:
 else:
     cncfFiles = args.cncfFiles
 
+if args.segFiles is None:
+    segFiles = glob.glob('*.seg') 
+else:
+    segFiles = args.segFiles
+
 if args.outFiles is None:
     outFiles = glob.glob('*out')
 else:
@@ -22,14 +28,21 @@ else:
 ### Check if outPrefix specified
 if args.outPrefix is None:
     CNCF = '%s_CNCF.txt' % os.path.basename(os.getcwd())
+    SEG = '%s.SEG' % os.path.basename(os.getcwd())
     OUT = '%s_OUT.txt' % os.path.basename(os.getcwd())
 else:
     CNCF = '%s_CNCF.txt' % args.outPrefix
+    SEG = '%s.SEG' % args.outPrefix
     OUT = '%s_OUT.txt' % args.outPrefix
 
 ### Concatenate cncf files into CNCF.txt
-concatCall = '(cat %s | head -1; cat *cncf.txt | egrep -v "^ID") > %s' % (' '.join(cncfFiles), CNCF)
-subprocess.call(concatCall, shell = True, stdout = open(os.devnull, 'w'), stderr = subprocess.STDOUT)
+# concatCall = '(cat %s | head -1; cat *cncf.txt | egrep -v "^ID") > %s' % (' '.join(cncfFiles), CNCF)
+concatCncf = "awk 'ARGIND == 1 { print; next } /^ID/ { next } { print }' %s > %s" % (' '.join(cncfFiles), CNCF)
+subprocess.call(concatCncf, shell = True, stdout = open(os.devnull, 'w'), stderr = subprocess.STDOUT)
+
+### Concatenate seg files into .SEG
+concatSeg = "awk 'ARGIND == 1 { print; next } /^ID/ { next } { print }' %s > %s" % (' '.join(segFiles), SEG)
+subprocess.call(concatSeg, shell = True, stdout = open(os.devnull, 'w'), stderr = subprocess.STDOUT)
 
 ### Read and parse out files
 ### Write to OUT.txt
