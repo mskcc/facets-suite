@@ -100,6 +100,7 @@ get_gene_level_calls <- function(cncf_files,
 
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(IMPACT341_targets, concat_cncf_txt, nomatch=NA)
+  fo_impact <- fo_impact[!is.na(ID)]
   fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
