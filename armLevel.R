@@ -67,6 +67,7 @@ annotate_integer_copy_number <- function(gene_level){
 }
 
 get_gene_level_calls <- function(cncf_files,
+                                 method,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
@@ -109,11 +110,24 @@ get_gene_level_calls <- function(cncf_files,
   #fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
-  gene_level <- fo_impact[,
+  if(method == 'cncf'){
+
+      gene_level <- fo_impact[,
+                       list(frac_elev_major_cn=unique(frac_elev_major_cn),
+                            Nsegments = .N,
+                            length_CN = sum(as.numeric(loc.end - loc.start))),
+                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
+
+  }
+  if(method == 'em'){
+
+      gene_level <- fo_impact[,
                           list(frac_elev_major_cn=unique(frac_elev_major_cn),
                                Nsegments = .N,
                                length_CN = sum(as.numeric(loc.end - loc.start))),
                           by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
+  }
+  
   setkey(gene_level, Tumor_Sample_Barcode, arm)
   ### for each CN status, calculate fraction of arm covered
   setkey(arm_definitions, arm)
@@ -163,13 +177,16 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
+  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em')
+
   args=parser$parse_args()
 
   filenames = args$filenames
   outfile = args$outfile
-
+  method = args$method
+  
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
-  gene_level_calls = get_gene_level_calls(filenames)
+  gene_level_calls = get_gene_level_calls(filenames, method)
   write.text(gene_level_calls, outfile)
 }
 

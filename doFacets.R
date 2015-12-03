@@ -42,13 +42,15 @@ print_run_details <- function(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL,
     cat("# genome ="     , GENOME                , "\n", file=ff, append=T)
     
     cat("\n# LOADED MODULE INFO\n", file=ff, append=T)
-    buildData=installed.packages()["facets",]
-    version=buildData["Version"]
-    for(fi in c("Package","LibPath","Version","Built")){
-        cat("#",paste(fi,":",sep=""), buildData[fi], "\n", file=ff, append=T)
-    }
+    pv = packageVersion('facets')
+    cat("# Facets version =", as.character(pv), "\n" , file=ff, append=T) 
     cat("\n", file=ff, append=T)
- 
+    #buildData=installed.packages()["facets",]
+    #version=buildData["Version"]
+    #for(fi in c("Package","LibPath","Version","Built")){
+    #   cat("#",paste(fi,":",sep=""), buildData[fi], "\n", file=ff, append=T)
+    #}
+
     cat("\n# FACETS OUTPUT\n", file=ff, append=T)
     cat("# Purity ="     , fit$purity            ,"\n", file=ff, append=T)
     cat("# Ploidy ="     , fit$ploidy            ,"\n", file=ff, append=T)
