@@ -32,7 +32,7 @@ setkey(IMPACT341_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.txt"))
+FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
