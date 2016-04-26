@@ -277,12 +277,6 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
   c(mid.point, chrom@values)
 }
 
-get.gene.pos = function(hugo.symbols, mid.points=suppressWarnings(fread('~/home/facets-suite/hg19_hugo_genomic_midpoints.bed'))){
-  
-  my.mid.points = mid.points[hugo %in% hugo.symbols,]$mid
-  my.mid.points
- }
-
 
 #Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL, lend='butt'){
