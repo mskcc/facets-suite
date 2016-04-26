@@ -1,44 +1,45 @@
+require(bit64)
 require(Cairo)
 require(ggplot2)
 require(grid)
 require(gridExtra)
 
 
-copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt'){
-
+copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw'){
+  
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
-
+  
   cncf = fit$cncf
   cncf = subset(cncf, chrom < 23)
   dipLogR = out$dipLogR
-
+  
   cnlr.median = rep(cncf$cnlr.median, cncf$num.mark)
   mat = cbind(mat, cnlr.median)
-
+  
   starts = cumsum(c(1,cncf$num.mark))[1:length(cncf$num.mark)]
   ends = cumsum(c(cncf$num.mark))
   my.starts = mat[starts,c('chr.maploc','cnlr.median')]
   my.ends = mat[ends,c('chr.maploc','cnlr.median')]
-
+  
   if(is.null(sample.num)){subset_ = 1:nrow(mat)}
-
+  
   if(is.null(sample.num) == FALSE){
     if(sample.num >= nrow(mat)){subset_ = 1:nrow(mat)}
     if(sample.num < nrow(mat)){subset_ = sort(sample(1:nrow(mat), sample.num, replace=FALSE))}
   }
-
+  
   mat = mat[subset_,]
   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
-
+  
   cnlr = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
     cnlr = cnlr + geom_vline(xintercept=gene.pos, color='palevioletred1')
   }
-
+  
   cnlr = cnlr +
     geom_point(aes(y=cnlr,x=chr.maploc), colour=c(col.1, col.2)[col.rep], size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
@@ -46,49 +47,54 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
     ylim(-3,3) +
     ylab('Copy number log ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) +
-    geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend) +
-    theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
-          axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10),
-          panel.grid.minor.x=element_line(colour='white', size=.5),
-          panel.grid.major.x=element_line(colour='white', size=0))
+    geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend)
+  
+  panel.grid.col='white'; grid.width = .5
+  if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; cnlr = cnlr + theme_bw()}
+  
+  cnlr = cnlr + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
+                      axis.text.y = element_text(angle=90, vjust=0, size=8),
+                      text = element_text(size=10),
+                      panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
+                      panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
+                      plot.margin = unit(c(0,1,0,0), 'lines'))  
   cnlr
 }
 
-var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt'){
-
+var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw'){
+  
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
-
+  
   cncf = fit$cncf
   cncf = subset(cncf, chrom < 23)
-
+  
   mafR = rep(sqrt(abs(cncf$mafR)), cncf$num.mark)
   mat = cbind(mat, mafR)
-
+  
   starts = cumsum(c(1,cncf$num.mark))[1:length(cncf$num.mark)]
   ends = cumsum(c(cncf$num.mark))
   my.starts = mat[starts,c('chr.maploc','mafR')]
   my.ends = mat[ends,c('chr.maploc','mafR')]
-
+  
   if(is.null(sample.num)){subset_ = 1:nrow(mat)}
-
+  
   if(is.null(sample.num) == FALSE){
     if(sample.num >= nrow(mat)){subset_ = 1:nrow(mat)}
     if(sample.num < nrow(mat)){subset_ = sort(sample(1:nrow(mat), sample.num, replace=FALSE))}
   }
-
+  
   mat = mat[subset_,]
   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
-
+  
   valor = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
     valor = valor + geom_vline(xintercept=gene.pos, color='palevioletred1')
   }
-
+  
   valor = valor +
     geom_point(aes(y=valor,x=chr.maploc), colour=c(col.1,col.2)[col.rep], size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
@@ -96,72 +102,82 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
     ylim(-4,4) +
     ylab('Variant allele log odds ratio') +
     geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$mafR, y=my.starts$mafR), col='red3', size=1, lineend=lend) +
-    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1, lineend=lend) +
-    theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
-          axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10),
-          panel.grid.minor.x=element_line(colour='white', size=.5),
-          panel.grid.major.x=element_line(colour='white', size=0))
+    geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=-my.ends$mafR, y=-my.starts$mafR), col='red3', size=1, lineend=lend)
+  
+  panel.grid.col='white'; grid.width = .5
+  if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; valor = valor + theme_bw()}
+  
+  valor = valor + theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
+                        axis.text.y = element_text(angle=90, vjust=0, size=8),
+                        text = element_text(size=10),
+                        panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
+                        panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
+                        plot.margin = unit(c(0,1,0,0), 'lines'))
   valor
 }
 
-cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt'){
-
+cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw'){
+  
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
-
+  
   cncf = fit$cncf
   cncf = subset(cncf, chrom < 23)
-
+  
   if(method == 'em'){cncf$cf.em[is.na(cncf$cf.em)] = -1; cf = rep(cncf$cf.em, cncf$num.mark); my.ylab='Cellular fraction (EM)'}
   if(method == 'cncf'){cncf$cf[is.na(cncf$cf)] = -1; cf = rep(cncf$cf, cncf$num.mark); my.ylab='Cellular fraction (CNCF)'}
-
+  
   mat = cbind(mat, cf)
   starts = cumsum(c(1,cncf$num.mark))[1:length(cncf$num.mark)]
   ends = cumsum(c(cncf$num.mark))
   my.starts = mat[starts,c('chr.maploc','cf')]
   my.ends = mat[ends,c('chr.maploc','cf')]
-
+  
   cf = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
     cf = cf + geom_vline(xintercept=gene.pos, color='palevioletred1')
   }
-
+  
   cf = cf +
     geom_segment(data=cncf, aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, yend=my.ends$cf, y=my.starts$cf), col='black', size=1, lineend=lend) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
     ylim(0,1) +
-    ylab(my.ylab) +
-    theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
-          axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10),
-          panel.grid.minor.x=element_line(colour='white', size=.5),
-          panel.grid.major.x=element_line(colour='white', size=0))
+    ylab(my.ylab)
+  
+  panel.grid.col='white'; grid.width = .5
+  if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; cf = cf + theme_bw()}
+  
+  cf = cf + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
+                  axis.text.y = element_text(angle=90, vjust=0, size=8),
+                  text = element_text(size=10),
+                  panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
+                  panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
+                  plot.margin = unit(c(0,1,0,0), 'lines'))
   cf
 }
 
-integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt'){
-
+integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw'){
+  
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
-
+  
   cncf = fit$cncf
   cncf = subset(cncf, chrom < 23)
-
+  
   if(method == 'em'){tcnscaled = cncf$tcn.em; tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] = (5 + (tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] - 5)/3)}
   if(method == 'cncf'){tcnscaled = cncf$tcn; tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] = (5 + (tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] - 5)/3)}
   tcn_ = rep(tcnscaled, cncf$num.mark)
-
+  
   if(method == 'em'){lcn_ = rep(cncf$lcn.em, cncf$num.mark); my.ylab='Integer copy number (EM)'}
   if(method == 'cncf'){lcn_ = rep(cncf$lcn, cncf$num.mark); my.ylab='Integer copy number (CNCF)'}
-
+  
   mat = cbind(mat, cbind(tcn_, lcn_))
   starts = cumsum(c(1,cncf$num.mark))[1:length(cncf$num.mark)]
   ends = cumsum(c(cncf$num.mark))
@@ -169,26 +185,33 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   my.tcn.ends = mat[ends,c('chr.maploc','tcn_')]
   my.lcn.starts = mat[starts,c('chr.maploc','lcn_')]
   my.lcn.ends = mat[ends,c('chr.maploc','lcn_')]
-
+  
   icn = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
     icn = icn + geom_vline(xintercept=gene.pos, color='palevioletred1')
   }
-
+  
   icn = icn +
     geom_segment(data=cncf, aes(x=my.tcn.starts$chr.maploc, xend=my.tcn.ends$chr.maploc, y=my.tcn.starts$tcn_, yend=my.tcn.ends$tcn_), col='black', size=1,lineend=lend) +
     geom_segment(data=cncf, aes(x=my.lcn.starts$chr.maploc, xend=my.lcn.ends$chr.maploc, y=my.lcn.starts$lcn_, yend=my.lcn.ends$lcn_), col='red', size=1, lineend=lend) +
     scale_y_continuous(breaks=c(0:5, 5 + (1:35)/3), labels=0:40,limits = c(0, NA)) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     ylab(my.ylab) +
-    xlab('') +
-    theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
-          axis.text.y = element_text(angle=90, vjust=0, size=8),
-          text = element_text(size=10),
-          panel.grid.minor.x=element_line(colour='white', size=.5),
-          panel.grid.major.x=element_line(colour='white', size=0))
+    xlab('')
+  
+  panel.grid.col='white'; grid.width = .5
+  if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; icn = icn + theme_bw()}
+  
+  icn = icn + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
+                    axis.text.y = element_text(angle=90, vjust=0, size=8),
+                    text = element_text(size=10),
+                    panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
+                    panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
+                    plot.margin = unit(c(0,1,0,0), 'lines'))
+  
   icn
 }
+
 
 get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
 
@@ -215,7 +238,7 @@ get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
   list(mat=mat, mid=mid)
 }
 
-get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sapiens.GRCh37.75.canonical_exons.bed',load.genome=FALSE){
+get.gene.pos_ = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sapiens.GRCh37.75.canonical_exons.bed',load.genome=FALSE){
 
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
@@ -240,6 +263,13 @@ get.gene.pos = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sap
 
   mid.point
 }
+
+get.gene.pos = function(hugo.symbols, mid.points=suppressWarnings(fread('~/home/facets-suite/hg19_hugo_genomic_midpoints.bed'))){
+  
+  my.mid.points = mid.points[hugo %in% hugo.symbols,]$mid
+  my.mid.points
+ }
+
 
 #Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL, lend='butt'){
