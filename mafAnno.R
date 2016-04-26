@@ -67,6 +67,12 @@ annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iTumor_Sample_Barc
   setkey(maf,Chromosome,Start_Position,End_Position)
   dt = integer_cn_table(out, fit)
 
+  ### check for duplicate columns
+  if(any(duplicated(names(maf)))){
+    warning("duplicate columns removed from maf file")
+    maf[, which(duplicated(names(maf))) := NULL, with = F]
+  }
+
   if(is.null(iTumor_Sample_Barcode)){maf_ann = foverlaps(maf, dt, mult="first",nomatch=NA)}
   else{maf_ann = foverlaps(maf[Tumor_Sample_Barcode == iTumor_Sample_Barcode], dt, mult="first",nomatch=)}
 
@@ -122,7 +128,7 @@ main = function(maf,facets_files){
   maf = maf[maf$Tumor_Sample_Barcode %in% idi]
   maf_list = lapply(idi, function(x){load(facets_files[x]);
                                      maf = annotate_maf_with_facets_cf_tcn_lcn(maf, out, fit, x)})
-  
+
   if(length(no.facets)){maf_list = c(maf_list, list(no.facets.data))}
   maf = rbindlist(maf_list,fill=T)
 
