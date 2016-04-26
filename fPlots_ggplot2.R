@@ -4,6 +4,18 @@ require(ggplot2)
 require(grid)
 require(gridExtra)
 
+### Get path to repo
+getSDIR <- function(){
+  args=commandArgs(trailing=F)
+  TAG="--file="
+  path_idx=grep(TAG,args)
+  SDIR=dirname(substr(args[path_idx],nchar(TAG)+1,nchar(args[path_idx])))
+  if(length(SDIR)==0) {
+    return(getwd())
+  } else {
+    return(SDIR)
+  }
+}
 
 copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw'){
   
@@ -238,7 +250,8 @@ get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
   list(mat=mat, mid=mid)
 }
 
-get.gene.pos_ = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sapiens.GRCh37.75.canonical_exons.bed',load.genome=FALSE){
+
+get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh37.75.canonical_exons.bed'),load.genome=FALSE){
 
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
@@ -261,7 +274,7 @@ get.gene.pos_ = function(hugo.symbol,my.path='~/home/reference_sequences/Homo_sa
   chrom = seqnames(genes[which(mcols(genes)$name == hugo.symbol)])[1]
   mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
 
-  mid.point
+  c(mid.point, chrom@values)
 }
 
 get.gene.pos = function(hugo.symbols, mid.points=suppressWarnings(fread('~/home/facets-suite/hg19_hugo_genomic_midpoints.bed'))){
@@ -300,15 +313,19 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
 }
 
 #Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
-close.up = function(out, fit, chrom.range, method=NA, gene.name=NULL, lend='butt'){
+close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL){
 
+  if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
+  } else { gene.info = get.gene.pos(gene.name) }
+
+  if (!is.null(gene.name)) gene.pos = gene.info[1]
+  if (is.null(gene.name)) gene.pos = NULL
+  if (is.null(chrom.range)) chrom.range=gene.info[2]
+  
   out$out = out$out[out$out$chrom %in% chrom.range,]
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,]
   out$IGV = out$IGV[out$IGV$chrom %in% chrom.range,]
   fit$cncf = fit$cncf[fit$cncf$chrom %in% chrom.range,]
-
-  if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
-  if(is.null(gene.name)){gene.pos = NULL}
 
   cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
   valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)

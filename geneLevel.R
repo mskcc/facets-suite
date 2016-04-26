@@ -32,7 +32,7 @@ setkey(IMPACT341_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.txt"))
+FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
@@ -99,6 +99,7 @@ get_gene_level_calls <- function(cncf_files,
 
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(IMPACT341_targets, concat_cncf_txt, nomatch=NA)
+  fo_impact <- fo_impact[!is.na(ID)]
   fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene

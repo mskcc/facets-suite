@@ -35,7 +35,7 @@ def slugify(value):
 
 
 
-def run(args):
+def run(args, facets_args):
     try:
         import cmo
         os.environ['PYTHON2']=cmo.util.programs['python']['default']
@@ -46,12 +46,12 @@ def run(args):
     for key, value in vars(args).items():
         if value != None:
             if type(value) is list:
-                cmd = cmd + ["--"+key, ",".join(value)]
+                cmd = cmd + ["--"+key] +  value
             else:
                 cmd = cmd + ["--"+key, str(value)]
     print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
-        rv = subprocess.call(cmd)
+        rv = subprocess.call(cmd + facets_args)
     except:
         print >>sys.stderr, "Error executing command, returncode %s" % rv
         sys.exit(rv)
@@ -122,7 +122,7 @@ if __name__ =='__main__':
     parser = create_parser()
     (args, facets_args) = parser.parse_known_args()
     args_dict= vars(args)
-    run(args)
+    run(args, facets_args)
 ##    print args
     
 
