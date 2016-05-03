@@ -44,12 +44,17 @@ def run(args, facets_args):
     cmd = [args.script]
     del vars(args)['script']
     for key, value in vars(args).items():
-        if value != None:
+        if value == True:
+            cmd = cmd + ['--'+key]
+        elif value == False:
+            pass
+            #don't append
+        elif value != None:
             if type(value) is list:
                 cmd = cmd + ["--"+key] +  value
             else:
                 cmd = cmd + ["--"+key, str(value)]
-    print >>sys.stderr, "Executing %s" % " ".join(cmd)
+            print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd + facets_args)
     except:
@@ -88,6 +93,7 @@ def add_subparser(file, subparsers):
             fixed_code = re.sub("""required=T""", """required=True""", fixed_code)
             #problaly not needed unless someone is a jackass
             fixed_code = re.sub("""required=F""", """required=False""", fixed_code)
+            fixed_code = re.sub("""default\s*=\s*F(alse|ALSE)?\s*,""", """""", fixed_code)
             python_code =  "parser." +fixed_code
             if python_code.find(")") == -1:
                 #multiline shit
