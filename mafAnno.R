@@ -161,11 +161,13 @@ if(!interactive()){
   parser$add_argument('-f','--facets_files', type='character',
                       help='Mapping of "Tumor_Sample_Barcode" from maf and "Rdata_filename" from FACETS (tab-delimited with header)')
   parser$add_argument('-o','--out_maf', type='character', help='file name of CN annotated maf.')
+  parser$add_argument('-c','--save_comments', action = 'store_true', default = FALSE, help = 'Retains comments in file header')
   args=parser$parse_args()
 
   maf_file = args$maf
   facets_samples_file = args$facets_files
   output_maf_file = args$out_maf
+  save_comments = args$save_comments
 
   maf = fread(paste0('grep -v "^#" ', maf_file))
   facets_samples = fread(facets_samples_file)
@@ -174,7 +176,16 @@ if(!interactive()){
 
   maf = main(maf, facets_files)
 
-  write.table(maf, file = output_maf_file,
+  if (save_comments) {
+		header = readLines(maf_file, n = 10)
+		header = header[unlist(lapply(header, function(x) substr(x,1,1)=='#'))]
+		out_file = file(output_maf_file, open = 'wt')
+		for (i in 1:length(header)) cat(header[i], '\n', file = out_file, append = T)
+		write.table(maf, file = out_file, quote = F, col.names = T, row.names = F, sep = "\t")
+		close(out_file)
+  } else {
+		  write.table(maf, file = output_maf_file,
               quote = F, col.names = T, row.names = F, sep = "\t")
+  }
 }
 
