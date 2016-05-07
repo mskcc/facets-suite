@@ -24,8 +24,10 @@ getSDIR <- function(){
 }
 
 ### get IMPACT341 loci and gene names
-msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
-IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list')))
+#msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
+GENE_TARGET_FILE="/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list"
+IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',GENE_TARGET_FILE)))
+
 setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT341_targets, chr, start, end)
 
@@ -66,6 +68,7 @@ annotate_integer_copy_number <- function(gene_level){
 
 get_gene_level_calls <- function(cncf_files,
                                  method=c('em','cncf'),
+                                 gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
@@ -74,7 +77,7 @@ get_gene_level_calls <- function(cncf_files,
   ### check version of data.table
   if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
 
-  
+
   ### concatenate input files
   cncf_txt_list <- lapply(cncf_files, fread)
   names(cncf_txt_list) <- cncf_files
@@ -98,7 +101,7 @@ get_gene_level_calls <- function(cncf_files,
     by=Tumor_Sample_Barcode]
 
   ### Extract integer copy number for each probe from concat_cncf_txt
-  fo_impact <- foverlaps(IMPACT341_targets, concat_cncf_txt, nomatch=NA)
+  fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
   fo_impact <- fo_impact[!is.na(ID)]
   fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
@@ -129,7 +132,7 @@ get_gene_level_calls <- function(cncf_files,
                         keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
   }
 
-  
+
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
 
@@ -175,7 +178,8 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
-  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em')
+  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em [default cncf]')
+  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT341', help="PICARD interval list file of gene target coordinates [default IMPACT341]")
   args=parser$parse_args()
 
   filenames = args$filenames
@@ -183,8 +187,28 @@ if(!interactive()){
   method = args$method
 
   #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
-  gene_level_calls = get_gene_level_calls(filenames, method)
+
+
+
+  if(args$targetFile=="IMPACT341") {
+
+    geneTargets=IMPACT341_targets
+
+  } else {
+
+    # Note the target file needs to not only be in the PICARD interval list format
+    # But the names need to be in the format
+    #    GENESYM_.*
+
+    geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
+    setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
+    setkey(geneTargets, chr, start, end)
+
+  }
+
+  gene_level_calls = get_gene_level_calls(filenames, method, geneTargets)
   write.text(gene_level_calls, outfile)
+
 }
 
 
