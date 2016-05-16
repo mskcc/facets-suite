@@ -110,7 +110,7 @@ facets_qc <- function(maf, facets, igv=F){
     
     # WGD
     wgd <- F
-    f_hi_mcn <- sum(fit$seglen[which((facets.fit$tcn - facets.fit$lcn) >= 2)]) / sum(fit$seglen)
+    f_hi_mcn <- sum(as.numeric(fit$seglen[which((facets.fit$tcn - facets.fit$lcn) >= 2)])) / sum(as.numeric(fit$seglen))
     if(f_hi_mcn > 0.5){ # Major copy number >= 2 across 50% of the genome
       wgd <- T
       alt.fit <- T
@@ -129,8 +129,8 @@ facets_qc <- function(maf, facets, igv=F){
     }
     
     # LOH
-    loh <- sum(fit$seglen[which(facets.fit$lcn == 0)]) / sum(fit$seglen)
-    if(loh > 1/3){ # 1000Mb of LOH
+    loh <- sum(as.numeric(fit$seglen[which(facets.fit$lcn == 0)])) / sum(as.numeric(fit$seglen))
+    if(loh > 1/2){
       catverbose(paste0("Widespread LOH"))
     }
     
