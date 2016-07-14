@@ -73,6 +73,7 @@ center_igv_file <- function(outfile){
 facets_qc <- function(maf, facets, igv=F){
   
   summary <- c()
+  flagged <- c()
   samples <- unique(maf$Tumor_Sample_Barcode)
   
   for (s in samples){
@@ -100,7 +101,7 @@ facets_qc <- function(maf, facets, igv=F){
       catverbose(paste0("Purity < 0.3, use EM"))
     }
     
-    ### TODO: report mismatches between EM, CNCF
+    ### TODO: report egregious mismatches between EM, CNCF
     
     dipLogR <- out$dipLogR
     if(abs(dipLogR) > 1){
@@ -122,6 +123,7 @@ facets_qc <- function(maf, facets, igv=F){
     if(wgd){
       dipLogR.bal.segs <- facets.fit[cnlr.median.clust == dipLogR & mafR.clust < balance.thresh]
       dipLogR.bal.chrs <- unique(dipLogR.bal.segs$chrom)
+      dipLogR.bal.out <- paste(dipLogR.bal.chrs, collapse = "|")
       if(length(dipLogR.bal.chrs > 0)){
         catverbose("Balanced segments at dipLogR in chromosomes:")
         catverbose(dipLogR.bal.chrs)
@@ -187,12 +189,23 @@ facets_qc <- function(maf, facets, igv=F){
     
     s.summary <- c(s, purity, ploidy, dipLogR, f_hi_mcn, wgd, loh, n.amps, n.homdels)
     summary <- rbind(summary, s.summary)
+    
+    if(!is.null(flags)) {
+      flags.out <- paste(flags, collapse = " | ")
+      s.summary <- c(s.summary, flags.out)
+      flagged <- rbind(flagged, s.summary) 
+    }
   
   }
   
   colnames(summary) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'LOH', 'Amps.n', 'HomDels.n')
   write.table(summary, file="FACETS_QC_summary.txt", quote=F, row.names=F, col.names=T,
               sep="\t")
+  
+  colnames(flagged) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'LOH', 'Amps.n', 'HomDels.n', 'Flags')
+  write.table(flagged, file="FACETS_QC_flagged.txt", quote=F, row.names=F, col.names=T,
+              sep="\t")
+  
 
 }
 
