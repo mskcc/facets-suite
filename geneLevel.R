@@ -29,6 +29,10 @@ IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" /ifs/depot/reso
 setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT341_targets, chr, start, end)
 
+msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
+IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/picard_targets.interval_list | grep target')))
+setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
+setkey(IMPACT410_targets, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
