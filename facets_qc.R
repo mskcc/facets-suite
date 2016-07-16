@@ -32,6 +32,7 @@ plot_vaf_by_cn_state <- function(maf, wgd=F) {
   }
   
   maf.tmp <- maf[!is.na(mcn) & mcn <= 6]
+  if (!('t_var_freq' %in% names(maf.tmp))) maf.tmp[,t_var_freq := t_alt_count/t_depth]
   phi <- unique(maf[!is.na(purity)]$purity)
   if(length(phi) == 0){
     catverbose("No FACETS annotations!")
@@ -97,7 +98,7 @@ facets_qc <- function(maf, facets, igv=F){
       catverbose(paste0("Flags: ", out$flags))
     }
     
-    if(purity < 0.3){
+    if(purity < 0.3 | is.na(purity)){
       catverbose(paste0("Purity < 0.3, use EM"))
     }
     
@@ -160,8 +161,10 @@ facets_qc <- function(maf, facets, igv=F){
       catverbose(paste0("Alternative dipLogR: ", alt.diplogR))
     }
     
-    ggsave(plot_vaf_by_cn_state(s.maf, wgd), filename = paste0(s, "_vaf_vs_cn.pdf"),
-           width = 20, height = 14)
+    if (!(all(is.na(s.maf$lcn)))) {# Faceting of plot won't work if this is the case
+      ggsave(plot_vaf_by_cn_state(s.maf, wgd), filename = paste0(s, "_vaf_vs_cn.pdf"),
+        width = 20, height = 14)
+    }
     
     homloss.idx <- which(facets.fit$tcn == 0)
     facets.fit.homloss <- as.data.table(cbind(facets.fit$chrom[homloss.idx], 
@@ -190,8 +193,8 @@ facets_qc <- function(maf, facets, igv=F){
     s.summary <- c(s, purity, ploidy, dipLogR, f_hi_mcn, wgd, loh, n.amps, n.homdels)
     summary <- rbind(summary, s.summary)
     
-    if(!is.null(flags)) {
-      flags.out <- paste(flags, collapse = " | ")
+    if(!is.null(out$flags)) {
+      flags.out <- paste(out$flags, collapse = " | ")
       s.summary <- c(s.summary, flags.out)
       flagged <- rbind(flagged, s.summary) 
     }
