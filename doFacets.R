@@ -177,6 +177,32 @@ results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM,
 ##########################################################################################
 ##########################################################################################
 
+extract_six_column_counts_matrix <- function(COUNTS_FILE){
+  mat <- fread(paste0("gunzip --stdout ", COUNTS_FILE))
+  mat[, TUM.RD := get(paste0("TUM.", Ref, "p")) + get(paste0("TUM.", Ref, "n")),
+      1:nrow(mat)]
+  mat[, NOR.RD := get(paste0("NOR.", Ref, "p")) + get(paste0("NOR.", Ref, "n")),
+      1:nrow(mat)]
+
+  mat[, c("Ref", "Alt",
+          "TUM.Ap", "TUM.Cp", "TUM.Gp", "TUM.Tp",
+          "TUM.An", "TUM.Cn", "TUM.Gn", "TUM.Tn",
+          "NOR.Ap", "NOR.Cp", "NOR.Gp", "NOR.Tp",
+          "NOR.An", "NOR.Cn", "NOR.Gn", "NOR.Tn") := NULL]
+  setnames(mat, 1, "Chromosome") ## must be called Chromosome
+  setnames(mat, 2, "Position") ## must be called Position
+  setcolorder(mat,
+              c("Chromosome", "Position",
+                "NOR.DP", "NOR.RD",
+                "TUM.DP", "TUM.RD"))
+
+  mat <- as.data.frame(mat)
+  mat
+}
+
+##########################################################################################
+##########################################################################################
+
 facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
                              SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM,
                              SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL){
@@ -184,7 +210,18 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
     chromLevels = select_genome(GENOME, SINGLE_CHROM)
     
-    dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
+    if(RLIB_VERSION <= "0.3.30"){
+      preProcSample_arg <- COUNTS_FILE
+      dat=preProcSample(preProcSample_arg,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
+    } else {
+      preProcSample_arg <- extract_six_column_counts_matrix(COUNTS_FILE)
+      dat=preProcSample(preProcSample_arg,snp.nbhd=SNP_NBHD,cval=CVAL,ndepth=NDEPTH)
+      if (GENOME %in% c("hg19", "hg18")) {
+        chromLevels <- c(1:22,"X")
+      } else {
+        chromLevels <- c(1:19,"X")
+      }
+    }
     out=procSample(dat,cval=CVAL,min.nhet=MIN_NHET,dipLogR=DIPLOGR)
 
     seg_figure(out, DIRECTORY, TAG, chromLevels, CVAL)
