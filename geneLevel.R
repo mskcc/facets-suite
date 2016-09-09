@@ -1,38 +1,35 @@
 #!/opt/common/CentOS_6-dev/R/R-3.1.3/bin/Rscript
 
-#### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
+# Generate gene-level TCN/LCN and CNA call, given cncf.txt files from a doFacets run
 
 library(argparse)
 library(data.table)
 
-
 write.text <- function (...) {
-  write.table(..., quote = F, col.names = T, row.names = F,
-              sep = "\t")
+    write.table(..., quote = F, col.names = T, row.names = F, sep = "\t")
 }
 
 getSDIR <- function(){
-  args=commandArgs(trailing=F)
-  TAG="--file="
-  path_idx=grep(TAG,args)
-  SDIR=dirname(substr(args[path_idx],nchar(TAG)+1,nchar(args[path_idx])))
-  if(length(SDIR)==0) {
-    return(getwd())
-  } else {
-    return(SDIR)
-  }
+    args=commandArgs(trailing=F)
+    TAG="--file="
+    path_idx=grep(TAG,args)
+    SDIR=dirname(substr(args[path_idx],nchar(TAG)+1,nchar(args[path_idx])))
+    if(length(SDIR)==0) {
+        return(getwd())
+    } else {
+        return(SDIR)
+    }
 }
 
-### get IMPACT341 loci and gene names
+# Get IMPACT341 loci and gene names
 #msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
-GENE_TARGET_FILE="/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list"
-IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',GENE_TARGET_FILE)))
-
+IMPACT341_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list'))
 setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT341_targets, chr, start, end)
 
-msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
-IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/picard_targets.interval_list | grep target')))
+# Get IMPACT410 loci and gene names
+#msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
+IMPACT410_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/picard_targets.interval_list'))
 setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT410_targets, chr, start, end)
 
@@ -40,15 +37,14 @@ setkey(IMPACT410_targets, chr, start, end)
 ### definition of copy number calls in WGD
 FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
-### lowest value of tcn for AMP
-AMP_thresh_tcn <- 6
 #############################################
 
-
-
-annotate_integer_copy_number <- function(gene_level){
+annotate_integer_copy_number <- function(gene_level, amp_threshold){
   ### Portal/TCGA copy number calls as well as
   ### more advanced copy number calling, including CNLOH etc.
+
+  ### lowest value of tcn for AMP
+  AMP_thresh_tcn <- amp_threshold + 1
 
   ### assumes that WGD variable has already been set
   input_key <- key(gene_level)
@@ -81,7 +77,6 @@ get_gene_level_calls <- function(cncf_files,
   ### check version of data.table
   if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
 
-
   ### concatenate input files
   cncf_txt_list <- lapply(cncf_files, fread)
   names(cncf_txt_list) <- cncf_files
@@ -112,20 +107,20 @@ get_gene_level_calls <- function(cncf_files,
   ### Summarize copy number for each gene
   if(method == 'cncf'){
 
-        gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP"),
-                          list(chr = unique(chr),
-                               seg.start=unique(loc.start),
-                               seg.end=unique(loc.end),
+      gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
+                        list(chr = unique(chr),
+                             seg.start=unique(loc.start),
+                             seg.end=unique(loc.end),
 #                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
 #                                end=unique(end),
-                               frac_elev_major_cn=unique(frac_elev_major_cn),
-                               Nprobes = .N),
-                          keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn)]
+                             frac_elev_major_cn=unique(frac_elev_major_cn),
+                             Nprobes = .N),
+                        keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn)]
   }
 
   if(method == 'em'){
 
-      gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP"),
+      gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
                         list(chr = unique(chr),
                              seg.start=unique(loc.start),
                              seg.end=unique(loc.end),
@@ -157,7 +152,7 @@ get_gene_level_calls <- function(cncf_files,
 #   gene_level[, mean_tcn_per_chr := mean_tcn_per_chr_v[paste(Tumor_Sample_Barcode, chr)]]
 
   ### annotate integer copy number
-  gene_level <- annotate_integer_copy_number(gene_level)
+  gene_level <- annotate_integer_copy_number(gene_level, amp_threshold)
 
   ### remove duplicate entries for partial deletions
   ### the lower value is chosen on the basis that a
@@ -183,27 +178,25 @@ if(!interactive()){
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
   parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em [default cncf]')
-  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT341', help="PICARD interval list file of gene target coordinates [default IMPACT341]")
+  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT341', help="IMPACT341, IMPACT410, or a Picard interval list file of gene target coordinates [default IMPACT341]")
   args=parser$parse_args()
 
   filenames = args$filenames
   outfile = args$outfile
   method = args$method
 
-  #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
-
-
-
   if(args$targetFile=="IMPACT341") {
 
     geneTargets=IMPACT341_targets
 
+  } else if(args$targetFile=="IMPACT410") {
+
+    geneTargets=IMPACT410_targets
+
   } else {
 
     # Note the target file needs to not only be in the PICARD interval list format
-    # But the names need to be in the format
-    #    GENESYM_.*
-
+    # But the names must match the regex: /GENESYMBOL_.*/ (e.g. TP53_target_02)
     geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
     setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
     setkey(geneTargets, chr, start, end)
@@ -214,6 +207,3 @@ if(!interactive()){
   write.text(gene_level_calls, outfile)
 
 }
-
-
-
