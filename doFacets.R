@@ -177,19 +177,46 @@ results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM,
 ##########################################################################################
 ##########################################################################################
 
+extract_six_column_counts_matrix <- function(COUNTS_FILE){
+  mat <- fread(paste0("gunzip --stdout ", COUNTS_FILE))
+  mat[, TUM.RD := get(paste0("TUM.", Ref, "p")) + get(paste0("TUM.", Ref, "n")),
+      1:nrow(mat)]
+  mat[, NOR.RD := get(paste0("NOR.", Ref, "p")) + get(paste0("NOR.", Ref, "n")),
+      1:nrow(mat)]
+
+  mat[, c("Ref", "Alt",
+          "TUM.Ap", "TUM.Cp", "TUM.Gp", "TUM.Tp",
+          "TUM.An", "TUM.Cn", "TUM.Gn", "TUM.Tn",
+          "NOR.Ap", "NOR.Cp", "NOR.Gp", "NOR.Tp",
+          "NOR.An", "NOR.Cn", "NOR.Gn", "NOR.Tn") := NULL]
+  setnames(mat, 1, "Chromosome") ## must be called Chromosome
+  setnames(mat, 2, "Position") ## must be called Position
+  setcolorder(mat,
+              c("Chromosome", "Position",
+                "NOR.DP", "NOR.RD",
+                "TUM.DP", "TUM.RD"))
+
+  mat <- as.data.frame(mat)
+  mat
+}
+
+##########################################################################################
+##########################################################################################
+
 facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
                              SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM,
                              SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL){
                              
     if (RLIB_VERSION >= '0.5.2') {
 
-      rcmat = readSnpMatrix(COUNTS_FILE)
 
+      rcmat = readSnpMatrix(COUNTS_FILE)
+    
       dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = CVAL,
         gbuild = GENOME, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
 
       out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
-      fit = emcncf(out)
+      fit = emcncf2(out)
 
       write_output(out, fit, DIRECTORY, TAG)
       print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
