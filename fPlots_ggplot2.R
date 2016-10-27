@@ -224,6 +224,61 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   icn
 }
 
+clonal.cluster = function(out, fit, method='em', load.genome=FALSE, gene.pos=NULL, main='', theme='bw') {
+  
+  mat = out$jointseg
+  mat = subset(mat, chrom < 23)
+  mat = get.cumulative.chr.maploc(mat, load.genome)
+  mid = mat$mid
+  mat = mat$mat
+  
+  cncf = fit$cncf
+  cncf = subset(cncf, chrom < 23)
+  
+  if(method == 'em'){tcnscaled = cncf$tcn.em; tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] = (5 + (tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] - 5)/3)}
+  if(method == 'cncf'){tcnscaled = cncf$tcn; tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] = (5 + (tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] - 5)/3)}
+  tcn_ = rep(tcnscaled, cncf$num.mark)
+  
+  if(method == 'em'){lcn_ = rep(cncf$lcn.em, cncf$num.mark); my.ylab='CF EM'}
+  if(method == 'cncf'){lcn_ = rep(cncf$lcn, cncf$num.mark); my.ylab='Integer copy number (CNCF)'}
+  
+  mat = cbind(mat, cbind(tcn_, lcn_))
+  starts = cumsum(c(1,cncf$num.mark))[1:length(cncf$num.mark)]
+  ends = cumsum(c(cncf$num.mark))
+  my.tcn.starts = mat[starts,c('chr.maploc','tcn_')]
+  my.tcn.ends = mat[ends,c('chr.maploc','tcn_')]
+  my.lcn.starts = mat[starts,c('chr.maploc','lcn_')]
+  my.lcn.ends = mat[ends,c('chr.maploc','lcn_')]
+  
+  ccl = ggplot(mat, environment = environment())
+  if(!is.null(gene.pos)){
+    ccl = ccl + geom_vline(xintercept=gene.pos, color='palevioletred1')
+  }
+  
+  ccf.col = c(colorRampPalette(c("white", "steelblue"))(10),"bisque2")[round(10*cncf$cf.em+0.501)]
+
+  ccl = ccl +
+    geom_rect(data=cncf, aes(xmin=my.tcn.starts$chr.maploc, xmax=my.tcn.ends$chr.maploc, ymax=1, ymin=0), fill=ccf.col, col = 'white', size=0) +
+    scale_y_continuous(expand = c(0,0)) +
+    scale_x_continuous(breaks=mid, labels=names(mid)) +
+    ylab(my.ylab) +
+    xlab('')
+  
+  panel.grid.col='white'; grid.width = .5
+  if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; ccl = ccl + theme_bw()}
+  
+  ccl = ccl + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
+                    axis.text.y = element_text(angle=90, vjust=0, size=8, color = 'white'),
+                    axis.ticks.y = element_line(color = 'white'),
+                    text = element_text(size=10),
+                    panel.grid.major.y = element_blank(),
+                    panel.grid.minor.y = element_blank(),
+                    panel.grid.major.x= element_blank(),
+                    panel.grid.minor.x= element_blank(),
+                    plot.margin = unit(c(0,1,0,0), 'lines'))
+  
+  ccl
+}
 
 get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
 
@@ -279,29 +334,46 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
 
 
 #Standard facets output plot
-plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test', gene.name=NULL, lend='butt'){
+plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test',
+  gene.name=NULL, lend='butt', em.plot = FALSE) {
 
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
   if(is.null(gene.name)){gene.pos = NULL}
 
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
-  cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
-  cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
-  icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
-  icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+  if (em.plot == F) {
+    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+    cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)  
+    all.plots = list(cnlr, valor, cfem, icnem, cfcncf, icncncf)
+    plot.no = 6
+    plot.h = rep(1, 6)
+  } else {
+    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+    cclem = clonal.cluster(out, fit, method = 'em')
+    all.plots = list(cnlr, valor, icnem, cclem)
+    plot.no = 4
+    plot.h = c(1,1,1,.25)
+    h = (3/5)*h
+  }
 
   if(type == 'pdf'){plotname = paste(plotname, '.pdf', sep=''); CairoPDF(width = 8.854167, height=11.458333, file=plotname)}
   if(type == 'png'){plotname = paste(plotname, '.png', sep=''); CairoPNG(width = w, height=h, file=plotname, units='px')}
 
-  if(main != ''){grid.arrange(cnlr, valor, cfem, icnem, cfcncf, icncncf,
+  if(main != ''){grid.arrange(grobs = all.plots,
                               ncol=1,
-                              nrow=6,
+                              nrow=plot.no,
+                              heights = plot.h,
                               top=textGrob(main))}
 
-  if(main == ''){grid.arrange(cnlr, valor, cfem, icnem, cfcncf, icncncf,
+  if(main == ''){grid.arrange(grobs = all.plots,
                               ncol=1,
-                              nrow=6)}
+                              heights = plot.h,
+                              nrow=plot.no)}
   dev.off()
 
 }

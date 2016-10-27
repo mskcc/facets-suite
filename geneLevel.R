@@ -196,7 +196,7 @@ if(!interactive()){
 
   if(args$targetFile=="IMPACT341") {
 
-    geneTargets=IMPACT341_targets
+    geneTargets=IMPACT410_targets
 
   } else {
 

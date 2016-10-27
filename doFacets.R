@@ -1,4 +1,4 @@
-#!/opt/common/CentOS_6-dev/R/R-3.1.3/bin/Rscript
+#!/opt/common/CentOS_6-dev/R/R-3.2.2/bin/Rscript
 
 ### modified version of doFacets.R
 ###
@@ -139,7 +139,7 @@ write_output <- function(out, fit, DIRECTORY, TAG){
 ##########################################################################################
 ##########################################################################################
 
-results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL){
+results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL, EM_PLOT=FALSE){
     
     if(SINGLE_CHROM == 'F'){
 
@@ -168,7 +168,7 @@ results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM,
 
         if(GGPLOT == 'T'){
             source(file.path(getSDIR(),"fPlots_ggplot2.R"))
-            plot.facets.all.output(out, fit, type='png', main=main, plotname=filename)
+            plot.facets.all.output(out, fit, type='png', main=main, plotname=filename, em.plot = EM_PLOT)
         }
     }
 }
@@ -181,23 +181,44 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
                              SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM,
                              SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL){
                              
+    if (RLIB_VERSION >= '0.5.2') {
 
-    chromLevels = select_genome(GENOME, SINGLE_CHROM)
-    
-    dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
-    out=procSample(dat,cval=CVAL,min.nhet=MIN_NHET,dipLogR=DIPLOGR)
+      rcmat = readSnpMatrix(COUNTS_FILE)
 
-    seg_figure(out, DIRECTORY, TAG, chromLevels, CVAL)
-    
-    fit=emcncf(out) #fit=emcncf(out$jointseg,out$out,dipLogR=out$dipLogR) OLD
+      dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = CVAL,
+        gbuild = GENOME, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
 
-    write_output(out, fit, DIRECTORY, TAG)
-    print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
-                      MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL)
-    
-    results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL)
+      out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
+      fit = emcncf(out)
 
-    return(fit$dipLogR)
+      write_output(out, fit, DIRECTORY, TAG)
+      print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
+                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL)
+        
+      results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL, EM_PLOT=TRUE)
+
+      return(fit$dipLogR)
+
+    } else {
+
+      chromLevels = select_genome(GENOME, SINGLE_CHROM)
+  
+      dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
+      out=procSample(dat,cval=CVAL,min.nhet=MIN_NHET,dipLogR=DIPLOGR)
+
+      #seg_figure(out, DIRECTORY, TAG, chromLevels, CVAL) no need for this
+        
+      fit=emcncf(out) #fit=emcncf(out$jointseg,out$out,dipLogR=out$dipLogR) OLD
+
+      write_output(out, fit, DIRECTORY, TAG)
+      print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
+                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL)
+        
+      results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL)
+
+      return(fit$dipLogR)
+    }
+
 }
 
 
@@ -233,7 +254,7 @@ parser$add_argument("-D", "--directory", type="character", required=T, help="out
 parser$add_argument("-r", "--R_lib", type="character", default='latest', help="Which version of FACETs to load into R")
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
 parser$add_argument("-G", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
-parser$add_argument("--seed", type="integer", help="Set the seed for reproducability")
+parser$add_argument("--seed", type="integer", help="Set the seed for reproducibility")
 args=parser$parse_args()
 
 CVAL=args$cval
@@ -251,7 +272,8 @@ DIPLOGR=args$dipLogR
 
 RLIB_PATH=args$R_lib
 if(RLIB_PATH != "latest"){
-    library(facets, lib.loc=RLIB_PATH)
+    #library(facets, lib.loc=RLIB_PATH)
+    library(facets)
 } else{
     library(facets)
 }

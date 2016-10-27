@@ -65,7 +65,7 @@ annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iTumor_Sample_Barc
   maf_cols = colnames(maf)
   maf$Chromosome = factor(maf$Chromosome)
   setkey(maf,Chromosome,Start_Position,End_Position)
-  dt = integer_cn_table(out, fit, em = F)
+  dt = integer_cn_table(out, fit, em = T)
 
   ### check for duplicate columns
   if(any(duplicated(names(maf)))){
