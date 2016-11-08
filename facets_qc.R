@@ -25,24 +25,22 @@ getSDIR <- function(){
   }
 }
 
-plot_vaf_by_cn_state <- function(maf, wgd=F) {
-  
+plot_vaf_by_cn_state <- function(maf, sample, wgd=F){
   if ('mcn' %!in% names(maf)){
     maf[, mcn := tcn-lcn]
   }
-  
-  maf.tmp <- maf[!is.na(mcn) & mcn <= 6]
-  if (!('t_var_freq' %in% names(maf.tmp))) maf.tmp[,t_var_freq := t_alt_count/t_depth]
-  phi <- unique(maf[!is.na(purity)]$purity)
+  maf.tmp <- maf[patient == sample & !is.na(mcn) & mcn <= 6]
+  phi <- unique(maf.tmp[!is.na(purity)]$purity)
   if(length(phi) == 0){
     catverbose("No FACETS annotations!")
   } else {
-    gg <- ggplot(maf.tmp, aes(x=t_var_freq)) + 
+    gg <- ggplot(maf.tmp, aes(x=VAF)) + 
       geom_histogram(col="black", fill="#41B6C4", lwd=1.5, binwidth = 0.02) +
       geom_vline(xintercept=(phi/2), linetype=2, color = "#FB6A4A") +
       facet_grid(lcn ~ mcn) + 
       xlab("Variant Allele Fraction") +
       ylab("Frequency") +
+      ggtitle(sample) +
       theme_bw() + 
       theme(plot.title=element_text(size=25, face = "bold"),
             axis.title=element_text(size=20, face = "bold"),
@@ -55,7 +53,7 @@ plot_vaf_by_cn_state <- function(maf, wgd=F) {
     if(wgd){
       gg <- gg + geom_vline(xintercept=(phi/4), linetype=2, color = "#FD8D3C")
     }
-    gg
+    plot(gg)
   }
 }
 
@@ -98,11 +96,9 @@ facets_qc <- function(maf, facets, igv=F){
       catverbose(paste0("Flags: ", out$flags))
     }
     
-    if(purity < 0.3 | is.na(purity)){
+    if(purity < 0.3){
       catverbose(paste0("Purity < 0.3, use EM"))
     }
-    
-    ### TODO: report egregious mismatches between EM, CNCF
     
     dipLogR <- out$dipLogR
     if(abs(dipLogR) > 1){
@@ -129,6 +125,18 @@ facets_qc <- function(maf, facets, igv=F){
         catverbose("Balanced segments at dipLogR in chromosomes:")
         catverbose(dipLogR.bal.chrs)
       }
+    }
+    
+    f_altered <- 0 # Fraction of genome altered
+    f_altered_v2 <- 0 # Fraction of genome altered, excluding diploid regions in WGD cases
+    if(wgd){
+      cn.neutral <- sum(as.numeric(fit$seglen[which(facets.fit$tcn == 4 & facets.fit$lcn == 2)]))
+      cn.neutral.v2 <- sum(as.numeric(fit$seglen[which((facets.fit$tcn == 4 & facets.fit$lcn == 2) | (facets.fit$tcn == 2 & facets.fit$lcn == 1))]))
+      f_altered <- 1 - (cn.neutral / n.bases)
+      f_altered_v2 <- 1 - (cn.neutral.v2 / n.bases)
+    } else {
+      cn.neutral <- sum(as.numeric(fit$seglen[which(facets.fit$tcn == 2 & facets.fit$lcn == 1)]))
+      f_altered <- f_altered_v2 <- 1 - (cn.neutral / n.bases)
     }
     
     # LOH
@@ -161,10 +169,8 @@ facets_qc <- function(maf, facets, igv=F){
       catverbose(paste0("Alternative dipLogR: ", alt.diplogR))
     }
     
-    if (!(all(is.na(s.maf$lcn)))) {# Faceting of plot won't work if this is the case
-      ggsave(plot_vaf_by_cn_state(s.maf, wgd), filename = paste0(s, "_vaf_vs_cn.pdf"),
-        width = 20, height = 14)
-    }
+    ggsave(plot_vaf_by_cn_state(s.maf, wgd), filename = paste0(s, "_vaf_vs_cn.pdf"),
+           width = 20, height = 14)
     
     homloss.idx <- which(facets.fit$tcn == 0)
     facets.fit.homloss <- as.data.table(cbind(facets.fit$chrom[homloss.idx], 
@@ -190,22 +196,22 @@ facets_qc <- function(maf, facets, igv=F){
       center_igv_file(outfile = paste0(s, "_igv.adj.seg"))
     }
     
-    s.summary <- c(s, purity, ploidy, dipLogR, f_hi_mcn, wgd, loh, n.amps, n.homdels)
+    s.summary <- c(s, purity, ploidy, dipLogR, f_hi_mcn, wgd, f_altered_v2, loh, n.amps, n.homdels)
     summary <- rbind(summary, s.summary)
     
-    if(!is.null(out$flags)) {
-      flags.out <- paste(out$flags, collapse = " | ")
+    if(!is.null(flags)) {
+      flags.out <- paste(flags, collapse = " | ")
       s.summary <- c(s.summary, flags.out)
       flagged <- rbind(flagged, s.summary) 
     }
   
   }
   
-  colnames(summary) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'LOH', 'Amps.n', 'HomDels.n')
+  colnames(summary) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'FGA', 'LOH', 'Amps.n', 'HomDels.n')
   write.table(summary, file="FACETS_QC_summary.txt", quote=F, row.names=F, col.names=T,
               sep="\t")
   
-  colnames(flagged) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'LOH', 'Amps.n', 'HomDels.n', 'Flags')
+  colnames(flagged) <- c('Tumor_Sample_Barcode', 'Purity', 'Ploidy', 'dipLogR', 'f_hi_MCN', 'WGD', 'FGA', 'LOH', 'Amps.n', 'HomDels.n', 'Flags')
   write.table(flagged, file="FACETS_QC_flagged.txt", quote=F, row.names=F, col.names=T,
               sep="\t")
   

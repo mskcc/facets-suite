@@ -90,6 +90,10 @@ get_gene_level_calls <- function(cncf_files,
   concat_cncf_txt[chrom == "23", chrom := "X"]
   setkey(concat_cncf_txt, chrom, loc.start, loc.end)
 
+  if (!("tcn" %in% names(concat_cncf_txt))) {
+    concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
+  }
+
   ### estimate fraction of the genome with more than one copy from a parent
   ### a large fraction implies whole genome duplication
   concat_cncf_txt[, frac_elev_major_cn := sum(
