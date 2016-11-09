@@ -84,8 +84,8 @@ def test_mergeTN():
 def test_facets():
     output_dir = os.path.join(TEST_TEMP_DIR)
     merged_count_input = test_inputs['merged_counts']
-    facets_cmd = [FACETS_SCRIPT,
-            "doFacets",
+    #FIXME this test is hardcoded for our env...do more better...
+    facets_cmd = [FACETS_SCRIPT, "doFacets", "-r=/opt/common/CentOS_6-dev/facets_lib/0.3.9/",
             "--seed=1587443596", 
             "-f", merged_count_input,
             "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",
@@ -102,8 +102,7 @@ def test_facets():
 def test_facets_with_pcval():
     output_dir = os.path.join(TEST_TEMP_DIR)
     merged_count_input = test_inputs['merged_counts']
-    facets_cmd = [FACETS_SCRIPT,
-            "doFacets",
+    facets_cmd = [FACETS_SCRIPT, "doFacets", "-r=/opt/common/CentOS_6-dev/facets_lib/0.3.9/",
             "--seed=1587443596", 
             "-f", merged_count_input,
             "-t", "H_LS-A8-A094-01A-11W-A019-09-1__H_LS-A8-A094-10A-01W-A021-09-1",

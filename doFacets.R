@@ -299,8 +299,8 @@ DIPLOGR=args$dipLogR
 
 RLIB_PATH=args$R_lib
 if(RLIB_PATH != "latest"){
-    #library(facets, lib.loc=RLIB_PATH)
-    library(facets)
+    library(facets, lib.loc=RLIB_PATH)
+    #library(facets)
 } else{
     library(facets)
 }
