@@ -22,14 +22,15 @@ getSDIR <- function(){
 }
 
 # Get IMPACT341 loci and gene names
-#msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
+msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
 IMPACT341_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list'))
 setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT341_targets, chr, start, end)
 
 # Get IMPACT410 loci and gene names
-#msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
+msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
 IMPACT410_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/picard_targets.interval_list'))
+IMPACT410_targets = IMPACT410_targets[V5 %like% 'target']
 setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT410_targets, chr, start, end)
 
