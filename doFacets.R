@@ -210,7 +210,7 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
     if (RLIB_VERSION >= '0.5.2') {
 
 
-      rcmat = readSnpMatrix(COUNTS_FILE)
+      rcmat = readSnpMatrix(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
     
       dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = CVAL,
         gbuild = GENOME, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
