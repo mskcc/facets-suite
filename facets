@@ -57,6 +57,7 @@ def run(args, facets_args):
             print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd + facets_args)
+        sys.exit(rv)
     except:
         print >>sys.stderr, "Error executing command, returncode %s" % rv
         sys.exit(rv)
