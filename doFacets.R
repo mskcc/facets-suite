@@ -40,10 +40,10 @@ print_run_details <- function(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL,
     cat("# cval ="       , CVAL                  , "\n", file=ff, append=T)
     cat("# min.nhet ="   , MIN_NHET              , "\n", file=ff, append=T)
     cat("# genome ="     , GENOME                , "\n", file=ff, append=T)
-    
+
     cat("\n# LOADED MODULE INFO\n", file=ff, append=T)
     pv = packageVersion('facets')
-    cat("# Facets version =", as.character(pv), "\n" , file=ff, append=T) 
+    cat("# Facets version =", as.character(pv), "\n" , file=ff, append=T)
     cat("\n", file=ff, append=T)
     #buildData=installed.packages()["facets",]
     #version=buildData["Version"]
@@ -132,7 +132,12 @@ write_output <- function(out, fit, DIRECTORY, TAG){
   out$IGV=formatSegmentOutput(out, TAG)
   save(out, fit, file=paste0(DIRECTORY, "/", TAG,".Rdata"), compress=T)
   write.table(out$IGV,file=paste0(DIRECTORY, "/", TAG,'.seg'), row.names=F, quote=F, sep="\t") #NEW
-  write.xls(cbind(out$IGV[,1:4], fit$cncf[,2:ncol(fit$cncf)]), paste0(DIRECTORY, "/", TAG,".cncf.txt"), row.names=F)
+
+  out_cols = c('ID','chrom','loc.start','loc.end')
+  cncf_cols = c("seg","num.mark","nhet","cnlr.median","mafR","segclust","cnlr.median.clust","mafR.clust","cf","tcn",
+    "lcn","cf.em","tcn.em","lcn.em")
+  write.xls(cbind(out$IGV[,out_cols],
+    fit$cncf[,cncf_cols]), paste0(DIRECTORY, "/", TAG,".cncf.txt"), row.names=F)
 }
 
 
@@ -140,7 +145,7 @@ write_output <- function(out, fit, DIRECTORY, TAG){
 ##########################################################################################
 
 results_figure <- function(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL, EM_PLOT=FALSE){
-    
+
     if(SINGLE_CHROM == 'F'){
 
         filename = paste0(DIRECTORY, "/", TAG,".CNCF")
@@ -206,22 +211,24 @@ extract_six_column_counts_matrix <- function(COUNTS_FILE){
 facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
                              SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM,
                              SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL){
-                             
+
     if (RLIB_VERSION >= '0.5.2') {
 
 
       rcmat = readSnpMatrix(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
-    
+
       dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = CVAL,
         gbuild = GENOME, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
 
       out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
-      fit = emcncf2(out)
+      fit = emcncf(out)
+
+      fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
 
       write_output(out, fit, DIRECTORY, TAG)
       print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
                         MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL)
-        
+
       results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL, EM_PLOT=TRUE)
 
       return(fit$dipLogR)
@@ -229,18 +236,18 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
     } else {
 
       chromLevels = select_genome(GENOME, SINGLE_CHROM)
-  
+
       dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
       out=procSample(dat,cval=CVAL,min.nhet=MIN_NHET,dipLogR=DIPLOGR)
 
       #seg_figure(out, DIRECTORY, TAG, chromLevels, CVAL) no need for this
-        
+
       fit=emcncf(out) #fit=emcncf(out$jointseg,out$out,dipLogR=out$dipLogR) OLD
 
       write_output(out, fit, DIRECTORY, TAG)
       print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
                         MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL)
-        
+
       results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL)
 
       return(fit$dipLogR)
@@ -310,7 +317,7 @@ SINGLE_CHROM = args$single_chrom
 GENOME=args$genome
 GGPLOT=args$ggplot2
 SEED=args$seed
-seed_setting(SEED) 
+seed_setting(SEED)
 
 if(!is.null(PURITY_CVAL)){
 
@@ -318,7 +325,7 @@ if(!is.null(PURITY_CVAL)){
     estimated_dipLogR = facets_iteration(COUNTS_FILE, paste0(TAG, "_purity"), DIRECTORY, PURITY_CVAL, DIPLOGR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL)
 
     ### ... and use it for a second run of FACETS
-    facets_iteration(COUNTS_FILE, paste0(TAG, "_hisens"), DIRECTORY, CVAL, estimated_dipLogR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=PURITY_CVAL) 
+    facets_iteration(COUNTS_FILE, paste0(TAG, "_hisens"), DIRECTORY, CVAL, estimated_dipLogR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=PURITY_CVAL)
 }
 if(is.null(PURITY_CVAL)){
 
