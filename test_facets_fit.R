@@ -182,7 +182,7 @@ if ( ! interactive() ) {
   parser$add_argument('-m', '--maf', required=T, type='character', help='MAF file with FACETS annotations')
   parser$add_argument('-f', '--facets', required=T, type='character', 
                       help='Tab-delimited mapping of "Tumor_Sample_Barcode" from maf file to FACETS Rdata files')
-  parser$add_argument('-p', '--plot', type='logical', default=F, help='Plot model output')
+  parser$add_argument('-p', '--plot', action="store_true", default=F, help='Plot model output')
   args=parser$parse_args()
   
   maf <- fread(args$maf)

@@ -57,8 +57,10 @@ def run(args, facets_args):
             print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd + facets_args)
+        if rv!=0:
+            sys.exit(rv)
     except:
-        print >>sys.stderr, "Error executing command, returncode %s" % rv
+        print >>sys.stderr, "Error executing command, returncode %d" % rv
         sys.exit(rv)
 
 def add_subparser(file, subparsers):
