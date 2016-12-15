@@ -34,7 +34,7 @@ setkey(arm_definitions, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.txt"))
+FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6
@@ -92,6 +92,10 @@ get_gene_level_calls <- function(cncf_files,
   concat_cncf_txt[chrom == "23", chrom := "X"]
   setkey(concat_cncf_txt, chrom, loc.start, loc.end)
 
+  if (!("tcn" %in% names(concat_cncf_txt))) {
+    concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
+  }
+
   ### estimate fraction of the genome with more than one copy from a parent
   ### a large fraction implies whole genome duplication
   concat_cncf_txt[, frac_elev_major_cn := sum(
@@ -100,7 +104,7 @@ get_gene_level_calls <- function(cncf_files,
       sum(as.numeric(loc.end-loc.start)
       ),
     by=Tumor_Sample_Barcode]
-
+  
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(arm_definitions, concat_cncf_txt, nomatch=NA)
   ### Truncate segments that span two arms

@@ -3,7 +3,6 @@
 .Rhistory
 .Rapp.history
 facetsc
-
 # Example code in package build process
 *-Ex.R
 
@@ -13,3 +12,5 @@ facetsc
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+
+*.pyc
