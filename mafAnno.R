@@ -228,7 +228,7 @@ if(!interactive()){
 
   if("purity" %in% names(facets_samples)){
     ### if purity column in facets_samples, assume that it is a cncf.txt file with purity added
-    print("purity")
+   
     maf = main(maf, facets_samples, mapping_file = FALSE)
   } else if("Rdata_filename" %in% names(facets_samples)){
     ### if Rdata_filename column in facets_files, assume that it a mapping to facets Rdata files
