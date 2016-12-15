@@ -138,7 +138,6 @@ main = function(maf, facets_files, mapping_file = TRUE){
     if(length(no.facets)){maf_list = c(maf_list, list(no.facets.data))}
     maf = rbindlist(maf_list,fill=T)
   } else {
-    print("cncf_purity")
     dt = facets_files[,
                       .(ID, 
                         chrom, 
