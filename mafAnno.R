@@ -112,7 +112,7 @@ ccf.likelihood = function(purity, absCN, alt_allele, coverage, copies){
 main = function(maf, facets_files, mapping_file = TRUE){
 
   maf = as.data.table(maf)
-<<<<<<< HEAD
+
   maf[, Chromosome := factor(as.character(maf$Chromosome))]
   setkey(maf,Chromosome,Start_Position,End_Position)
 
@@ -164,7 +164,7 @@ main = function(maf, facets_files, mapping_file = TRUE){
     
   }
   maf <- maf_ann
-=======
+
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
 
   not.in.maf = setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
@@ -186,7 +186,6 @@ main = function(maf, facets_files, mapping_file = TRUE){
 
   maf[,t_alt_count := as.numeric(t_alt_count)]
   maf[,t_ref_count := as.numeric(t_ref_count)]
->>>>>>> c3de0f6ee628f77f85ec76c850de3028bece1564
   maf[,c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90"):=ccf.likelihood(purity,
                                                                                                                     tcn,
                                                                                                                     t_alt_count,
