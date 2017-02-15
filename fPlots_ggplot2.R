@@ -3,6 +3,7 @@ require(Cairo)
 require(ggplot2)
 require(grid)
 require(gridExtra)
+require(plyr)
 
 ### Get path to repo
 getSDIR <- function(){
@@ -323,13 +324,16 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
   require(rtracklayer)
   genes = import.bed(my.path)
   mcols(genes)$name = matrix(unlist(strsplit(mcols(genes)$name,':')),nc=3,byrow=T)[,1]
-  gene.start = min(start(genes[which(mcols(genes)$name == hugo.symbol)]))
-  gene.end = max(end(genes[which(mcols(genes)$name == hugo.symbol)]))
-  mid.point = gene.start + ((gene.end - gene.start)/2)
-  chrom = seqnames(genes[which(mcols(genes)$name == hugo.symbol)])[1]
-  mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
-
   c(mid.point, chrom@values)
+  ldply(hugo.symbol, function(x) {
+        gene.start = min(start(genes[which(mcols(genes)$name == x)]))
+        gene.end = max(end(genes[which(mcols(genes)$name == x)]))
+        mid.point = gene.start + ((gene.end - gene.start)/2)
+        chrom = seqnames(genes[which(mcols(genes)$name == x)])[1]
+        mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
+
+        c(mid = mid.point, chrom = chrom@values)
+   })
 }
 
 
@@ -384,9 +388,9 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
   } else { gene.info = get.gene.pos(gene.name) }
 
-  if (!is.null(gene.name)) gene.pos = gene.info[1]
+  if (!is.null(gene.name)) gene.pos = gene.info$mid
   if (is.null(gene.name)) gene.pos = NULL
-  if (is.null(chrom.range)) chrom.range=gene.info[2]
+  if (is.null(chrom.range)) min(gene.info$chrom):max(gene.info$chrom)
   
   out$out = out$out[out$out$chrom %in% chrom.range,]
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,]
