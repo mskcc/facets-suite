@@ -18,7 +18,7 @@ getSDIR <- function(){
   }
 }
 
-copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw'){
+copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices=NULL){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
@@ -45,8 +45,11 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
     if(sample.num < nrow(mat)){subset_ = sort(sample(1:nrow(mat), sample.num, replace=FALSE))}
   }
   
-  mat = mat[subset_,]
-  col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
+  if (!is.null(subset.indices)) {
+        mat = mat[subset.indices,]
+  } else { mat = mat[subset_,] }
+  
+   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
   
   cnlr = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
@@ -74,7 +77,7 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   cnlr
 }
 
-var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw'){
+var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices=NULL){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
@@ -100,7 +103,10 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
     if(sample.num < nrow(mat)){subset_ = sort(sample(1:nrow(mat), sample.num, replace=FALSE))}
   }
   
-  mat = mat[subset_,]
+  if (!is.null(subset.indices)) {
+        mat = mat[subset.indices,]
+  } else { mat = mat[subset_,] }
+
   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
   
   valor = ggplot(mat, environment = environment())
@@ -324,7 +330,7 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
   require(rtracklayer)
   genes = import.bed(my.path)
   mcols(genes)$name = matrix(unlist(strsplit(mcols(genes)$name,':')),nc=3,byrow=T)[,1]
-  c(mid.point, chrom@values)
+ 
   ldply(hugo.symbol, function(x) {
         gene.start = min(start(genes[which(mcols(genes)$name == x)]))
         gene.end = max(end(genes[which(mcols(genes)$name == x)]))
@@ -339,14 +345,18 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
 
 #Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test',
-  gene.name=NULL, lend='butt', em.plot = FALSE) {
+  gene.name=NULL, lend='butt', em.plot = FALSE, subset.snps=FALSE) {
 
   if(!is.null(gene.name)){gene.pos = get.gene.pos(gene.name)}
   if(is.null(gene.name)){gene.pos = NULL}
 
+   if (subset.snps == TRUE) {
+        subset.indices = random.subset.snps(out$jointseg) 
+   } else { subset.indices = NULL } 
+
   if (em.plot == F) {
-    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
-    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
+    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
     cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
     cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
     icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
@@ -355,8 +365,8 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
     plot.no = 6
     plot.h = rep(1, 6)
   } else {
-    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
-    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+    cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
+    valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
     icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
     cclem = clonal.cluster(out, fit, method = 'em')
     all.plots = list(cnlr, valor, icnem, cclem)
@@ -382,8 +392,16 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
 
 }
 
+# Subset SNPs for plots that can be handled by e.g. Illustrator, defaults to 5-fold downsampling at present
+random.subset.snps = function(jointseg) {
+    chrom.weigths = table(jointseg$chrom)/sum(table(jointseg$chrom))
+    row.weights = chrom.weigths[match(jointseg$chrom, names(chrom.weigths))]
+    subset.indices = sort(sample(seq_len(nrow(jointseg)), size = nrow(jointseg)/5, replace = F, prob = row.weights))
+    subset.indices
+}
+
 #Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
-close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL){
+close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE){
 
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
   } else { gene.info = get.gene.pos(gene.name) }
@@ -396,9 +414,13 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,]
   out$IGV = out$IGV[out$IGV$chrom %in% chrom.range,]
   fit$cncf = fit$cncf[fit$cncf$chrom %in% chrom.range,]
-
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend)
+  
+  if (subset.snps == TRUE) {
+		subset.indices = random.subset.snps(out$jointseg)
+  } else { subset.indices = NULL } 
+  
+  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
+  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
 
   output_list <- list(cnlr=cnlr,valor=valor)
   if(method == 'em' | is.na(method)){
