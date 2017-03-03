@@ -2,6 +2,7 @@
 
 ################################################################################################################################
 ################################################################################################################################
+
 estimated_af_life_history = function(purity, ns, nw, m, M, copies=1, limit=TRUE){
 
   if(any(is.na(c(purity, ns, nw, m, M)))){return(NA)}
@@ -109,61 +110,9 @@ ccf.likelihood = function(purity, absCN, alt_allele, coverage, copies){
 ################################################################################################################################
 ################################################################################################################################
 
-main = function(maf, facets_files, mapping_file = TRUE){
+main = function(maf,facets_files){
 
   maf = as.data.table(maf)
-
-  maf[, Chromosome := factor(as.character(maf$Chromosome))]
-  setkey(maf,Chromosome,Start_Position,End_Position)
-
-  if(mapping_file == TRUE){
-    maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
-    
-    not.in.maf = setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
-    no.facets = setdiff(maf_Tumor_Sample_Barcodes, names(facets_files))
-    
-    no.facets.data = maf[maf$Tumor_Sample_Barcode %in% no.facets,]
-    maf_Tumor_Sample_Barcodes = maf_Tumor_Sample_Barcodes[!maf_Tumor_Sample_Barcodes %in% no.facets]
-    
-    write(paste('Missing facets data:', no.facets), stderr())
-    write(paste('Not in MAF:', not.in.maf), stderr())
-    idi = intersect(names(facets_files), maf_Tumor_Sample_Barcodes)
-    maf = maf[maf$Tumor_Sample_Barcode %in% idi]
-    maf_list = lapply(idi, 
-                      function(x){
-                        load(facets_files[x]);
-                        maf = annotate_maf_with_facets_cf_tcn_lcn(maf, out, fit, x)
-                      }
-    )
-    if(length(no.facets)){maf_list = c(maf_list, list(no.facets.data))}
-    maf = rbindlist(maf_list,fill=T)
-  } else {
-    dt = facets_files[,
-                      .(ID, 
-                        chrom, 
-                        loc.start, 
-                        loc.end, 
-                        cf,
-                        tcn,
-                        mcn = tcn - lcn,
-                        lcn,
-                        ploidy,
-                        purity)]
-    dt[, chrom := as.character(chrom)]
-    setkey(dt, chrom, loc.start, loc.end)
-    
-    maf_ann = foverlaps(maf, 
-                        dt, 
-                        mult="first",
-                        nomatch=NA)
-    
-    setcolorder(maf_ann, 
-                c(names(maf), 
-                  setdiff(names(maf_ann), names(maf))))
-    
-  }
-  maf <- maf_ann
-
   maf_Tumor_Sample_Barcodes = unique(maf$Tumor_Sample_Barcode)
 
   not.in.maf = setdiff(names(facets_files),maf_Tumor_Sample_Barcodes)
@@ -225,29 +174,20 @@ if(!interactive()){
   maf = fread(paste0('grep -v "^#" ', maf_file))
   facets_samples = fread(facets_samples_file)
 
-  if("purity" %in% names(facets_samples)){
-    ### if purity column in facets_samples, assume that it is a cncf.txt file with purity added
-   
-    maf = main(maf, facets_samples, mapping_file = FALSE)
-  } else if("Rdata_filename" %in% names(facets_samples)){
-    ### if Rdata_filename column in facets_files, assume that it a mapping to facets Rdata files
-    facets_files = with(facets_samples, structure(Rdata_filename, .Names = Tumor_Sample_Barcode))
-    maf = main(maf, facets_files, mapping_file = TRUE)
-  } else {
-    stop("Bad facets file")
-  }
+  facets_files = with(facets_samples, structure(Rdata_filename, .Names = Tumor_Sample_Barcode))
+
+  maf = main(maf, facets_files)
 
   if (save_comments) {
-		header = readLines(maf_file, n = 10)
-		header = header[unlist(lapply(header, function(x) substr(x,1,1)=='#'))]
-		out_file = file(output_maf_file, open = 'wt')
-		for (i in 1:length(header)) cat(header[i], '\n', file = out_file, append = T)
-		write.table(maf, file = out_file, quote = F, col.names = T, row.names = F, sep = "\t")
-		close(out_file)
+        header = readLines(maf_file, n = 10)
+        header = header[unlist(lapply(header, function(x) substr(x,1,1)=='#'))]
+        out_file = file(output_maf_file, open = 'wt')
+        for (i in 1:length(header)) cat(header[i], '\n', file = out_file, append = T)
+        write.table(maf, file = out_file, quote = F, col.names = T, row.names = F, sep = "\t")
+        close(out_file)
   } else {
-		  write.table(maf, file = output_maf_file,
+          write.table(maf, file = output_maf_file,
               quote = F, col.names = T, row.names = F, sep = "\t")
   }
 }
-
 
