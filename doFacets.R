@@ -271,7 +271,7 @@ parser=ArgumentParser()
 parser$add_argument("-c", "--cval",type="integer",default=50,help="critical value for segmentation")
 parser$add_argument("-s", "--snp_nbhd",type="integer",default=250,help="window size")
 parser$add_argument("-n", "--ndepth",type="integer",default=35,help="threshold for depth in the normal sample")
-parser$add_argument("-m", "--min_nhet",type="integer",default=25,
+parser$add_argument("-m", "--min_nhet",type="integer",default=15,
     help="minimum number of heterozygote snps in a segment used for bivariate t-statistic during clustering of segments")
 
 parser$add_argument("-pc", "--purity_cval",type="integer", help="critical value for segmentation")
