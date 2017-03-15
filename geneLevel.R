@@ -34,6 +34,13 @@ IMPACT410_targets = IMPACT410_targets[V5 %like% 'target']
 setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT410_targets, chr, start, end)
 
+# Get IMPACT468 loci and gene names
+msk_impact_468 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv6/genelist', what="", quiet = TRUE)
+IMPACT468_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv6/picard_targets.interval_list'))
+IMPACT468_targets = IMPACT468_targets[V5 %like% 'target']
+setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
+setkey(IMPACT468_targets, chr, start, end)
+
 #############################################
 ### definition of copy number calls in WGD
 FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
@@ -81,7 +88,7 @@ get_gene_level_calls <- function(cncf_files,
   ### concatenate input files
   cncf_txt_list <- lapply(cncf_files, fread)
   names(cncf_txt_list) <- cncf_files
-  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename")
+  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = T)
 
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
@@ -120,21 +127,23 @@ get_gene_level_calls <- function(cncf_files,
 #                                end=unique(end),
                              frac_elev_major_cn=unique(frac_elev_major_cn),
                              Nprobes = .N),
-                        keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn)]
+                        keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn, cf=cf,
+                          tcn.em = tcn.em, lcn.em = lcn.em, cf.em = cf.em)]
   }
 
-  if(method == 'em'){
+### Collapsed into one call, see above
+#   if(method == 'em'){
 
-      gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
-                        list(chr = unique(chr),
-                             seg.start=unique(loc.start),
-                             seg.end=unique(loc.end),
-#                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
-#                                end=unique(end),
-                             frac_elev_major_cn=unique(frac_elev_major_cn),
-                             Nprobes = .N),
-                        keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
-  }
+#       gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
+#                         list(chr = unique(chr),
+#                              seg.start=unique(loc.start),
+#                              seg.end=unique(loc.end),
+# #                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
+# #                                end=unique(end),
+#                              frac_elev_major_cn=unique(frac_elev_major_cn),
+#                              Nprobes = .N),
+#                         keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
+#   }
 
 
   ### fix bug where lcn == NA even when tcn is 1
@@ -183,7 +192,7 @@ if(!interactive()){
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
   parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em [default cncf]')
-  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT341', help="IMPACT341, IMPACT410, or a Picard interval list file of gene target coordinates [default IMPACT341]")
+  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
   args=parser$parse_args()
 
   filenames = args$filenames
@@ -192,13 +201,18 @@ if(!interactive()){
 
   if(args$targetFile=="IMPACT341") {
 
-    geneTargets=IMPACT410_targets
+    geneTargets=IMPACT341_targets
 
   } else if(args$targetFile=="IMPACT410") {
 
     geneTargets=IMPACT410_targets
 
-  } else {
+  } else if(args$targetFile=="IMPACT468") {
+  
+    geneTargets=IMPACT468_targets
+
+  }
+  else {
 
     # Note the target file needs to not only be in the PICARD interval list format
     # But the names must match the regex: /GENESYMBOL_.*/ (e.g. TP53_target_02)
