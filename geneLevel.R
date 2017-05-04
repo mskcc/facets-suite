@@ -75,7 +75,6 @@ annotate_integer_copy_number <- function(gene_level, amp_threshold){
 }
 
 get_gene_level_calls <- function(cncf_files,
-                                 method=c('em','cncf'),
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
@@ -110,26 +109,26 @@ get_gene_level_calls <- function(cncf_files,
       sum(as.numeric(loc.end-loc.start)
       ),
     by=Tumor_Sample_Barcode]
-
+  
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
   fo_impact <- fo_impact[!is.na(ID)]
   fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
-  if(method == 'cncf'){
+#  if(method == 'cncf'){
 
-      gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
-                        list(chr = unique(chr),
-                             seg.start=unique(loc.start),
-                             seg.end=unique(loc.end),
-#                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
-#                                end=unique(end),
-                             frac_elev_major_cn=unique(frac_elev_major_cn),
-                             Nprobes = .N),
-                        keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn, cf=cf,
-                          tcn.em = tcn.em, lcn.em = lcn.em, cf.em = cf.em)]
-  }
+  gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
+                          list(chr = unique(chr),
+                               seg.start=unique(loc.start),
+                               seg.end=unique(loc.end),
+                               #                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
+                               #                                end=unique(end),
+                               frac_elev_major_cn=unique(frac_elev_major_cn),
+                               Nprobes = .N),
+                          keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn, cf=cf,
+                                     tcn.em = tcn.em, lcn.em = lcn.em, cf.em = cf.em)]
+#  }
 
 ### Collapsed into one call, see above
 #   if(method == 'em'){
@@ -191,13 +190,13 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
-  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em [default cncf]')
+  # parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em [default cncf]')
   parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
   args=parser$parse_args()
 
   filenames = args$filenames
   outfile = args$outfile
-  method = args$method
+  # method = args$method
 
   if(args$targetFile=="IMPACT341") {
 
@@ -222,7 +221,7 @@ if(!interactive()){
 
   }
 
-  gene_level_calls = get_gene_level_calls(filenames, method, geneTargets)
+  gene_level_calls = get_gene_level_calls(filenames, geneTargets)
   write.text(gene_level_calls, outfile)
 
 }
