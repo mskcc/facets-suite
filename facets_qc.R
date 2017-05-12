@@ -95,6 +95,8 @@ facets_qc <- function(maf, facets, igv=F){
     ploidy <- fit$ploidy
     catverbose(paste0("Purity: ", purity, " | ", "Ploidy: ", ploidy))
     
+    n.bases <- sum(as.numeric(fit$seglen))
+    
     if(!is.null(out$flags)){
       alt.fit <- T
       catverbose(paste0("Flags: ", out$flags))
