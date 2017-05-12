@@ -26,6 +26,10 @@ getSDIR <- function(){
 }
 
 plot_vaf_by_cn_state <- function(maf, sample, wgd=F){
+  if ('t_var_freq' %!in% names(maf)){
+    maf[!t_ref_count %in% c(NA,'.') & !t_alt_count %in% c(NA,'.'),
+        t_var_freq := as.numeric(t_alt_count)/(as.numeric(t_alt_count)+as.numeric(t_ref_count))]
+  }
   if ('mcn' %!in% names(maf)){
     maf[, mcn := tcn-lcn]
   }
@@ -34,7 +38,7 @@ plot_vaf_by_cn_state <- function(maf, sample, wgd=F){
   if(length(phi) == 0){
     catverbose("No FACETS annotations!")
   } else {
-    gg <- ggplot(maf.tmp, aes(x=VAF)) + 
+    gg <- ggplot(maf.tmp, aes(x=t_var_freq)) + 
       geom_histogram(col="black", fill="#41B6C4", lwd=1.5, binwidth = 0.02) +
       geom_vline(xintercept=(phi/2), linetype=2, color = "#FB6A4A") +
       facet_grid(lcn ~ mcn) + 
