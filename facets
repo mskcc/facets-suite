@@ -54,7 +54,7 @@ def run(args, facets_args):
                 cmd = cmd + ["--"+key] +  value
             else:
                 cmd = cmd + ["--"+key, str(value)]
-            print >>sys.stderr, "Executing %s" % " ".join(cmd)
+    print >>sys.stderr, "Executing %s" % " ".join(cmd)
     try:
         rv = subprocess.call(cmd + facets_args)
         if rv!=0:

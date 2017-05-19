@@ -290,7 +290,7 @@ parser$add_argument("-r", "--R_lib", type="character", default='latest', help="W
 parser$add_argument("-C", "--single_chrom", type="character", default='F',help="Perform analysis on single chromosome")
 parser$add_argument("-G", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
 parser$add_argument("--seed", type="integer", help="Set the seed for reproducibility")
-parser$add_argument("-u", "--unmatched", type="logical", default=FALSE, help="run using a pooled normal")
+parser$add_argument("-u", "--unmatched", type="character", default='F', help="run using a pooled normal")
 args=parser$parse_args()
 
 CVAL=args$cval
@@ -321,6 +321,11 @@ GENOME=args$genome
 GGPLOT=args$ggplot2
 SEED=args$seed
 unmatched=args$unmatched
+if(unmatched == 'F'){
+unmatched = FALSE
+} else {
+unmatched = TRUE
+}
 seed_setting(SEED)
 
 if(!is.null(PURITY_CVAL)){
