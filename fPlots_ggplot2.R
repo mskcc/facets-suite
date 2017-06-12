@@ -49,18 +49,25 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
         mat = mat[subset.indices,]
   } else { mat = mat[subset_,] }
   
-   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
-  
+  col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
+  pt.cols = c(col.1, col.2)[col.rep]
+
+  ymin = floor(min(range(cncf$cnlr.median), na.rm = T))
+  if (ymin > -3) ymin = -3
+
   cnlr = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
-    cnlr = cnlr + geom_vline(xintercept=gene.pos, color='palevioletred1')
-  }
-  
+    cnlr = cnlr + geom_vline(xintercept=gene.pos$mid, color='palevioletred1')
+    mat$gene = FALSE
+    mat$gene[which(mat$chrom == gene.pos$chrom & mat$maploc >= gene.pos$start & mat$maploc <= gene.pos$end)] = TRUE
+  } else { mat$gene = FALSE }
+
   cnlr = cnlr +
-    geom_point(aes(y=cnlr,x=chr.maploc), colour=c(col.1, col.2)[col.rep], size=.4) +
+    geom_point(aes(y=cnlr,x=chr.maploc), colour=pt.cols, size=.4) +
+    geom_point(data = subset(mat, gene==T), aes(y=cnlr,x=chr.maploc), color='#525252', size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
-    ylim(-3,3) +
+	scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin ,3)) +
     ylab('Copy number log ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) +
     geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend)
@@ -108,15 +115,19 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   } else { mat = mat[subset_,] }
 
   col.rep = 1 + rep(mat$chrom - 2 * floor(mat$chrom/2))
+  pt.cols = c(col.1, col.2)[col.rep]
   
   valor = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
-    valor = valor + geom_vline(xintercept=gene.pos, color='palevioletred1')
-  }
+    valor = valor + geom_vline(xintercept=gene.pos$mid, color='palevioletred1')
+    mat$gene = FALSE
+    mat$gene[which(mat$chrom == gene.pos$chrom & mat$maploc >= gene.pos$start & mat$maploc <= gene.pos$end)] = TRUE
+  } else { mat$gene = FALSE }
   
   valor = valor +
-    geom_point(aes(y=valor,x=chr.maploc), colour=c(col.1,col.2)[col.rep], size=.4) +
-    scale_x_continuous(breaks=mid, labels=names(mid)) +
+    geom_point(aes(y=valor,x=chr.maploc), colour=pt.cols, size=.4) +
+    geom_point(data = subset(mat, gene==T), aes(y=valor,x=chr.maploc), color='#525252', size=.4) +
+    scale_x_continuous(breaks=mid, labels=names(mid)) + 
     xlab('') +
     ylim(-4,4) +
     ylab('Variant allele log odds ratio') +
@@ -157,7 +168,7 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   
   cf = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
-    cf = cf + geom_vline(xintercept=gene.pos, color='palevioletred1')
+    cf = cf + geom_vline(xintercept=gene.pos$mid, color='palevioletred1')
   }
   
   cf = cf +
@@ -207,7 +218,7 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   
   icn = ggplot(mat, environment = environment())
   if(!is.null(gene.pos)){
-    icn = icn + geom_vline(xintercept=gene.pos, color='palevioletred1')
+    icn = icn + geom_vline(xintercept=gene.pos$mid, color='palevioletred1')
   }
   
   icn = icn +
@@ -336,9 +347,9 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
         gene.end = max(end(genes[which(mcols(genes)$name == x)]))
         mid.point = gene.start + ((gene.end - gene.start)/2)
         chrom = seqnames(genes[which(mcols(genes)$name == x)])[1]
-        mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
+        if(as.integer(chrom)>1) mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
 
-        c(mid = mid.point, chrom = chrom@values)
+        c(mid = mid.point, chrom = chrom@values, start = gene.start, end = gene.end)
    })
 }
 
@@ -369,10 +380,12 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
     valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
     icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
     cclem = clonal.cluster(out, fit, method = 'em')
-    all.plots = list(cnlr, valor, icnem, cclem)
-    plot.no = 4
-    plot.h = c(1,1,1,.25)
-    h = (3/5)*h
+    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+    cclcncf = clonal.cluster(out, fit, method = 'cncf')
+    all.plots = list(cnlr, valor, icnem, cclem, icncncf, cclcncf)
+    plot.no = 6
+    plot.h = c(1,1,1,.25,1,.25)
+    h = (4.5/5)*h
   }
 
   if(type == 'pdf'){plotname = paste(plotname, '.pdf', sep=''); CairoPDF(width = 8.854167, height=11.458333, file=plotname)}
@@ -406,9 +419,9 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
   } else { gene.info = get.gene.pos(gene.name) }
 
-  if (!is.null(gene.name)) gene.pos = gene.info$mid
+  if (!is.null(gene.name)) gene.pos = gene.info
   if (is.null(gene.name)) gene.pos = NULL
-  if (is.null(chrom.range)) min(gene.info$chrom):max(gene.info$chrom)
+  if (is.null(chrom.range)) chrom.range = min(gene.info$chrom):max(gene.info$chrom)
   
   out$out = out$out[out$out$chrom %in% chrom.range,]
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,]
