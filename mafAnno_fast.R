@@ -279,7 +279,7 @@ main = function(maf, cncf_files, purity_fit_filename = ""){
   if (purity_fit_filename != ""){
     purity_fit <- readRDS(purity_fit_filename)
     sink(file = "/dev/null")
-    maf[!is.infinite(purity) & !is.na(purity), c("mu", "sigma", "nu", "tau") := predictAll(purity_fit, newdata = data.frame(purity = purity))]
+    maf[!is.infinite(purity) & !is.na(purity), c("mu", "sigma", "nu", "tau") := gamlss::predictAll(purity_fit, newdata = data.frame(purity = purity))]
     sink()
     maf[!is.infinite(purity) & !is.na(purity),
         c("purity_max", "purity_lower", "purity_upper") :=
@@ -349,6 +349,8 @@ main = function(maf, cncf_files, purity_fit_filename = ""){
 ################################################################################################################################
 ################################################################################################################################
 
+suppressPackageStartupMessages(library(gamlss))
+suppressPackageStartupMessages(library(gamlss.tr))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(argparse))
 
