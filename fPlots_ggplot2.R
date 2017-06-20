@@ -67,7 +67,7 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
     geom_point(data = subset(mat, gene==T), aes(y=cnlr,x=chr.maploc), color='#525252', size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
-	scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin ,3)) +
+    scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin ,3)) +
     ylab('Copy number log ratio') +
     geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) +
     geom_segment(data=cncf,aes(x=my.starts$chr.maploc, xend=my.ends$chr.maploc, y=my.starts$cnlr.median, yend=my.ends$cnlr.median), col='red3', size=1, lineend=lend)
