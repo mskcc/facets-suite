@@ -349,8 +349,8 @@ main = function(maf, cncf_files, purity_fit_filename = ""){
 ################################################################################################################################
 ################################################################################################################################
 
-suppressPackageStartupMessages(library(gamlss))
-suppressPackageStartupMessages(library(gamlss.tr))
+# suppressPackageStartupMessages(library(gamlss))
+# suppressPackageStartupMessages(library(gamlss.tr))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(argparse))
 
