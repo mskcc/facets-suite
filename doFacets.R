@@ -278,7 +278,7 @@ parser$add_argument("-m", "--min_nhet",type="integer",default=15,
 parser$add_argument("-pc", "--purity_cval",type="integer", help="critical value for segmentation")
 parser$add_argument("-ps", "--purity_snp_nbhd",type="integer",default=250,help="window size")
 parser$add_argument("-pn", "--purity_ndepth",type="integer",default=35,help="threshold for depth in the normal sample")
-parser$add_argument("-pm", "--purity_min_nhet",type="integer",default=25,
+parser$add_argument("-pm", "--purity_min_nhet",type="integer",default=15,
     help="minimum number of heterozygote snps in a segment used for bivariate t-statistic during clustering of segments")
 
 parser$add_argument("-d", "--dipLogR",type="double",help="diploid log ratio")
@@ -331,7 +331,7 @@ seed_setting(SEED)
 if(!is.null(PURITY_CVAL)){
 
     ### if "PURITY_CVAL" is specified, run FACETS twice. Take dipLogR from the first run...
-    estimated_dipLogR = facets_iteration(COUNTS_FILE, paste0(TAG, "_purity"), DIRECTORY, PURITY_CVAL, DIPLOGR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched)
+    estimated_dipLogR = facets_iteration(COUNTS_FILE, paste0(TAG, "_purity"), DIRECTORY, PURITY_CVAL, DIPLOGR, NDEPTH, SNP_NBHD, PURITY_MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched)
 
     ### ... and use it for a second run of FACETS
     facets_iteration(COUNTS_FILE, paste0(TAG, "_hisens"), DIRECTORY, CVAL, estimated_dipLogR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=PURITY_CVAL, unmatched = unmatched)

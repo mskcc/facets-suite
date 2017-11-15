@@ -114,6 +114,10 @@ get_gene_level_calls <- function(cncf_files,
   fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
   fo_impact <- fo_impact[!is.na(ID)]
   fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
+  
+  if (!("cf" %in% names(fo_impact))) {
+    fo_impact[, cf := cf.em]
+  }
 
   ### Summarize copy number for each gene
 #  if(method == 'cncf'){

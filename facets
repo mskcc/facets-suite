@@ -5,12 +5,12 @@ import subprocess, itertools, errno, csv, gzip
 import imp, glob
 ## import cmo
 
-FACETS_DIR = None 
+FACETS_DIR = None
 
 
 def make_sure_path_exists(directory):
     if not os.path.exists(directory):
-        os.makedirs(directory) 
+        os.makedirs(directory)
 
 def gzip_file_with_size(file_path):
     if not os.path.exists(file_path): return(False)
@@ -20,7 +20,7 @@ def gzip_file_with_size(file_path):
             if i > 10: return(True)
         return(False)
 
-        
+
 def slugify(value):
     """
     Normalizes string, removes non-alpha characters,
@@ -60,8 +60,16 @@ def run(args, facets_args):
         if rv!=0:
             sys.exit(rv)
     except:
-        print >>sys.stderr, "Error executing command, returncode %d" % rv
-        sys.exit(rv)
+        # hack: when facets are running part of Roslin pipeline,
+        # any kind of facets failure prevents downstream workflows from running
+        # due to how toil works.
+        # this workaround reports exitcode 0 to toil even if there is an error
+        if os.environ.get('FACETS_OVERRIDE_EXITCODE'):
+            sys.exit(0)
+        else:
+            print >>sys.stderr, "Error executing command, returncode %d" % rv
+            sys.exit(rv)
+
 
 def add_subparser(file, subparsers):
     R_script = open(file, "r")
@@ -110,7 +118,7 @@ def add_subparser(file, subparsers):
         parser.print_help()
         sys.exit(1)
 
-     
+
 
 FACETS_DIR = os.path.dirname(os.path.realpath(__file__))
 def create_parser(parser=None):
@@ -132,5 +140,5 @@ if __name__ =='__main__':
     args_dict= vars(args)
     run(args, facets_args)
 ##    print args
-    
+
 
