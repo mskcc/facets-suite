@@ -63,7 +63,8 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   } else { mat$gene = FALSE }
 
   cnlr = cnlr +
-    geom_point(aes(y=cnlr,x=chr.maploc), colour=pt.cols, size=.4) +
+    #geom_point(aes(y=cnlr,x=chr.maploc), colour=pt.cols, size=.4) +
+    geom_point(aes(y=cnlr,x=chr.maploc), pch = 19, col=pt.cols, size=.4) +
     geom_point(data = subset(mat, gene==T), aes(y=cnlr,x=chr.maploc), color='#525252', size=.4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
@@ -75,8 +76,8 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   panel.grid.col='white'; grid.width = .5
   if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; cnlr = cnlr + theme_bw()}
   
-  cnlr = cnlr + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
-                      axis.text.y = element_text(angle=90, vjust=0, size=8),
+  cnlr = cnlr + theme(axis.text.x  = element_text(angle=0, size=8),
+                      axis.text.y = element_text(angle=0, size=8),
                       text = element_text(size=10),
                       panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
                       panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
@@ -137,8 +138,8 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   panel.grid.col='white'; grid.width = .5
   if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; valor = valor + theme_bw()}
   
-  valor = valor + theme(axis.text.x = element_text(angle=90, vjust=0, size=8),
-                        axis.text.y = element_text(angle=90, vjust=0, size=8),
+  valor = valor + theme(axis.text.x = element_text(angle=0, size=8),
+                        axis.text.y = element_text(angle=0, size=8),
                         text = element_text(size=10),
                         panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
                         panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
@@ -146,7 +147,7 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   valor
 }
 
-cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw'){
+cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', ...){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
@@ -190,7 +191,7 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   cf
 }
 
-integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw'){
+integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', ...){
   
   mat = out$jointseg
   mat = subset(mat, chrom < 23)
@@ -221,9 +222,9 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
     icn = icn + geom_vline(xintercept=gene.pos$mid, color='palevioletred1')
   }
   
-  icn = icn +
-    geom_segment(data=cncf, aes(x=my.tcn.starts$chr.maploc, xend=my.tcn.ends$chr.maploc, y=my.tcn.starts$tcn_, yend=my.tcn.ends$tcn_), col='black', size=1,lineend=lend) +
+  icn = icn + 
     geom_segment(data=cncf, aes(x=my.lcn.starts$chr.maploc, xend=my.lcn.ends$chr.maploc, y=my.lcn.starts$lcn_, yend=my.lcn.ends$lcn_), col='red', size=1, lineend=lend) +
+    geom_segment(data=cncf, aes(x=my.tcn.starts$chr.maploc, xend=my.tcn.ends$chr.maploc, y=my.tcn.starts$tcn_, yend=my.tcn.ends$tcn_), col='black', size=1,lineend=lend) +
     scale_y_continuous(breaks=c(0:5, 5 + (1:35)/3), labels=0:40,limits = c(0, NA)) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     ylab(my.ylab) +
@@ -232,8 +233,8 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   panel.grid.col='white'; grid.width = .5
   if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; icn = icn + theme_bw()}
   
-  icn = icn + theme(axis.text.x  = element_text(angle=90, vjust=0, size=8),
-                    axis.text.y = element_text(angle=90, vjust=0, size=8),
+  icn = icn + theme(axis.text.x  = element_text(angle=0, size=8),
+                    axis.text.y = element_text(angle=0, size=8),
                     text = element_text(size=10),
                     panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
                     panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
@@ -406,15 +407,15 @@ plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.geno
 }
 
 # Subset SNPs for plots that can be handled by e.g. Illustrator, defaults to 5-fold downsampling at present
-random.subset.snps = function(jointseg) {
+random.subset.snps = function(jointseg, by_factor=5) {
     chrom.weigths = table(jointseg$chrom)/sum(table(jointseg$chrom))
     row.weights = chrom.weigths[match(jointseg$chrom, names(chrom.weigths))]
-    subset.indices = sort(sample(seq_len(nrow(jointseg)), size = nrow(jointseg)/5, replace = F, prob = row.weights))
+    subset.indices = sort(sample(seq_len(nrow(jointseg)), size = nrow(jointseg)/by_factor, replace = F, prob = row.weights))
     subset.indices
 }
 
 #Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
-close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE){
+close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE, ...){
 
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
   } else { gene.info = get.gene.pos(gene.name) }
@@ -428,22 +429,26 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   out$IGV = out$IGV[out$IGV$chrom %in% chrom.range,]
   fit$cncf = fit$cncf[fit$cncf$chrom %in% chrom.range,]
   
-  if (subset.snps == TRUE) {
-		subset.indices = random.subset.snps(out$jointseg)
+  if (subset.snps != FALSE) {
+		if (subset.snps==T) {
+				subset.indices = random.subset.snps(out$jointseg)
+		} else if (is.numeric(subset.snps)) {
+				subset.indices = random.subset.snps(out$jointseg, subset.snps)
+		}
   } else { subset.indices = NULL } 
   
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices)
+  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, ...)
+  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, ...)
 
   output_list <- list(cnlr=cnlr,valor=valor)
   if(method == 'em' | is.na(method)){
-    cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend)
-    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend)
+    cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend, ...)
+    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend, ...)
     output_list <- c(output_list, list(cfem=cfem, icnem=icnem))
   }
   if(method == 'cncf' | is.na(method)){
-    cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
-    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend)
+    cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, ...)
+    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, ...)
     output_list <- c(output_list, list(cfcncf=cfcncf, icncncf=icncncf))
   }
   output_list
