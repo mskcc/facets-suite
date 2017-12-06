@@ -18,16 +18,16 @@ getSDIR <- function(){
   }
 }
 
-copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices=NULL){
+copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices = NULL, plotX = FALSE){
   
   mat = out$jointseg
-  mat = subset(mat, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
-  mid = mat$mid
+  mid = mat$mid[names(mat$mid) %in% mat$mat$chrom]
   mat = mat$mat
   
   cncf = fit$cncf
-  cncf = subset(cncf, chrom < 23)
+  if (!plotX) cncf = subset(cncf, chrom < 23)
   dipLogR = out$dipLogR
   
   cnlr.median = rep(cncf$cnlr.median, cncf$num.mark)
@@ -64,8 +64,8 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
 
   cnlr = cnlr +
     #geom_point(aes(y=cnlr,x=chr.maploc), colour=pt.cols, size=.4) +
-    geom_point(aes(y=cnlr,x=chr.maploc), pch = 19, col=pt.cols, size=.4) +
-    geom_point(data = subset(mat, gene==T), aes(y=cnlr,x=chr.maploc), color='#525252', size=.4) +
+    geom_point(aes(y = cnlr, x = chr.maploc), pch = 19, col = pt.cols, size = .4) +
+    geom_point(data = subset(mat, gene == T), aes(y = cnlr, x = chr.maploc), color = '#525252', size = .4) +
     scale_x_continuous(breaks=mid, labels=names(mid)) +
     xlab('') +
     scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin ,3)) +
@@ -76,25 +76,25 @@ copy.number.log.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col
   panel.grid.col='white'; grid.width = .5
   if(theme=='bw'){panel.grid.col='grey'; grid.width = .2; cnlr = cnlr + theme_bw()}
   
-  cnlr = cnlr + theme(axis.text.x  = element_text(angle=0, size=8),
-                      axis.text.y = element_text(angle=0, size=8),
-                      text = element_text(size=10),
-                      panel.grid.minor.x=element_line(colour=panel.grid.col, size=grid.width),
-                      panel.grid.major.x=element_line(colour=panel.grid.col, size=0),
-                      plot.margin = unit(c(0,1,0,0), 'lines'))  
+  cnlr = cnlr + theme(axis.text.x = element_text(angle = 0, size = 8),
+                      axis.text.y = element_text(angle = 0, size = 8),
+                      text = element_text(size = 10),
+                      panel.grid.minor.x = element_line(colour = panel.grid.col, size = grid.width),
+                      panel.grid.major.x = element_line(colour = panel.grid.col, size = 0),
+                      plot.margin = unit(c(0, 1, 0, 0), 'lines'))  
   cnlr
 }
 
-var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices=NULL){
+var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL, col.1="#0080FF", col.2="#4CC4FF", sample.num=NULL, lend='butt', theme='bw', subset.indices = NULL, plotX = FALSE){
   
   mat = out$jointseg
-  mat = subset(mat, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
   cncf = fit$cncf
-  cncf = subset(cncf, chrom < 23)
+  if (!plotX) cncf = subset(cncf, chrom < 23)
   
   mafR = rep(sqrt(abs(cncf$mafR)), cncf$num.mark)
   mat = cbind(mat, mafR)
@@ -147,16 +147,16 @@ var.allele.log.odds.ratio = function(out, fit, load.genome=FALSE, gene.pos=NULL,
   valor
 }
 
-cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', ...){
+cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', plotX = FALSE, ...){
   
   mat = out$jointseg
-  mat = subset(mat, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
   cncf = fit$cncf
-  cncf = subset(cncf, chrom < 23)
+  if (!plotX) cncf = subset(cncf, chrom < 23)
   
   if(method == 'em'){cncf$cf.em[is.na(cncf$cf.em)] = -1; cf = rep(cncf$cf.em, cncf$num.mark); my.ylab='Cellular fraction (EM)'}
   if(method == 'cncf'){cncf$cf[is.na(cncf$cf)] = -1; cf = rep(cncf$cf, cncf$num.mark); my.ylab='Cellular fraction (CNCF)'}
@@ -191,16 +191,16 @@ cellular.fraction = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE
   cf
 }
 
-integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', ...){
+integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FALSE, gene.pos=NULL, main='', lend='butt', theme='bw', plotX = FALSE, ...){
   
   mat = out$jointseg
-  mat = subset(mat, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
   cncf = fit$cncf
-  cncf = subset(cncf, chrom < 23)
+  if (!plotX) cncf = subset(cncf, chrom < 23)
   
   if(method == 'em'){tcnscaled = cncf$tcn.em; tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] = (5 + (tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] - 5)/3)}
   if(method == 'cncf'){tcnscaled = cncf$tcn; tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] = (5 + (tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] - 5)/3)}
@@ -243,16 +243,16 @@ integer.copy.number = function(out, fit, method=c('cncf', 'em'), load.genome=FAL
   icn
 }
 
-clonal.cluster = function(out, fit, method='em', load.genome=FALSE, gene.pos=NULL, main='', theme='bw') {
+clonal.cluster = function(out, fit, method='em', load.genome=FALSE, gene.pos=NULL, main='', theme='bw', plotX = FALSE) {
   
   mat = out$jointseg
-  mat = subset(mat, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   mat = get.cumulative.chr.maploc(mat, load.genome)
   mid = mat$mid
   mat = mat$mat
   
   cncf = fit$cncf
-  cncf = subset(cncf, chrom < 23)
+  if (!plotX) mat = subset(mat, chrom < 23)
   
   if(method == 'em'){tcnscaled = cncf$tcn.em; tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] = (5 + (tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] - 5)/3)}
   if(method == 'cncf'){tcnscaled = cncf$tcn; tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] = (5 + (tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] - 5)/3)}
@@ -304,19 +304,19 @@ get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
     genome = BSgenome.Hsapiens.UCSC.hg19
-    chrom.lengths = seqlengths(genome)[1:22]
+    chrom.lengths = seqlengths(genome)[1:23]
   }
   else{
     chrom.lengths = c(249250621, 243199373, 198022430, 191154276, 180915260, 171115067, 159138663, 146364022, 141213431, 135534747,135006516,
-                      133851895, 115169878, 107349540, 102531392, 90354753,  81195210,  78077248,  59128983,  63025520, 48129895,  51304566) #hg19
+                      133851895, 115169878, 107349540, 102531392, 90354753,  81195210,  78077248,  59128983,  63025520, 48129895,  51304566, 155270560) #hg19
   }
 
   cum.chrom.lengths = cumsum(as.numeric(chrom.lengths))
   mid = cum.chrom.lengths - (chrom.lengths/2)
-  names(mid) = 1:22
+  names(mid) = 1:23
 
   chr.maploc.to.gen.maploc = function(x){mat[mat$chrom==x,]$maploc + cum.chrom.lengths[x-1]}
-  chr.maploc = sapply(2:22,chr.maploc.to.gen.maploc)
+  chr.maploc = sapply(2:23,chr.maploc.to.gen.maploc)
   chr.maploc = unlist(chr.maploc)
   chr.maploc = c(mat[mat$chrom==1,]$maploc,chr.maploc)
   mat = cbind(mat,chr.maploc)
@@ -330,11 +330,11 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
     genome = BSgenome.Hsapiens.UCSC.hg19
-    chrom.lengths = seqlengths(genome)[1:22]
+    chrom.lengths = seqlengths(genome)[1:23]
   }
   else{
-    chrom.lengths = c(249250621, 243199373, 198022430, 191154276, 180915260, 171115067, 159138663, 146364022, 141213431, 135534747,135006516,
-                      133851895, 115169878, 107349540, 102531392, 90354753,  81195210,  78077248,  59128983,  63025520, 48129895,  51304566) #hg19
+    chrom.lengths = c(249250621, 243199373, 198022430, 191154276, 180915260, 171115067, 159138663, 146364022, 141213431, 135534747, 135006516,
+                      133851895, 115169878, 107349540, 102531392, 90354753,  81195210,  78077248, 59128983, 63025520, 48129895, 51304566, 155270560) #hg19
   }
 
   cum.chrom.lengths = cumsum(as.numeric(chrom.lengths))
@@ -348,7 +348,8 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
         gene.end = max(end(genes[which(mcols(genes)$name == x)]))
         mid.point = gene.start + ((gene.end - gene.start)/2)
         chrom = seqnames(genes[which(mcols(genes)$name == x)])[1]
-        if(as.integer(chrom)>1) mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
+        if (as.character(chrom) == 'X') chrom@values = 23
+        if (as.integer(chrom)>1) mid.point = cum.chrom.lengths[as.integer(chrom)-1] + mid.point
 
         c(mid = mid.point, chrom = chrom@values, start = gene.start, end = gene.end)
    })
@@ -415,7 +416,7 @@ random.subset.snps = function(jointseg, by_factor=5) {
 }
 
 #Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
-close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE, ...){
+close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE, plotX = FALSE, ...){
 
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
   } else { gene.info = get.gene.pos(gene.name) }
@@ -423,6 +424,7 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   if (!is.null(gene.name)) gene.pos = gene.info
   if (is.null(gene.name)) gene.pos = NULL
   if (is.null(chrom.range)) chrom.range = min(gene.info$chrom):max(gene.info$chrom)
+  if (23 %in% chrom.range) plotX = TRUE
   
   out$out = out$out[out$out$chrom %in% chrom.range,]
   out$jointseg = out$jointseg[out$jointseg$chrom %in% chrom.range,]
@@ -437,18 +439,18 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
 		}
   } else { subset.indices = NULL } 
   
-  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, ...)
-  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, ...)
+  cnlr = copy.number.log.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, plotX = plotX, ...)
+  valor = var.allele.log.odds.ratio(out, fit, gene.pos=gene.pos, lend=lend, subset.indices=subset.indices, plotX = plotX, ...)
 
   output_list <- list(cnlr=cnlr,valor=valor)
   if(method == 'em' | is.na(method)){
-    cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend, ...)
-    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend, ...)
+    cfem = cellular.fraction(out, fit, method='em', gene.pos=gene.pos, lend=lend, plotX = plotX, ...)
+    icnem = integer.copy.number(out, fit, method='em', gene.pos=gene.pos, lend=lend, plotX = plotX, ...)
     output_list <- c(output_list, list(cfem=cfem, icnem=icnem))
   }
   if(method == 'cncf' | is.na(method)){
-    cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, ...)
-    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, ...)
+    cfcncf = cellular.fraction(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, plotX = plotX, ...)
+    icncncf = integer.copy.number(out, fit, method='cncf', gene.pos=gene.pos, lend=lend, plotX = plotX, ...)
     output_list <- c(output_list, list(cfcncf=cfcncf, icncncf=icncncf))
   }
   output_list
