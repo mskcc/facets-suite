@@ -67,9 +67,11 @@ annotate_maf_with_facets_cf_tcn_lcn = function(maf, out, fit, iTumor_Sample_Barc
   }
 
   if(is.null(iTumor_Sample_Barcode)){maf_ann = foverlaps(maf, dt, mult="first",nomatch=NA)}
-  else{maf_ann = foverlaps(maf[Tumor_Sample_Barcode == iTumor_Sample_Barcode], dt, mult="first",nomatch=)}
+  else{maf_ann = foverlaps(maf[Tumor_Sample_Barcode == iTumor_Sample_Barcode], dt, mult="first",nomatch=NA)}
 
   maf_ann[,c(maf_cols, 'dipLogR', 'seg.mean', 'cf', 'tcn', 'lcn', 'cf.em', 'tcn.em', 'lcn.em', 'purity', 'ploidy'), with=F]
+  maf_ann$purity = fit$purity
+  maf_ann$ploidy = fit$ploidy
 }
 
 
@@ -140,7 +142,7 @@ main = function(maf,facets_files){
                                                                                                                     (t_alt_count + t_ref_count),
                                                                                                                     copies=1), by= 1:nrow(maf)]
 
-maf[,c("ccf_Mcopies_em", "ccf_Mcopies_lower_em", "ccf_Mcopies_upper_em", "ccf_Mcopies_prob95_em", "ccf_Mcopies_prob90_em"):=ccf.likelihood(purity,
+  maf[,c("ccf_Mcopies_em", "ccf_Mcopies_lower_em", "ccf_Mcopies_upper_em", "ccf_Mcopies_prob95_em", "ccf_Mcopies_prob90_em"):=ccf.likelihood(purity,
                                                                                                                     tcn.em,
                                                                                                                     t_alt_count,
                                                                                                                     (t_alt_count + t_ref_count),
