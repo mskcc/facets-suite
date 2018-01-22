@@ -227,7 +227,8 @@ main = function(maf, cncf_files, purity_fit_filename = ""){
   out_table <- dcast.data.table(
     out[variable %in% c("Purity", "Ploidy", "dipLogR", "dipt", "loglik")],
     Tumor_Sample_Barcode ~ variable,
-    value.var = "value"
+    value.var = "value",
+    fun.aggregate=max # defaulting to 'length' without this
   )
   if("Purity" %in% names(out_table)) setnames(out_table, "Purity", "purity")
   if("Ploidy" %in% names(out_table)) setnames(out_table, "Ploidy", "ploidy")
