@@ -25,7 +25,7 @@ getSDIR <- function(){
 
 print_run_details <- function(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL,
                               DIPLOGR, NDEPTH, SNP_NBHD,MIN_NHET, GENOME,
-                              GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched){
+                              GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched, TUMOR_ID ){
 
     if(is.null(GIVE_PCVAL)){GIVE_PCVAL = 'NA'}
     ff=paste0(DIRECTORY, "/", TAG,".out")
@@ -41,6 +41,7 @@ print_run_details <- function(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL,
     cat("# cval ="       , CVAL                  , "\n", file=ff, append=T)
     cat("# min.nhet ="   , MIN_NHET              , "\n", file=ff, append=T)
     cat("# genome ="     , GENOME                , "\n", file=ff, append=T)
+    cat("# tumor_id ="    , TUMOR_ID                , "\n", file=ff, append=T)
 
     cat("\n# LOADED MODULE INFO\n", file=ff, append=T)
     pv = packageVersion('facets')
@@ -128,9 +129,10 @@ seg_figure <- function(out, DIRECTORY, TAG, chromLevels, CVAL){
 ##########################################################################################
 ##########################################################################################
 
-write_output <- function(out, fit, DIRECTORY, TAG){
+write_output <- function(out, fit, DIRECTORY, TAG, TUMOR_ID ){
 
-  out$IGV=formatSegmentOutput(out, TAG)
+  sampID = if(TUMOR_ID != '') TUMOR_ID else TAG
+  out$IGV=formatSegmentOutput(out, sampID)
   save(out, fit, file=paste0(DIRECTORY, "/", TAG,".Rdata"), compress=T)
   write.table(out$IGV,file=paste0(DIRECTORY, "/", TAG,'.seg'), row.names=F, quote=F, sep="\t") #NEW
 
@@ -211,7 +213,7 @@ extract_six_column_counts_matrix <- function(COUNTS_FILE){
 
 facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
                              SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM,
-                             SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched){
+                             SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched, TUMOR_ID ){
 
     if (RLIB_VERSION >= '0.5.2') {
 
@@ -226,9 +228,9 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
       fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
 
-      write_output(out, fit, DIRECTORY, TAG)
+      write_output(out, fit, DIRECTORY, TAG, TUMOR_ID )
       print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
-                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched)
+                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched, TUMOR_ID )
 
       results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL, EM_PLOT=TRUE)
 
@@ -245,9 +247,9 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
       fit=emcncf(out) #fit=emcncf(out$jointseg,out$out,dipLogR=out$dipLogR) OLD
 
-      write_output(out, fit, DIRECTORY, TAG)
+      write_output(out, fit, DIRECTORY, TAG, TUMOR_ID )
       print_run_details(out, fit, COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD,
-                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched)
+                        MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL, unmatched, TUMOR_ID )
 
       results_figure(out, fit, DIRECTORY, TAG, CVAL, GGPLOT, SINGLE_CHROM, GIVE_PCVAL)
 
@@ -291,6 +293,7 @@ parser$add_argument("-C", "--single_chrom", type="character", default='F',help="
 parser$add_argument("-G", "--ggplot2", type="character", default='T', help="Plots using  ggplot2")
 parser$add_argument("--seed", type="integer", help="Set the seed for reproducibility")
 parser$add_argument("-u", "--unmatched", type="character", default='F', help="run using a pooled normal")
+parser$add_argument("-id", "--tumor_id", type="character", default='', help="Tumor ID of facets run")
 args=parser$parse_args()
 
 CVAL=args$cval
@@ -303,6 +306,7 @@ PURITY_NDEPTH=args$purity_ndepth
 PURITY_MIN_NHET=args$purity_min_nhet
 COUNTS_FILE=args$counts_file
 TAG=args$TAG
+TUMOR_ID=args$tumor_id
 DIRECTORY=args$directory
 DIPLOGR=args$dipLogR
 
@@ -331,15 +335,15 @@ seed_setting(SEED)
 if(!is.null(PURITY_CVAL)){
 
     ### if "PURITY_CVAL" is specified, run FACETS twice. Take dipLogR from the first run...
-    estimated_dipLogR = facets_iteration(COUNTS_FILE, paste0(TAG, "_purity"), DIRECTORY, PURITY_CVAL, DIPLOGR, NDEPTH, SNP_NBHD, PURITY_MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched)
+    estimated_dipLogR = facets_iteration(COUNTS_FILE, paste0(TAG, "_purity"), DIRECTORY, PURITY_CVAL, DIPLOGR, NDEPTH, SNP_NBHD, PURITY_MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched, TUMOR_ID )
 
     ### ... and use it for a second run of FACETS
-    facets_iteration(COUNTS_FILE, paste0(TAG, "_hisens"), DIRECTORY, CVAL, estimated_dipLogR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=PURITY_CVAL, unmatched = unmatched)
+    facets_iteration(COUNTS_FILE, paste0(TAG, "_hisens"), DIRECTORY, CVAL, estimated_dipLogR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=PURITY_CVAL, unmatched = unmatched, TUMOR_ID )
 }
 if(is.null(PURITY_CVAL)){
 
     ### if "PURITY_CVAL" is not specified, run FACETS only once, with dipLogR taken from the arguments
-    facets_iteration(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched)
+    facets_iteration(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH, SNP_NBHD, MIN_NHET, GENOME, GGPLOT, SINGLE_CHROM, SEED, RLIB_PATH, RLIB_VERSION, GIVE_PCVAL=NULL, unmatched = unmatched, TUMOR_ID )
 }
 
 
