@@ -252,7 +252,7 @@ clonal.cluster = function(out, fit, method='em', load.genome=FALSE, gene.pos=NUL
   mat = mat$mat
   
   cncf = fit$cncf
-  if (!plotX) mat = subset(mat, chrom < 23)
+  if (!plotX) cncf = subset(cncf, chrom < 23)
   
   if(method == 'em'){tcnscaled = cncf$tcn.em; tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] = (5 + (tcnscaled[cncf$tcn.em > 5 & !is.na(cncf$tcn.em)] - 5)/3)}
   if(method == 'cncf'){tcnscaled = cncf$tcn; tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] = (5 + (tcnscaled[cncf$tcn > 5 & !is.na(cncf$tcn)] - 5)/3)}
