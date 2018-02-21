@@ -208,12 +208,8 @@ if(!interactive()){
   args=parser$parse_args()
 
   filenames = args$filenames
-  print(typeof(filenames))
-  print(filenames)
   outfile = args$outfile
   method = args$method
-  scna_outfile = gsub(".txt", ".scna.txt", outfile) 
-  # method = args$method
 
   if(args$targetFile=="IMPACT341") {
 
@@ -242,6 +238,7 @@ if(!interactive()){
   write.text(gene_level_calls, outfile)
 
   if(tolower(method) == 'scna'){
+    scna_outfile = gsub(".txt", ".scna.txt", outfile) 
     portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
     write.text(portal_output, scna_outfile)
   }
