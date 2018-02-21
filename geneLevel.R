@@ -87,11 +87,12 @@ get_gene_level_calls <- function(cncf_files,
   ### concatenate input files
   cncf_txt_list <- lapply(cncf_files, fread)
   names(cncf_txt_list) <- cncf_files
+#  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = T)
   concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = T)
-
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
-  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
+#  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
+  concat_cncf_txt$Tumor_Sample_Barcode <- as.character(concat_cncf_txt$ID)
   concat_cncf_txt[, filename := NULL]
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
   concat_cncf_txt[chrom == "23", chrom := "X"]
@@ -185,6 +186,14 @@ get_gene_level_calls <- function(cncf_files,
   gene_level
 }
 
+convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
+
+    data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "FACETS_CNA")]
+    portal_output <- dcast(data_to_convert, Hugo_Symbol ~ Tumor_Sample_Barcode, value.var = "FACETS_CNA" )
+    portal_output
+}
+
+
 #####################################################################################
 #####################################################################################
 
@@ -195,10 +204,15 @@ if(!interactive()){
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
   parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
+  parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
   args=parser$parse_args()
 
   filenames = args$filenames
+  print(typeof(filenames))
+  print(filenames)
   outfile = args$outfile
+  method = args$method
+  scna_outfile = gsub(".txt", ".scna.txt", outfile) 
   # method = args$method
 
   if(args$targetFile=="IMPACT341") {
@@ -227,4 +241,8 @@ if(!interactive()){
   gene_level_calls = get_gene_level_calls(filenames, geneTargets)
   write.text(gene_level_calls, outfile)
 
+  if(tolower(method) == 'scna'){
+    portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
+    write.text(portal_output, scna_outfile)
+  }
 }
