@@ -78,6 +78,7 @@ get_gene_level_calls <- function(cncf_files,
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
+                                 max_seg_length = 25000000, ### genes in segments longer than this will always be diploid
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  fun.rename = function(filename){filename}){
 
@@ -110,7 +111,7 @@ get_gene_level_calls <- function(cncf_files,
       sum(as.numeric(loc.end-loc.start)
       ),
     by=Tumor_Sample_Barcode]
-  
+
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
   fo_impact <- fo_impact[!is.na(ID)]
@@ -127,8 +128,6 @@ get_gene_level_calls <- function(cncf_files,
                           list(chr = unique(chr),
                                seg.start=unique(loc.start),
                                seg.end=unique(loc.end),
-                               #                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
-                               #                                end=unique(end),
                                frac_elev_major_cn=unique(frac_elev_major_cn),
                                Nprobes = .N),
                           keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn, cf=cf,
@@ -149,6 +148,8 @@ get_gene_level_calls <- function(cncf_files,
 #                         keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
 #   }
 
+  ### If the segment is too long, set the gene to diploid
+  gene_level[as.numeric(seg.end-seg.start) > max_seg_length, c("tcn", "lcn") := list(2, 1)]
 
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
