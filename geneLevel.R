@@ -148,15 +148,16 @@ get_gene_level_calls <- function(cncf_files,
 #                         keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
 #   }
 
-  ### If the segment is too long, set the gene to diploid
-  gene_level[as.numeric(seg.end-seg.start) > max_seg_length, c("tcn", "lcn") := list(2, 1)]
-
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
 
   ### apply WGD threshold
   gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
   setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
+
+  ### If the segment is too long, set the gene to diploid
+  gene_level[as.numeric(seg.end-seg.start) > max_seg_length & WGD != "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(2, 1, 2, 1)]
+  gene_level[as.numeric(seg.end-seg.start) > max_seg_length & WGD == "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(4, 2, 4, 2)]
 
   ### focality requirement
   ### get (weighted) mean total copy number for the chromosome
