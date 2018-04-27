@@ -220,7 +220,7 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
       rcmat = readSnpMatrix(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
 
-      dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = CVAL,
+      dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = 25,
         gbuild = GENOME, hetscale = TRUE, unmatched = unmatched, ndepthmax = 1000)
 
       out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
@@ -240,7 +240,7 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
       chromLevels = select_genome(GENOME, SINGLE_CHROM)
 
-      dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=CVAL,chromlevels=chromLevels,ndepth=NDEPTH)
+      dat=preProcSample(COUNTS_FILE,snp.nbhd=SNP_NBHD,cval=25,chromlevels=chromLevels,ndepth=NDEPTH)
       out=procSample(dat,cval=CVAL,min.nhet=MIN_NHET,dipLogR=DIPLOGR)
 
       #seg_figure(out, DIRECTORY, TAG, chromLevels, CVAL) no need for this
