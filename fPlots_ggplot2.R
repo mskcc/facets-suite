@@ -356,7 +356,7 @@ get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh
 }
 
 
-#Standard facets output plot
+# Standard facets output plot
 plot.facets.all.output = function(out, fit, w=850, h=1100, type='png', load.genome=FALSE, main='', plotname='test',
   gene.name=NULL, lend='butt', em.plot = FALSE, subset.snps=FALSE) {
 
@@ -415,7 +415,7 @@ random.subset.snps = function(jointseg, by_factor=5) {
     subset.indices
 }
 
-#Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
+# Need to add this functionality so it can be callled by the wrapper, doFacets.R etc.
 close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend='butt', bed.path=NULL, subset.snps=FALSE, plotX = FALSE, ...){
 
   if (!is.null(bed.path)) { gene.info = get.gene.pos(gene.name, my.path = bed.path)
@@ -456,8 +456,8 @@ close.up = function(out, fit, chrom.range=NULL, method=NA, gene.name=NULL, lend=
   output_list
 }
 
-############################################################################################################################################
-############################################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 #Example Plot
 akt1.close.ups = function(chrom.range = 13:15, gene.name ='AKT1', w=13, h=8, plotname='proj_5513_wxs.pdf',type='pdf',method='cncf'){
