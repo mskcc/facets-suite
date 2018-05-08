@@ -99,11 +99,12 @@ def add_subparser(file, subparsers):
             #take "add_argument" to end of line
             python_code = line[add_argument_index:].rstrip()
             #take out "type" argument from R
-            fixed_code =re.sub("""type=['"]\S+['"],""","", python_code)
-            fixed_code = re.sub("""required=T""", """required=True""", fixed_code)
-            #problaly not needed unless someone is a jackass
-            fixed_code = re.sub("""required=F""", """required=False""", fixed_code)
+            fixed_code =re.sub("""type\s*=\s*['"]\S+['"],""","", python_code)
+            #probably not needed unless someone is a jackass
+            fixed_code = re.sub("""required\s*=\s*T""", """required=True""", fixed_code)
+            fixed_code = re.sub("""required\s*=\s*F""", """required=False""", fixed_code)
             fixed_code = re.sub("""default\s*=\s*F(alse|ALSE)?\s*,""", """""", fixed_code)
+            fixed_code = re.sub("""default\s*=\s*T(rue|RUE)?\s*,""", """""", fixed_code)
             python_code =  "parser." +fixed_code
             if python_code.find(")") == -1:
                 #multiline shit
