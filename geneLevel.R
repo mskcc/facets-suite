@@ -78,7 +78,8 @@ get_gene_level_calls <- function(cncf_files,
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
-                                 max_seg_length = 25000000, ### genes in segments longer than this will always be diploid
+                                 max_seg_length = 25000000, ### genes in segments longer than this will be treated as diploid
+                                 min_cf = 0.6, ### genes in segments with cell fraction less than this will be treated as diploid
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  fun.rename = function(filename){filename}){
 
@@ -155,9 +156,9 @@ get_gene_level_calls <- function(cncf_files,
   gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
   setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
 
-  ### If the segment is too long, set the gene to diploid
-  gene_level[as.numeric(seg.end-seg.start) > max_seg_length & WGD != "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(2, 1, 2, 1)]
-  gene_level[as.numeric(seg.end-seg.start) > max_seg_length & WGD == "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(4, 2, 4, 2)]
+  ### If the segment is too long or cell fraction too low, set the gene to diploid
+  gene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD != "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(2, 1, 2, 1)]
+  gene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD == "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(4, 2, 4, 2)]
 
   ### focality requirement
   ### get (weighted) mean total copy number for the chromosome
