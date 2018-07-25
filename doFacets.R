@@ -19,6 +19,22 @@ getSDIR <- function(){
     }
 }
 
+readSnpMatrix2<- function(pileup, err.thresh= Inf, del.thresh= Inf){
+	library(data.table)
+    rcmat<- fread(sprintf('gunzip -c %s', pileup),
+        select= c('Chromosome', 'Position', 'File1R', 'File1A', 'File1E', 'File1D',
+                                            'File2R', 'File2A', 'File2E', 'File2D'))
+    setnames(rcmat, c('File1R', 'File1A', 'File2R', 'File2A'),
+                    c('NOR.RD', 'NOR.DP', 'TUM.RD', 'TUM.DP'))
+    rcmat<- rcmat[File1E <= err.thresh & File2E <= err.thresh &
+                  File1D <= del.thresh & File2D <= del.thresh, list(Chromosome, Position, NOR.DP, NOR.RD, TUM.DP, TUM.RD)]
+    rcmat[, NOR.DP := NOR.DP + NOR.RD]
+    rcmat[, TUM.DP := TUM.DP + TUM.RD]
+    rcmat[, Chromosome := sub("chr", "", Chromosome, fixed= TRUE)]
+    setcolorder(rcmat, c('Chromosome', 'Position', 'NOR.DP', 'NOR.RD', 'TUM.DP', 'TUM.RD'))
+    setDF(rcmat)
+    return(rcmat)
+}
 
 ##########################################################################################
 ##########################################################################################
@@ -218,7 +234,7 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
     if (RLIB_VERSION >= '0.5.2') {
 
 
-      rcmat = readSnpMatrix(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
+      rcmat = readSnpMatrix2(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
 
       dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = 25,
         gbuild = GENOME, hetscale = TRUE, unmatched = unmatched, ndepthmax = 1000)
