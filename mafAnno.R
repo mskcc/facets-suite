@@ -95,12 +95,12 @@ main = function(maf, facets_files, file_type = 'Rdata'){
     maf = maf[maf$Tumor_Sample_Barcode %in% idi]
 
     if (file_type == 'Rdata') {
-        maf_list = lapply(idi, function(x) {
+        maf_list = mclapply(idi, function(x) {
             load(facets_files[x])
             annotate_maf_with_facets_cf_tcn_lcn(maf, out$dipLogR, fit, x)
-        })
+        }, mc.cores = detectCores())
     } else if (file_type == 'cncf') {
-        maf_list = lapply(idi, function(x) { 
+        maf_list = mclapply(idi, function(x) { 
             fit = list()
             fit$cncf = fread(facets_files[x])
             out = system(paste('grep -P "Purity|dipLogR|Ploidy"',
@@ -111,7 +111,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
             fit$purity = as.numeric(out$Purity)
             fit$ploidy = as.numeric(out$Ploidy)
             annotate_maf_with_facets_cf_tcn_lcn(maf, out$dipLogR, fit, x)
-        })
+        }, mc.cores = detectCores())
     }
 
     if (length(no.facets)) { maf_list = c(maf_list, list(no.facets.data)) }
@@ -160,6 +160,7 @@ suppressPackageStartupMessages({
     library(data.table)
     library(argparse)
     library(stringr)
+    library(parallel)
     })
 
 if (!interactive()) {
