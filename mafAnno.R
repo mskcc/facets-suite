@@ -32,6 +32,18 @@ integer_cn_table = function(diplogr, fit) {
     dt
 }
 
+expected_alt_copies = function(t_var_freq, purity, tcn) { # from PMID 28270531
+    
+    if (tcn == 0) tcn = 1
+    
+    mu = t_var_freq * (1/purity) * (purity*tcn + (1-purity)*2)
+    alt_copies = case_when(
+        mu < 1 ~ 1,
+        mu >= 1 ~ abs(mu)
+    )
+    round(alt_copies)
+}
+
 annotate_maf_with_facets_cf_tcn_lcn = function(maf, diplogr, fit, iTumor_Sample_Barcode = NULL) {
 
     maf_cols = colnames(maf)
@@ -119,6 +131,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
 
     maf[, t_alt_count := as.numeric(t_alt_count)]
     maf[, t_ref_count := as.numeric(t_ref_count)]
+    maf[, expected_alt_copies := expected_alt_copies(t_var_freq, purity, tcn.em), by = seq_len(nrow(maf))]
 
     maf[, c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90") :=
             ccf.likelihood(purity, # CCF estimates if mutation on mcn, cncf algorithm
@@ -128,7 +141,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
                                          copies=(tcn-lcn)),
         by = 1:nrow(maf)]
 
-    maf[, c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90") :=
+    maf[, c("ccf_1copy", "ccf_1copy_lower", "ccf_1copy_upper", "ccf_1copy_prob95", "ccf_1copy_prob90") :=
             ccf.likelihood(purity, # CCF estimates if mutation in 1 copy, cncf algorithm
                                          tcn,
                                          t_alt_count,
@@ -144,12 +157,20 @@ main = function(maf, facets_files, file_type = 'Rdata'){
                                        copies=(tcn.em-lcn.em)),
         by= 1:nrow(maf)]
 
-    maf[, c("ccf_Mcopies_em", "ccf_Mcopies_lower_em", "ccf_Mcopies_upper_em", "ccf_Mcopies_prob95_em", "ccf_Mcopies_prob90_em") :=
+    maf[, c("ccf_Mcopies_em", "ccf_1copy_lower_em", "ccf_1copy_upper_em", "ccf_1copy_prob95_em", "ccf_1copy_prob90_em") :=
             ccf.likelihood(purity, # ditto for em algorithm, 1 copy
                                        tcn.em,
                                        t_alt_count,
                                        (t_alt_count + t_ref_count),
                                        copies=1),
+        by= 1:nrow(maf)]
+    
+    maf[, c("ccf_expected_copies_em", "ccf_expected_lower_em", "ccf_expected_upper_em", "ccf_expected_prob95_em", "ccf_expected_prob90_em") :=
+            ccf.likelihood(purity, # ditto for em algorithm, 1 copy
+                           tcn.em,
+                           t_alt_count,
+                           (t_alt_count + t_ref_count),
+                           copies=expected_alt_copies),
         by= 1:nrow(maf)]
 
    maf
