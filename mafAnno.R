@@ -133,6 +133,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
 
     maf[, t_alt_count := as.numeric(t_alt_count)]
     maf[, t_ref_count := as.numeric(t_ref_count)]
+    maf[, t_var_freq := t_alt_count/(t_alt_count+t_ref_count)]
     maf[, expected_alt_copies := expected_alt_copies(t_var_freq, purity, tcn.em), by = seq_len(nrow(maf))]
 
     maf[, c("ccf_Mcopies", "ccf_Mcopies_lower", "ccf_Mcopies_upper", "ccf_Mcopies_prob95", "ccf_Mcopies_prob90") :=
