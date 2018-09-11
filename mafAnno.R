@@ -34,14 +34,16 @@ integer_cn_table = function(diplogr, fit) {
 
 expected_alt_copies = function(t_var_freq, purity, tcn) { # from PMID 28270531
     
-    if (tcn == 0) tcn = 1
+    if (is.na(tcn)) {
+        NA
+    } else {
+
+        if (tcn == 0) tcn = 1
     
-    mu = t_var_freq * (1/purity) * (purity*tcn + (1-purity)*2)
-    alt_copies = case_when(
-        mu < 1 ~ 1,
-        mu >= 1 ~ abs(mu)
-    )
-    round(alt_copies)
+        mu = t_var_freq * (1/purity) * (purity*tcn + (1-purity)*2)
+        alt_copies = ifelse(mu < 1, 1, abs(mu)) # mu < 1 ~ 1, mu >= 1 ~ abs(mu)
+        round(alt_copies)
+    }
 }
 
 annotate_maf_with_facets_cf_tcn_lcn = function(maf, diplogr, fit, iTumor_Sample_Barcode = NULL) {
