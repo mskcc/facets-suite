@@ -33,13 +33,13 @@ integer_cn_table = function(diplogr, fit) {
 }
 
 expected_alt_copies = function(t_var_freq, purity, tcn) { # from PMID 28270531
-    
+
     if (is.na(tcn)) {
-        NA
+        NA_real_
     } else {
 
         if (tcn == 0) tcn = 1
-    
+
         mu = t_var_freq * (1/purity) * (purity*tcn + (1-purity)*2)
         alt_copies = ifelse(mu < 1, 1, abs(mu)) # mu < 1 ~ 1, mu >= 1 ~ abs(mu)
         round(alt_copies)
@@ -167,7 +167,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
                                        (t_alt_count + t_ref_count),
                                        copies=1),
         by= 1:nrow(maf)]
-    
+
     maf[, c("ccf_expected_copies_em", "ccf_expected_lower_em", "ccf_expected_upper_em", "ccf_expected_prob95_em", "ccf_expected_prob90_em") :=
             ccf.likelihood(purity, # ditto for em algorithm, 1 copy
                            tcn.em,
