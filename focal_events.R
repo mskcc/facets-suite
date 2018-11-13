@@ -253,35 +253,35 @@ find_events = function(rdata,
             fc_chrom = ifelse(logr0_chrom < 0, -2^(logr0_chrom), 2^(logr0_chrom))
             
             # also, test intragenic
-            intergenic_snps = g_snps[between(cnlr, quantile(g_snps$cnlr, .1), quantile(g_snps$cnlr, .9))]
-            if (nrow(intergenic_snps) >= 5) {
-                if (mean(intergenic_snps$cnlr) > mean(cn0_snps$cnlr)) {
-                    p_intergenic = 1 - pnorm(
-                        mean(intergenic_snps$cnlr),
+            intragenic_snps = g_snps[between(cnlr, quantile(g_snps$cnlr, .1), quantile(g_snps$cnlr, .9))]
+            if (nrow(intragenic_snps) >= 5) {
+                if (mean(intragenic_snps$cnlr) > mean(cn0_snps$cnlr)) {
+                    p_intragenic = 1 - pnorm(
+                        mean(intragenic_snps$cnlr),
                         mean = mean(cn0_snps$cnlr),
                         sd = sd(cn0_snps$cnlr),
                         lower.tail = T)
                 } else {
-                    p_intergenic = pnorm(
-                        mean(intergenic_snps$cnlr),
+                    p_intragenic = pnorm(
+                        mean(intragenic_snps$cnlr),
                         mean = mean(cn0_snps$cnlr),
                         sd = sd(cn0_snps$cnlr),
                         lower.tail = T)
                 }
                 
-                logr0_diplogr_intergenic = mean(intergenic_snps$cnlr) - mean(cn0_snps$cnlr)
-                fc_diplogr_intergenic = ifelse(logr0_diplogr_intergenic < 0,
-                                               -2^(-logr0_diplogr_intergenic),
-                                               2^(logr0_diplogr_intergenic))
+                logr0_diplogr_intragenic = mean(intragenic_snps$cnlr) - mean(cn0_snps$cnlr)
+                fc_diplogr_intragenic = ifelse(logr0_diplogr_intragenic < 0,
+                                               -2^(-logr0_diplogr_intragenic),
+                                               2^(logr0_diplogr_intragenic))
                 
                 tibble(gene = g,
                        chrom = unique(g_coords$chrom),
                        fold_change_gene = fc_diplogr,
                        pval_gene = p_diplogr,
-                       fold_change_intergenic = fc_diplogr_intergenic,
-                       pval_intergenic = p_intergenic,
+                       fold_change_intragenic = fc_diplogr_intragenic,
+                       pval_intragenic = p_intragenic,
                        pos = paste0(g_snps$maploc, collapse = ','),
-                       pos_intergenic = paste0(intergenic_snps$maploc, collapse = ','))
+                       pos_intragenic = paste0(intragenic_snps$maploc, collapse = ','))
             } else {
                 tibble(gene = g,
                        chrom = unique(g_coords$chrom),
@@ -296,10 +296,10 @@ find_events = function(rdata,
     
     # multiple hypothesis testing correction and mark significant changes
     gmat$padj_gene = p.adjust(gmat$pval_gene, method = 'BH') 
-    gmat$padj_intergenic = p.adjust(gmat$pval_intergenic, method = 'BH')
+    gmat$padj_intragenic = p.adjust(gmat$pval_intragenic, method = 'BH')
     gmat = mutate(gmat,
                   signif = (fold_change_gene >= 6 | fold_change_gene < -2) & padj_gene < .05,
-                  signif_intergenic = (fold_change_intergenic >= 6 | fold_change_intergenic < -2) & padj_intergenic < .05)
+                  signif_intragenic = (fold_change_intragenic >= 6 | fold_change_intragenic < -2) & padj_intragenic < .05)
     
     # plot, write
     sample_name = str_extract(rdata, '(P-[0-9]{7}-T[0-9]{2}-IM[0-9]{1}|TCGA-[A-Z0-9]{2}-[A-Z0-9]{4})')
