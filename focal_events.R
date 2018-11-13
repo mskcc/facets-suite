@@ -14,8 +14,21 @@ suppressPackageStartupMessages({
 
 # Define functions ------------------------------------------------------------------------------------------------
 load_genes = function(ivs, genes = NULL) {
-    ivs = fread(ivs, header = F, col.names = c('chrom', 'start', 'end', 'strand', 'info')) %>% 
-        mutate(gene = str_extract(info, '^.*(?=\\:NM)')) %>% 
+    first_line = readLines(ivs, n = 1) %>% 
+        strsplit(., '\t') %>% 
+        unlist
+    
+    strand_ = which(first_line %in% c('+', '-'))[1]
+    info_ = which(first_line %like% 'NM|ENS|[A-Z]+')
+    
+    if (strand_ == 4 & info_ == 5) {
+        cols = c('chrom', 'start', 'end', 'strand', 'info')
+    } else if (strand_ == 6 & info_ == 4) {
+        cols = c('chrom', 'start', 'end', 'info', 'empty', 'strand')
+    }
+    
+    ivs = fread(ivs, header = F, col.names = cols) %>% 
+        mutate(gene = str_extract(info, '^[^\\:]+')) %>% 
         group_by(gene) %>% 
         filter(chrom %in% c(1:22, 'X')) %>% 
         mutate(exon = ifelse(strand == '+',
