@@ -94,3 +94,9 @@ optional arguments:
   -o OUTFILE, --outfile OUTFILE
                         output file (gzipped)
 ```
+
+
+### Citation
+If using `facets-suite` in a publication, please cite: \
+Bielski, C.M., et al. "Widespread Selection for Oncogenic Mutant Allele Imbalance in Cancer." Cancer cell (2018).
+[PMID: 30393068](https://www.ncbi.nlm.nih.gov/pubmed/30393068)
