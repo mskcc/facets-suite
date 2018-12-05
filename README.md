@@ -1,5 +1,10 @@
-## Helper scripts that wrap the FACETS CRAN Library
-![Facets is Great](https://i.imgur.com/vP2tUvM.jpg "Aww Yeah FACETS Time!")
+## Helper scripts that wrap the [FACETS R library](https://github.com/mskcc/facets)
+
+### Citation
+If using `facets-suite` in a publication, please cite:\
+Bielski, C.M., et al. "Widespread Selection for Oncogenic Mutant Allele Imbalance in Cancer." Cancer cell (2018).\
+[PMID: 30393068](https://www.ncbi.nlm.nih.gov/pubmed/30393068)
+
 ```
 usage: facets doFacets [-h] [-c CVAL] [-s SNP_NBHD] [-n NDEPTH] [-m MIN_NHET]
                        [-pc PURITY_CVAL] [-ps PURITY_SNP_NBHD]
@@ -94,8 +99,3 @@ optional arguments:
   -o OUTFILE, --outfile OUTFILE
                         output file (gzipped)
 ```
-
-### Citation
-If using `facets-suite` in a publication, please cite:\
-Bielski, C.M., et al. "Widespread Selection for Oncogenic Mutant Allele Imbalance in Cancer." Cancer cell (2018).\
-[PMID: 30393068](https://www.ncbi.nlm.nih.gov/pubmed/30393068)
