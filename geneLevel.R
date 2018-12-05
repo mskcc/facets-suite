@@ -196,6 +196,14 @@ convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
     portal_output
 }
 
+convert_gene_level_calls_to_matrix_ascna <- function(gene_level_calls){
+    # gene_level_calls[is.na(gene_level_calls)] <- 'NA'
+    gene_level_calls$ascna <- paste0(gene_level_calls$tcn,';',gene_level_calls$lcn)
+    data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "ascna")]
+    ascna_output <- dcast(data_to_convert, Hugo_Symbol ~ Tumor_Sample_Barcode, value.var = "ascna" )
+    ascna_output[is.na(ascna_output)] <- 'NA;NA'
+    ascna_output
+}
 
 #####################################################################################
 #####################################################################################
@@ -242,7 +250,10 @@ if(!interactive()){
 
   if(tolower(method) == 'scna'){
     scna_outfile = gsub(".txt", ".scna.txt", outfile) 
+    ascna_outfile = gsub(".txt", ".ascna.txt", outfile) 
     portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
+    ascna_output = convert_gene_level_calls_to_matrix_ascna(gene_level_calls)
     write.text(portal_output, scna_outfile)
+    write.text(ascna_output, ascna_outfile)
   }
 }
