@@ -160,7 +160,7 @@ main = function(maf, facets_files, file_type = 'Rdata'){
                                        copies=(tcn.em-lcn.em)),
         by= 1:nrow(maf)]
 
-    maf[, c("ccf_Mcopies_em", "ccf_1copy_lower_em", "ccf_1copy_upper_em", "ccf_1copy_prob95_em", "ccf_1copy_prob90_em") :=
+    maf[, c("ccf_1copy_em", "ccf_1copy_lower_em", "ccf_1copy_upper_em", "ccf_1copy_prob95_em", "ccf_1copy_prob90_em") :=
             ccf.likelihood(purity, # ditto for em algorithm, 1 copy
                                        tcn.em,
                                        t_alt_count,
