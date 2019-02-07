@@ -1,0 +1,25 @@
+*~
+# History files
+.Rhistory
+.Rapp.history
+
+# Example code in package build process
+*-Ex.R
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+*.pyc
+.Rproj.user
+
+# fix this somehow, ~50 Mb to large
+data/test_read_counts.rda
+
+# tmp dev files
+tmp/*
+
+
