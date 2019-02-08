@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
     library(gridExtra)
     library(dplyr)
     library(facets)
-    library(facetssuite)
+    library(facetsSuite)
     library(ggplot2)
     library(Cairo)
 })
@@ -19,7 +19,7 @@ parser$add_argument('-f', '--counts-file', required = T,
 parser$add_argument('-s', '--sample-id', required = F,
                     help = 'Sample ID, preferrable Tumor_Normal to keep track of the normal used')
 parser$add_argument('-D', '--directory', required = F,
-                    default = paste0('/sample_id'), help = 'Output directory [default %(default)s]')
+                    help = 'Output directory [default sample_id')
 parser$add_argument('-g', '--genome', required = F,
                     choices = c('hg18', 'hg19', 'hg38'),
                     default = 'hg19', help = 'Reference genome [default %(default)s]')
@@ -88,36 +88,23 @@ print_plots = function(outfile,
                         ' | ploidy=', round(facets_output$ploidy, 2),
                         ' | dipLogR=', round(facets_output$diplogr, 2))
     
-    # png(outfile, type = 'cairo', width = 850, height = 1100, units = 'px', res = 150)
     CairoPNG(file = outfile, width = 850, height = 999, units = 'px')
-    grid.arrange(
-        grobs = list(
-            cnlr_plot(facets_output),
-            valor_plot(facets_output),
-            icn_plot(facets_output, method = 'em'),
-            cf_plot(facets_output, method = 'em'),
-            icn_plot(facets_output, method = 'cncf'),
-            cf_plot(facets_output, method = 'cncf')
-        ),
-        ncol = 1,
-        nrow = 6,
-        heights = c(1, 1, 1, .25, 1, .25),
-        top = textGrob(plot_title))
-    # ggarrange(
-    #     plots = list(
-    #         cnlr_plot(facets_output),
-    #         valor_plot(facets_output),
-    #         icn_plot(facets_output, method = 'em'),
-    #         cf_plot(facets_output, method = 'em'),
-    #         icn_plot(facets_output, method = 'cncf'),
-    #         cf_plot(facets_output, method = 'cncf')
-    #         ),
-    #     top = textGrob(plot_title),
-    #     ncol = 1,
-    #     heights = c(1, 1, 1, .25, 1, .25)
-    # )
-    dev.off()
-    # ggsave(filename = outfile, plot = pp, width = 8.5, height = 11, type = 'cairo')
+    suppressWarnings(
+        grid.arrange(
+            grobs = list(
+                cnlr_plot(facets_output),
+                valor_plot(facets_output),
+                icn_plot(facets_output, method = 'em'),
+                cf_plot(facets_output, method = 'em'),
+                icn_plot(facets_output, method = 'cncf'),
+                cf_plot(facets_output, method = 'cncf')
+            ),
+            ncol = 1,
+            nrow = 6,
+            heights = c(1, 1, 1, .25, 1, .25),
+            top = textGrob(plot_title))
+    )
+     dev.off()
 }
 
 # Print segmentation
@@ -178,12 +165,11 @@ facets_iteration = function(name_prefix, ...) {
 # Run -------------------------------------------------------------------------------------------------------------
 
 # Name files and create output directory
-args$directory = gsub('[\\/]$', '', args$directory)
 if (is.null(args$sample_id)) args$sample_id = gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
 if (is.null(args$directory)) {
     args$directory = paste0(getwd(), '/', args$sample_id)
 } else {
-    args$directory = paste0(args$directory, '/', args$sample_id)
+    args$directory = paste0(gsub('[\\/]$', '', args$directory), '/', args$sample_id)
 }
 
 if (dir.exists(args$directory)) {
@@ -191,6 +177,9 @@ if (dir.exists(args$directory)) {
 } else {
     system(paste('mkdir', args$directory))
 }
+
+message(paste('Reading', args$counts_file))
+message(paste('Writing to', args$directory))
 
 # Read SNP counts file
 read_counts = read_snp_matrix(args$counts_file)
@@ -218,6 +207,10 @@ if (!is.null(args$purity_cval)) {
                                      min_nhet = args$purity_min_nhet,
                                      genome = args$genome,
                                      seed = args$seed)
+    
+    saveRDS(purity_output, paste0(args$directory, '/', args$sample_id, '_purity', '.rds'))
+    saveRDS(hisens_output, paste0(args$directory, '/', args$sample_id, '_hisens', '.rds'))
+    
 } else {
     output = facets_iteration(name_prefix = paste0(args$directory, '/', args$sample_id), 
                               sample_id = args$sample_id,
@@ -227,4 +220,5 @@ if (!is.null(args$purity_cval)) {
                               min_nhet = args$min_nhet,
                               genome = args$genome,
                               seed = args$seed)
+    saveRDS(output, paste0(args$directory, '/', args$sample_id, '.rds'))
 }

@@ -8,13 +8,11 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj*
 
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
-
-*.pyc
-.Rproj.user
 
 # fix this somehow, ~50 Mb to large
 data/test_read_counts.rda

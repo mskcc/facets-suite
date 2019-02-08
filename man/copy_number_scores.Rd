@@ -3,14 +3,50 @@
 \name{copy_number_scores}
 \alias{copy_number_scores}
 \alias{calculate_fcna}
-\title{Calculate copy-number based scores}
+\alias{calculate_ntai}
+\alias{calculate_lst}
+\alias{calculate_hrdloh}
+\title{Copy-number based scores}
+\source{
+\url{https://www.ncbi.nlm.nih.gov/pubmed/29622463}
+
+\url{https://www.ncbi.nlm.nih.gov/pubmed/26015868}
+}
 \usage{
-calculate_fcna(segs, ploidy, genome = c("hg18", "hg19", "grch38"),
+calculate_fcna(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"))
+
+calculate_ntai(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"), min_size = 0, min_probes = 250)
+
+calculate_lst(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"), min_size = 1e+07, min_probes = 50)
+
+calculate_hrdloh(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
   algorithm = c("em", "cncf"))
 }
 \arguments{
-\item{algorithm}{}
+\item{segs}{FACETS segmentation output.}
+
+\item{ploidy}{Sample ploidy.}
+
+\item{genome}{Genome build.}
+
+\item{algorithm}{Choice between FACETS \code{em} and \code{cncf} algorithm.}
+
+\item{min_size}{Minimum length of segment, as defined per function.}
+
+\item{min_probes}{Minimum number of SNPs per segment, as defined per function.}
+}
+\value{
+`data.frame` with one or more values from function.
 }
 \description{
-Calculate copy-number based scores
+Calculate the following 
+\itemize{
+ \item{Copy-number statistics:} {Fraction of genome altered, altered chromosome arms and genome doubling flag.}
+ \item{LST score:} {Large-scale state transitions, see source URL.}
+ \item{NtAI:} {Telomeric allelic imbalance, see source URL.}
+ \item{HRD-LOH:} {HRD-LOH score, see source URL.}
+}
 }

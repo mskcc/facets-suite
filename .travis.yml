@@ -1,0 +1,20 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: r
+sudo: false
+cache: packages
+latex: false
+
+r_github_packages:
+  - jimhester/lintr
+
+warnings_are_errors: true
+
+notifications:
+    email:
+    on_success: change
+    on_failure: always
+
+after_success:
+    - Rscript -e 'covr::codecov()'
+    - Rscript -e 'lintr::lint_package()'

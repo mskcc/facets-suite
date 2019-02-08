@@ -10,14 +10,14 @@
 #'
 #' @return Count matrix.
 #' 
-#' @import data.table
+#' @importFrom data.table fread :=
 
 #' @export
 read_snp_matrix = function(input_file,
                            err.thresh = 10,
                            del.thresh = 10) {
-    read_counts = data.table::fread(cmd = paste('gunzip -c', input_file), key = c('Chromosome', 'Position'))
     
+    read_counts = data.table::fread(cmd = paste('gunzip -c', input_file), key = c('Chromosome', 'Position'))
     read_counts = read_counts[File1E <= err.thresh & File2E <= err.thresh &
                               File1D <= del.thresh & File2D <= del.thresh &
                               !Chromosome %in% c('MT', 'chrM', 'Y', 'chrY')]

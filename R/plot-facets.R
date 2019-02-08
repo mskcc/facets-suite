@@ -4,7 +4,7 @@
 #' \itemize{
 #'  \item{Log-ratio:} {Copy-number segmentation based on tumor-normal read coverage comparison.}
 #'  \item{Allelic imbalance:} {Allelic imbalance based on somatic changes in zygosity of heterozygous SNPs in the normal.}
-#'  \item{Integer copy number:} {Inference of the major and minor copu number states based on the tumor-normal log ratio and allelic content.}
+#'  \item{Integer copy number:} {Inference of the major and minor copy-number states based on the tumor-normal log ratio and allelic content.}
 #'  \item{Cellular fraction:} {Estimate of fraction of cells in sample harboring each segment.}
 #' }
 #'
@@ -20,6 +20,7 @@
 #' @return \code{ggplot2} objects.
 #' 
 #' @import ggplot2
+#' @importFrom grDevices colorRampPalette
 #'
 #' @name plot_facets
 NULL
@@ -27,14 +28,13 @@ NULL
 #' @export
 #' @rdname plot_facets
 cnlr_plot = function(facets_data,
-                     cols = c('#0080FF','#4CC4FF'),
+                     cols = c('#0080FF', '#4CC4FF'),
                      subset_indices = NULL,
                      plotX = FALSE,
-                     genome = c('hg19', 'hg18'),
+                     genome = c('hg19', 'hg18', 'hg38'),
                      gene_pos = NULL,
-                     adjust_diplogr = TRUE
-                     ) {
-
+                     adjust_diplogr = TRUE) {
+    
     snps = facets_data$snps
     segs = facets_data$segs
     diplogr = facets_data$diplogr
@@ -59,7 +59,7 @@ cnlr_plot = function(facets_data,
         snps = mat[subset_indices, ]
     }
     
-    pt_cols = cols[c(snps$chrom %% 2)+1]
+    pt_cols = cols[c(snps$chrom %% 2) + 1]
     ymin = floor(min(segs$cnlr.median, na.rm = T))
     ymax = ceiling(max(segs$cnlr.median, na.rm = T))
     if (ymin > -3) ymin = -3
@@ -91,9 +91,11 @@ cnlr_plot = function(facets_data,
               plot.margin = unit(c(0, 1, 0, 0), 'lines'))
     
     # if highligthing gene
-    if(!is.null(gene_pos)) {
+    if (!is.null(gene_pos)) {
         snps$gene = FALSE
-        snps$gene[which(snps$chrom == gene.pos$chrom & snps$maploc >= gene_pos$start & snps$maploc <= gene_pos$end)] = TRUE
+        snps$gene[which(snps$chrom == gene.pos$chrom &
+                            snps$maploc >= gene_pos$start &
+                            snps$maploc <= gene_pos$end)] = TRUE
         cnlr = cnlr + geom_vline(xintercept = gene_pos$mid, color = 'palevioletred1') +
             geom_point(data = subset(snps, gene == T), aes(y = cnlr, x = chr_maploc), color = '#525252', size = .4) 
     } else {
@@ -104,10 +106,10 @@ cnlr_plot = function(facets_data,
 #' @export
 #' @rdname plot_facets
 valor_plot = function(facets_data,
-                      cols = c('#0080FF','#4CC4FF'),
+                      cols = c('#0080FF', '#4CC4FF'),
                       subset_indices = NULL,
                       plotX = FALSE,
-                      genome = c('hg19', 'hg18'),
+                      genome = c('hg19', 'hg18', 'hg38'),
                       gene_pos = NULL) {
     
     snps = facets_data$snps
@@ -123,7 +125,7 @@ valor_plot = function(facets_data,
     centromeres = snps$centromeres
     snps = snps$snps
     
-    snps$mafr = rep(segs$mafR, segs$num.mark)
+    snps$mafr = rep(sqrt(abs(segs$mafR)), segs$num.mark)
     
     starts = cumsum(c(1, segs$num.mark))[1:length(segs$num.mark)]
     ends = cumsum(c(segs$num.mark))
@@ -134,7 +136,7 @@ valor_plot = function(facets_data,
         snps = mat[subset_indices, ]
     }
     
-    pt_cols = cols[c(snps$chrom %% 2)+1]
+    pt_cols = cols[c(snps$chrom %% 2) + 1]
     
     # plot
     valor = ggplot(snps) +
@@ -157,9 +159,11 @@ valor_plot = function(facets_data,
               plot.margin = unit(c(0, 1, 0, 0), 'lines'))
     
     # if highligthing gene
-    if(!is.null(gene_pos)) {
+    if (!is.null(gene_pos)) {
         snps$gene = FALSE
-        snps$gene[which(snps$chrom == gene.pos$chrom & snps$maploc >= gene_pos$start & snps$maploc <= gene_pos$end)] = TRUE
+        snps$gene[which(snps$chrom == gene.pos$chrom &
+                            snps$maploc >= gene_pos$start &
+                            snps$maploc <= gene_pos$end)] = TRUE
         valor + geom_vline(xintercept = gene_pos$mid, color = 'palevioletred1') +
             geom_point(data = subset(snps, gene == T), aes(y = cnlr, x = chr_maploc), color = '#525252', size = .4) 
     } else {
@@ -172,7 +176,7 @@ valor_plot = function(facets_data,
 cf_plot = function(facets_data,
                    method = c('em', 'cncf'),
                    plotX = FALSE,
-                   genome = c('hg19', 'hg18')) {
+                   genome = c('hg19', 'hg18', 'hg38')) {
     
     snps = facets_data$snps
     segs = facets_data$segs
@@ -186,12 +190,12 @@ cf_plot = function(facets_data,
     centromeres = snps$centromeres
     snps = snps$snps
     
-    if(method == 'em') {
-        cols = c(colorRampPalette(c('white', 'steelblue'))(10), 'papayawhip')[round(10 * segs$cf.em + 0.501)]
+    if (method == 'em') {
+        cols = c(grDevices::colorRampPalette(c('white', 'steelblue'))(10), 'papayawhip')[round(10 * segs$cf.em + 0.501)]
         my_ylab = 'CF (EM)'
     } else if (method == 'cncf') {
         my_ylab = 'CF (CNCF)'
-        cols = c(colorRampPalette(c('white', 'steelblue'))(10), 'papayawhip')[round(10 * segs$cf + 0.501)]
+        cols = c(grDevices::colorRampPalette(c('white', 'steelblue'))(10), 'papayawhip')[round(10 * segs$cf + 0.501)]
     }
     
     starts = cumsum(c(1, segs$num.mark))[1:length(segs$num.mark)]
@@ -201,7 +205,7 @@ cf_plot = function(facets_data,
         geom_rect(aes(xmin = starts, xmax = ends, ymax = 1, ymin = 0),
                   fill = cols, col = 'white', size = 0) +
         scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
-        scale_y_continuous(expand = c(0,0)) +
+        scale_y_continuous(expand = c(0, 0)) +
         labs(x = NULL, y = my_ylab) +
         theme_bw() +
         theme(axis.text.x = element_text(angle = 0, size = 8, color = 'black'),
@@ -210,11 +214,10 @@ cf_plot = function(facets_data,
               text = element_text(size = 10),
               panel.grid.major.y = element_blank(),
               panel.grid.minor.y = element_blank(),
-              panel.grid.major.x= element_blank(),
-              panel.grid.minor.x= element_blank(),
+              panel.grid.major.x = element_blank(),
+              panel.grid.minor.x = element_blank(),
               plot.margin = unit(c(0, 1, 0, 0), 'lines'))
     cf
-    
 }
 
 #' @export
@@ -222,7 +225,7 @@ cf_plot = function(facets_data,
 icn_plot = function(facets_data,
                     method = c('em', 'cncf'),
                     plotX = FALSE,
-                    genome = c('hg19', 'hg18'),
+                    genome = c('hg19', 'hg18', 'hg38'),
                     gene_pos = NULL) {
     
     snps = facets_data$snps
@@ -239,12 +242,12 @@ icn_plot = function(facets_data,
     
     if(method == 'em') {
         tcnscaled = segs$tcn.em
-        tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] = (5 + (tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] - 5)/3)
+        tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] = (5 + (tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] - 5) / 3)
         lcn = rep(segs$lcn.em, segs$num.mark)
         my_ylab = 'Integer copy number (EM)'        
     } else if (method == 'cncf') {
         tcnscaled = segs$tcn
-        tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] = (5 + (tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] - 5)/3)
+        tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] = (5 + (tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] - 5) / 3)
         lcn = rep(segs$lcn, segs$num.mark)
         my_ylab = 'Integer copy number (CNCF)'        
     }
@@ -266,7 +269,7 @@ icn_plot = function(facets_data,
         geom_segment(col = 'black', size = 1, 
                      aes(x = my_tcn_starts$chr_maploc, xend = my_tcn_ends$chr_maploc, 
                          y = my_tcn_starts$tcn, yend = my_tcn_ends$tcn)) +
-        scale_y_continuous(breaks=c(0:5, 5 + (1:35)/3), labels=0:40,limits = c(0, NA)) +
+        scale_y_continuous(breaks=c(0:5, 5 + (1:35) / 3), labels = 0:40, limits = c(0, NA)) +
         scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
         labs(x = NULL, y = my_ylab) +
         theme_bw() +
@@ -277,19 +280,19 @@ icn_plot = function(facets_data,
               panel.grid.major.x = element_line(colour = 'grey', size = 0),
               plot.margin = unit(c(0, 1, 0, 0), 'lines'))
 
-    if(!is.null(gene_pos)){
+    if(!is.null(gene_pos)) {
         icn + geom_vline(xintercept = gene_pos$mid, color = 'palevioletred1')
     } else {
         icn    
     }
 }
 
-get_cum_chr_maploc = function(snps, genome = c('hg19', 'hg18')) {
+get_cum_chr_maploc = function(snps, genome = c('hg19', 'hg18', 'hg38')) {
     
     genome = get(genome)
     
     cum_chrom_lengths = cumsum(as.numeric(genome$size))
-    mid = cum_chrom_lengths - (genome$size/2)
+    mid = cum_chrom_lengths - (genome$size / 2)
     names(mid) = 1:nrow(genome)
     centromeres = genome$centromere + c(0, cum_chrom_lengths[-length(cum_chrom_lengths)])
     

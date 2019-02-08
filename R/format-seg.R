@@ -2,7 +2,7 @@
 #'
 #' Format Facets output for viewing in IGV.
 #'
-#' @param out Facets out objet.
+#' @param out Facets out object.
 #' @param sample_id Sample name.
 #' 
 #' @importFrom dplyr group_by left_join summarize mutate select
@@ -11,6 +11,7 @@
 
 #' @export
 format_seg = function(facets_output, sample_id, normalize = TRUE) {
+    
     seg = group_by(facets_output$snps, chrom, seg) %>% 
         summarize(loc.start = min(maploc),
                   loc.end = max(maploc)) %>% 

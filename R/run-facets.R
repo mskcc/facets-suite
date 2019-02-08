@@ -7,7 +7,7 @@
 #' @param diplogr Manual dipLogR value, if left empty `facets` finds the most likely sample baseline.
 #' @param ndepth Minimum depth in normal to retain SNP, see `facets` help.
 #' @param snp_nbhd Minimum basepair distance for SNPs, see `facets` help.
-#' @param min_nhet Minimum number of heterozygous SNPs on segment required for clusterin, see `facets` help.
+#' @param min_nhet Minimum number of heterozygous SNPs on segment required for clustering, see `facets` help.
 #' @param genome Genome build.
 #' @param seed Seed value for random number generation, set to enable full reproducibility.
 #' @param rlib_path
@@ -29,9 +29,7 @@ run_facets = function(read_counts,
                       snp_nbhd = 250,
                       min_nhet = 15,
                       genome = c('hg18', 'hg19', 'hg38', 'mm9', 'mm10'),
-                      seed = 100,
-                      rlib_path = NULL
-) {
+                      seed = 100) {
     set.seed(seed)
     genome = match.arg(genome)
     

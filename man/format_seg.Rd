@@ -9,7 +9,7 @@ format_seg(facets_output, sample_id, normalize = TRUE)
 \arguments{
 \item{sample_id}{Sample name.}
 
-\item{out}{Facets out objet.}
+\item{out}{Facets out object.}
 }
 \value{
 Segmentation output formatted for IGV.

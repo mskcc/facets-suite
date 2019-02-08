@@ -1,0 +1,17 @@
+^codecov\.yml$
+^CRAN-RELEASE$
+^.*\.png$
+^.*\.gif$
+^\.travis\.yml$
+^[^/]+\.R$
+^travis-tool\.sh$
+^.*\.gz$
+^cran-comments\.md$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.lintr$
+^wercker\.yml$
+^[^/]+.Rmd$
+^revdep$
+^COPYING$
+^\.github$

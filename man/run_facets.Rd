@@ -19,7 +19,7 @@ run_facets(read_counts, cval = 100, diplogr = NULL, ndepth = 35,
 
 \item{snp_nbhd}{Minimum basepair distance for SNPs, see `facets` help.}
 
-\item{min_nhet}{Minimum number of heterozygous SNPs on segment required for clusterin, see `facets` help.}
+\item{min_nhet}{Minimum number of heterozygous SNPs on segment required for clustering, see `facets` help.}
 
 \item{genome}{Genome build.}
 

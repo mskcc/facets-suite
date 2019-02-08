@@ -13,8 +13,9 @@
 #' @param segs FACETS segmentation output.
 #' @param purity Sample purity estimate.
 #' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
-#'
-#' @import data.table
+#' 
+#' @importFrom data.table setDT foverlaps :=
+#' @importFrom stats dbinom
 #'
 #' @return MAF file annotated with clonality estimates for each mutation.
 
@@ -49,20 +50,21 @@ annotate_maf = function(maf,
     maf = maf[, c(original_cols, 'tcn', 'lcn'), with = FALSE]
     
     # Calculate CCFs
-    maf[, `:=`(
+    maf[, `:=` (
         purity = purity,
         t_alt_count = as.numeric(t_alt_count),
-        t_ref_count = as.numeric(t_ref_count),
-        t_depth = t_alt_count+t_ref_count,
-        t_var_freq = t_alt_count/t_depth
-        )]
+        t_ref_count = as.numeric(t_ref_count)
+    )]
+    maf[, t_depth := t_alt_count + t_ref_count]
+    maf[, t_var_freq := t_alt_count / t_depth]
     maf[, expected_alt_copies := expected_mutant_copies(t_var_freq, tcn, purity), by = seq_len(nrow(maf))]
     maf[, c('ccf_Mcopies', 'ccf_Mcopies_lower', 'ccf_Mcopies_upper', 'ccf_Mcopies_prob95', 'ccf_Mcopies_prob90') :=
-            estimate_ccf(purity, tcn, tcn-lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     maf[, c('ccf_1copy', 'ccf_1copy_lower', 'ccf_1copy_upper', 'ccf_1copy_prob95', 'ccf_1copy_prob90') :=
-            estimate_ccf(purity, tcn, tcn-lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
-    maf[, c('ccf_expected_copies', 'ccf_expected_copies_lower', 'ccf_expected_copies_upper', 'ccf_expected_copies_prob95', 'ccf_expected_copies_prob90') :=
-            estimate_ccf(purity, tcn, tcn-lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+    maf[, c('ccf_expected_copies', 'ccf_expected_copies_lower', 'ccf_expected_copies_upper',
+            'ccf_expected_copies_prob95', 'ccf_expected_copies_prob90') :=
+            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     as.data.frame(maf)
 }
 
@@ -77,23 +79,23 @@ estimate_ccf = function(purity,
     
     ccfs = seq(0.001, 1, 0.001)
     expected_vaf  = function(ccf, purity, total_copies) {
-        purity * ccf * mutant_copies / (2*(1 - purity) + purity * total_copies)
+        purity * ccf * mutant_copies / (2 * (1 - purity) + purity * total_copies)
     }
     
     probs = sapply(ccfs, function(c) {
-        dbinom(t_alt_count, t_depth, expected_vaf(c, purity, total_copies))
+        stats::dbinom(t_alt_count, t_depth, expected_vaf(c, purity, total_copies))
         })
-    probs = probs/sum(probs)
+    probs = probs / sum(probs)
     
     ccf_max = which.max(probs)
     if (identical(ccf_max, integer(0))) ccf_max = NA
-    ccf_half_max = which(probs > max(probs)/2)
+    ccf_half_max = which(probs > max(probs) / 2)
     ccf_lower = max(ccf_half_max[1] - 1, 1) # closest ccf value before half-max range (within 0-1 range)
     ccf_upper = min(ccf_half_max[length(ccf_half_max)] + 1, length(ccfs)) # closest ccf value after half-max range (within 0-1 range)
     if (is.na(purity)) ccf.upper = NA 
-    ccf_max = ccf_max/length(ccfs)
-    ccf_lower = ccf_lower/length(ccfs)
-    ccf_upper = ccf_upper/length(ccfs)
+    ccf_max = ccf_max / length(ccfs)
+    ccf_lower = ccf_lower / length(ccfs)
+    ccf_upper = ccf_upper / length(ccfs)
     prob95 = sum(probs[950:1000])
     prob90 = sum(probs[900:1000])
     
@@ -110,9 +112,8 @@ expected_mutant_copies = function(t_var_freq,
         NA_real_
     } else {
         if (total_copies == 0) total_copies = 1
-        mu = t_var_freq * (1/purity) * (purity*total_copies + (1-purity)*2)
+        mu = t_var_freq * (1 / purity) * (purity * total_copies + (1 - purity) * 2)
         alt_copies = ifelse(mu < 1, 1, abs(mu)) # mu < 1 ~ 1, mu >= 1 ~ abs(mu)
         round(alt_copies)
     }
 }
-

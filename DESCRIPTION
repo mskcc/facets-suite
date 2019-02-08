@@ -10,7 +10,17 @@ License: What license is it under?
 RoxygenNote: 6.1.1
 LazyData: true
 Encoding: UTF-8
-Imports: facets (>= 0.5.2), pctGCdata, data.table, dplyr, ggplot2
-Remotes: mskcc/facets, mskcc/pctGCdata
+Imports:
+    facets (>= 0.5.2),
+    pctGCdata (>= 0.3.0),
+    data.table,
+    dplyr,
+    ggplot2,
+    purrr
+Remotes:
+    mskcc/pctGCdata,
+    veseshan/pctGCdata
 NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp
+Suggests: 
+    covr

@@ -7,6 +7,9 @@
 #' @importFrom tibble tribble
 #' @importFrom readr read_tsv
 #' @importFrom purrr map_dfr map
+#' 
+#' @docType data
+#' 
 
 # Genome builds ---------------------------------------------------------------------------------------------------
 # extract_genome_info = function(url) {
