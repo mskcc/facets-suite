@@ -1,13 +1,12 @@
 #!/usr/bin/env Rscript --vanilla
 suppressPackageStartupMessages({
+    library(facetsSuite)
     library(argparse)
-    library(grid)
-    library(gridExtra)
     library(dplyr)
     library(facets)
-    library(facetsSuite)
     library(ggplot2)
     library(Cairo)
+    library(egg)
 })
 
 parser = ArgumentParser(description = 'Execute FACETS and generate various output, input SNP read counts from snp-pileup.')
@@ -90,8 +89,8 @@ print_plots = function(outfile,
     
     CairoPNG(file = outfile, width = 850, height = 999, units = 'px')
     suppressWarnings(
-        grid.arrange(
-            grobs = list(
+        egg::ggarrange(
+            plots = list(
                 cnlr_plot(facets_output),
                 valor_plot(facets_output),
                 icn_plot(facets_output, method = 'em'),
@@ -102,9 +101,9 @@ print_plots = function(outfile,
             ncol = 1,
             nrow = 6,
             heights = c(1, 1, 1, .25, 1, .25),
-            top = textGrob(plot_title))
+            top = plot_title)
     )
-     dev.off()
+    dev.off()
 }
 
 # Print segmentation

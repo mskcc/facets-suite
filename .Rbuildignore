@@ -1,3 +1,4 @@
+^data-raw$
 ^codecov\.yml$
 ^CRAN-RELEASE$
 ^.*\.png$

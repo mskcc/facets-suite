@@ -1,4 +1,5 @@
 # facetsSuite
+[![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
 [![Travis build status](https://travis-ci.org/mskcc/facets-suite.svg?branch=master)](https://travis-ci.org/mskcc/facets-suite)
 [![Coverage status](https://codecov.io/gh/mskcc/facets-suite/branch/master/graph/badge.svg)](https://codecov.io/github/mskcc/facets-suite?branch=master)
 
