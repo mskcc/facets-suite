@@ -5,7 +5,7 @@
 \alias{test_data}
 \alias{test_read_counts}
 \title{Test data}
-\format{An object of class \code{data.table} (inherits from \code{data.frame}) with 21608713 rows and 6 columns.}
+\format{An object of class \code{grouped_df} (inherits from \code{tbl_df}, \code{tbl}, \code{data.frame}) with 16206536 rows and 6 columns.}
 \source{
 \url{portal.gdc.cancer.gov}
 }
@@ -14,6 +14,6 @@ data(test_read_counts); data(test_facets_output); data(test_maf)
 }
 \description{
 Data for user and development testing, based on TCGA sample TCGA-06-0154.
-All data from GDC's data portal, processed as described below.
+All data from GDC's data portal, processed as described below. See script in `data-raw` for further descriptio.
 }
 \keyword{datasets}

@@ -2,56 +2,65 @@
 #' 
 #' Calculate the following 
 #' \itemize{
-#'  \item{Copy-number statistics:} {Fraction of genome altered, altered chromosome arms and genome doubling flag.}
+#'  \item{Fraction of genome altered:} {Fraction of genome altered and genome doubling flag.}
+#'  \item{Fraction LOH:} {Fraction of genome with LOH and flag for hypoploidy.}
 #'  \item{LST score:} {Large-scale state transitions, see source URL.}
 #'  \item{NtAI:} {Telomeric allelic imbalance, see source URL.}
 #'  \item{HRD-LOH:} {HRD-LOH score, see source URL.}
 #' }
 #'
 #' @param segs FACETS segmentation output.
+#' @param snps FACETS SNP output.
 #' @param ploidy Sample ploidy.
 #' @param genome Genome build.
 #' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
 #' @param min_size Minimum length of segment, as defined per function.
 #' @param min_probes Minimum number of SNPs per segment, as defined per function.
+#' @param hypoploidy_threshold Threshold for hypoploid call.
 #' 
-#' @source \url{https://www.ncbi.nlm.nih.gov/pubmed/29622463}
 #' @source \url{https://www.ncbi.nlm.nih.gov/pubmed/26015868}
 #'
-#' @return `data.frame` with one or more values from function.
+#' @return List with one or more values from function.
 #'
-#' @import dplyr
-#' @importFrom purrr map_dfr map_lgl discard
+#' @importFrom dplyr left_join summarize filter mutate group_by pull %>%
+#' @importFrom purrr map_dfr
+#' @importFrom diptest dip.test
+#' 
+#' @examples 
+#' calculate_fraction_cna(test_facets_output$segs, test_facets_output$ploidy, 'hg38', 'em')
+#' calculate_loh(test_facets_output$segs, test_facets_output$snps, 'hg38', 'em')
+#' calculate_lst(test_facets_output$segs, test_facets_output$ploidy, 'hg38', 'em')
+#' calculate_ntai(test_facets_output$segs, test_facets_output$ploidy, 'hg38', 'em')
+#' calculate_hrdloh(test_facets_output$segs, test_facets_output$ploidy, 'em')
 #' 
 #' @name copy_number_scores
 NULL
 
 #' @export 
 #' @rdname copy_number_scores
-calculate_fcna = function(segs,
-                          ploidy,
-                          genome = c('hg19', 'hg18', 'hg38'),
-                          algorithm = c('em', 'cncf')) {
+calculate_fraction_cna = function(segs,
+                                  ploidy,
+                                  genome = c('hg19', 'hg18', 'hg38'),
+                                  algorithm = c('em', 'cncf')) {
     
-    genome = match.arg(genome)
-    algorithm = match.arg(algorithm)
-
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = F)
+    
     # Centromere locations
-    genome = get(genome)
-
+    genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
+    
     # Create chrom_info for sample
     segs = parse_segs(segs, algorithm)
     sample_chrom_info = get_sample_genome(segs, genome)
-
+    
     # Calculated length of interrogated genome
     interrogated_genome = sum(sample_chrom_info$size)
     autosomal_genome = sum(sample_chrom_info$size[sample_chrom_info$chr %in% 1:22])
-
+    
     # Check for whole-genome duplication // PMID 30013179
     wgd_treshold = 0.5 # treshold
     frac_elevated_mcn = sum(segs$length[which(segs$mcn >= 2 & segs$chrom %in% 1:22)]) / autosomal_genome
     wgd = frac_elevated_mcn > wgd_treshold
-
+    
     # Calculate fraction of genome altered
     sample_ploidy = ifelse(wgd, round(ploidy), 2)
     if (!wgd) {
@@ -60,47 +69,62 @@ calculate_fcna = function(segs,
         diploid_length = sum(segs$length[which(segs$tcn == sample_ploidy & segs$lcn >= 1)])
     }
     frac_altered = (interrogated_genome - diploid_length) / interrogated_genome
-
-    # Altered arms, slightly adjusted to PMID 29622463
-    segs = left_join(segs, select(sample_chrom_info, chr, centromere), by = c('chrom' = 'chr'))
-    altered_arms = sapply(unique(segs$chrom), function(x) {
-        seg_p = segs[which(segs$chrom == x & segs$start < segs$centromere), ]
-        seg_p$end = ifelse(seg_p$end > seg_p$centromere, seg_p$centromere, seg_p$end)
-        seg_p$length = seg_p$end - seg_p$start
-        seg_q = segs[which(segs$chrom == x & segs$end > segs$centromere), ]
-        seg_q$start = ifelse(seg_q$start < seg_q$centromere, seg_q$centromere, seg_q$start)
-        seg_q$length = seg_q$end - seg_q$start
-
-        if (!wgd) {
-            seg_p_unaltered = sum(seg_p$length[which(seg_p$tcn == sample_ploidy & seg_p$lcn == 1)])
-            seg_q_unaltered = sum(seg_q$length[which(seg_q$tcn == sample_ploidy & seg_q$lcn == 1)])
-        } else if (wgd) {
-            seg_p_unaltered = sum(seg_p$length[which(seg_p$tcn == sample_ploidy & seg_p$lcn >= 1)])
-            seg_q_unaltered = sum(seg_q$length[which(seg_q$tcn == sample_ploidy & seg_q$lcn >= 1)])
-        }
-        paste0(paste0(x, c('p', 'q'))[c((sample_chrom_info$plength[sample_chrom_info$chr == x] - 
-                                             seg_p_unaltered) / sample_chrom_info$plength[sample_chrom_info$chr == x] > .8,
-                                        (sample_chrom_info$qlength[sample_chrom_info$chr == x] -
-                                             seg_q_unaltered) / sample_chrom_info$qlength[sample_chrom_info$chr == x] > .8) %>%
-                                          map_lgl(~ifelse(is.na(.), FALSE, .))], collapse = ',')
-    }
-    ) %>% strsplit(., ',') %>%
-        unlist %>%
-        discard(. %in% c('', '13p', '14p', '15p', '21p', '22p'))
-
-    # weighted fraction copy-number altered
-    frac_altered_w = select(sample_chrom_info, chr, p = plength, q = qlength) %>%
-        gather(arm, length, -chr) %>%
-        filter(!paste0(chr, arm) %in% c('13p', '14p', '15p', '21p', '22p')) %>%
-        summarize(sum(length[paste0(chr, arm) %in% altered_arms]) / sum(length)) %>%
-        as.numeric()
-
-    data.frame(
+    
+    list(
         genome_doubled = wgd,
-        fcna = frac_altered,
-        weighted_fcna = frac_altered_w,
-        aneuploidy_score = length(altered_arms),
-        altered_arms = paste0(altered_arms, collapse = ',')
+        fraction_cna = frac_altered
+    )
+}
+
+#' @export 
+#' @rdname copy_number_scores
+calculate_loh = function(segs,
+                         snps,
+                         genome = c('hg19', 'hg18', 'hg38'),
+                         algorithm = c('em', 'cncf'),
+                         hypoploidy_threshold = 0.5) {
+    
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
+    
+    # Centromere locations
+    genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
+    
+    # Create chrom_info for sample
+    segs = parse_segs(segs, algorithm) %>% 
+        filter(chrom %in% 1:22)
+    
+    # Fraction LOH
+    frac_loh = group_by(segs, chrom) %>% 
+        summarize(chrom_length = as.numeric(sum(length[!is.na(lcn)])),
+                  loh = as.numeric(sum(length[lcn == 0]))) %>% 
+        mutate(loh = ifelse(is.na(loh), 0, loh)) %>% 
+        summarize(fraction_loh = sum(loh, na.rm = TRUE)/sum(chrom_length),
+                  loh_chromosomes = paste(c(chrom[(loh / chrom_length) > 0.75]), collapse = ','))
+    
+    # Check for true hypoploidy
+    het_snps = filter(snps, het == 1) %>% 
+        left_join(segs, ., by = 'seg')
+    loh_snps = het_snps[het_snps$lcn == 0, ]
+    bal_snps = het_snps[which(het_snps$lcn == (het_snps$tcn / 2)), ]
+    gain_snps = het_snps[which(het_snps$lcn != (het_snps$tcn / 2) & het_snps$lcn > 0), ]
+    loh_test = diptest::dip.test(loh_snps$valor)$p.value
+    bal_test = diptest::dip.test(bal_snps$valor)$p.value
+    gain_test = diptest::dip.test(gain_snps$valor)$p.value
+    
+    if (loh_test < .05 & bal_test > 0.05 &
+        length(loh_snps) > 10 & length(bal_snps) > 10) {
+        hypo_test = TRUE
+    } else if (loh_test < .05 & bal_test > 0.05 &
+               length(loh_snps) > 10 & length(bal_snps) > 10) {
+        hypo_test = TRUE
+    } else {
+        hypo_test = F
+    }
+    
+    list(
+        fraction_loh = frac_loh$fraction_loh,
+        loh_chromosomes = frac_loh$loh_chromosomes,
+        hypoploid = hypo_test == TRUE & frac_loh$fraction_loh >= hypoploidy_threshold
     )
 }
 
@@ -113,11 +137,10 @@ calculate_ntai = function(segs,
                           min_size = 0,
                           min_probes = 250) {
     
-    genome = match.arg(genome)
-    algorithm = match.arg(algorithm)
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
     
     # Centromere locations
-    genome = get(genome)
+    genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
     
     # Create chrom_info for sample
     segs = parse_segs(segs, algorithm) %>% 
@@ -133,7 +156,7 @@ calculate_ntai = function(segs,
         if (nrow(chrom_seg) > 1) {
             chrom_seg = join_segments(chrom_seg)
         }
-        joined_segs = rbind(joined_segs, chrom_seg)
+        chrom_seg
     })
     
     # Add a column to call AI
@@ -186,7 +209,7 @@ calculate_ntai = function(segs,
     
     # Prepare return 
     segs_loh = segs[which(segs$lcn == 0), ]
-    data.frame(
+    list(
         ntelomeric_ai = nrow(segs[which(segs$AI == 1), ]), # telomeric AI
         telomeric_ai_mean_size = mean(segs$end[which(segs$AI == 1)] - segs$start[which(segs$AI == 1)]),
         ninterstitial_ai = nrow(segs[which(segs$AI == 2), ]), # interstitial AI
@@ -194,7 +217,7 @@ calculate_ntai = function(segs,
         ncentromeric_ai = nrow(segs[which(segs$AI == 3), ]), # chromosomal AI
         ntelomeric_loh = nrow(segs_loh[which(segs_loh$AI == 1), ]), # telomeric LOH
         telomeric_loh_mean_size = mean(segs_loh$end[which(segs_loh$AI == 1)] - segs_loh$start[which(segs_loh$AI == 1)]),
-        ninterstitial_loh = nrow(seg_loh[which(seg_loh$AI == 2), ]), # interstitial LOH
+        ninterstitial_loh = nrow(segs_loh[which(segs_loh$AI == 2), ]), # interstitial LOH
         interstitial_loh_mean_size = mean(segs_loh$end[which(segs_loh$AI == 2)] - segs_loh$start[which(segs_loh$AI == 2)]),
         ncentromeric_loh = nrow(segs_loh[which(segs_loh$AI == 3), ]) # chromosomal LOH
     ) 
@@ -209,11 +232,10 @@ calculate_lst = function(segs,
                          min_size = 10e6,
                          min_probes = 50) {
     
-    genome = match.arg(genome)
-    algorithm = match.arg(algorithm)
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
     
     # Centromere locations
-    genome = get(genome)
+    genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
     
     # Create chrom_info for sample
     segs = parse_segs(segs, algorithm) %>% 
@@ -238,7 +260,7 @@ calculate_lst = function(segs,
         # P arm
         # Smoothen 3-Mb segments
         n_3mb = which((p_arm$end-p_arm$start) < 3e6)
-        while(length(n_3mb) > 0) {
+        while (length(n_3mb) > 0) {
             p_arm = p_arm[-(n_3mb[1]), ] # non-juxtaposed segments will be removed, which is fine
             p_arm = join_segments(p_arm)
             n_3mb = which((p_arm$end - p_arm$start) < 3e6)
@@ -246,7 +268,7 @@ calculate_lst = function(segs,
         
         # Now check for LST
         if (nrow(p_arm) >= 2) { # if more than one segment
-            p_arm = cbind(p_arm, c(0, 1)[match((p_arm$end - p_arm$start) >= min_length, c('FALSE', 'TRUE'))]) # mark segments that pass length test
+            p_arm = cbind(p_arm, c(0, 1)[match((p_arm$end - p_arm$start) >= min_size, c('FALSE', 'TRUE'))]) # mark segments that pass length test
             for (k in 2:nrow(p_arm)) {
                 if (p_arm[k, ncol(p_arm)] == 1 & p_arm[(k - 1), ncol(p_arm)] == 1 &
                     (p_arm[k, 'start'] - p_arm[(k-1), 'end']) < 3e6) { # if two juxtaposed segments are 10 Mb and the space between them is less than 3 Mb...
@@ -258,7 +280,7 @@ calculate_lst = function(segs,
         # Q arm
         # Smoothen 3-Mb segments
         n_3mb = which((q_arm$end-q_arm$start) < 3e6)
-        while(length(n_3mb) > 0) {
+        while (length(n_3mb) > 0) {
             q_arm = q_arm[-(n_3mb[1]), ] # non-juxtaposed segments will be removed, which is fine
             q_arm = join_segments(q_arm)
             n_3mb = which((q_arm$end - q_arm$start) < 3e6)
@@ -266,7 +288,7 @@ calculate_lst = function(segs,
         
         # Now check for LST
         if (nrow(q_arm) >= 2) { # if more than one segment
-            q_arm = cbind(q_arm, c(0, 1)[match((q_arm$end - q_arm$start) >= min_length, c('FALSE', 'TRUE'))]) # mark segments that pass length test
+            q_arm = cbind(q_arm, c(0, 1)[match((q_arm$end - q_arm$start) >= min_size, c('FALSE', 'TRUE'))]) # mark segments that pass length test
             for (k in 2:nrow(q_arm)) {
                 if (q_arm[k, ncol(q_arm)] == 1 & q_arm[(k-1), ncol(q_arm)] == 1 &
                     (q_arm[k, 'start'] - q_arm[(k-1), 'end']) < 3e6){ # if two juxtaposed segments are 10 Mb and the space between them is less than 3 Mb...
@@ -277,17 +299,18 @@ calculate_lst = function(segs,
     }
     
     # Return values
-    data.frame(lst = lst)
+    list(lst = lst)
 }
 
 #' @export 
 #' @rdname copy_number_scores
 calculate_hrdloh = function(segs,
                             ploidy,
-                            genome = c('hg19', 'hg18', 'hg38'),
                             algorithm = c('em', 'cncf')) {
     
-    segs = filter(segs, chrom %in% 1:22)
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
+    segs = parse_segs(segs, algorithm) %>% 
+        filter(chrom %in% 1:22)
     
     chr_del = vector()
     for (j in unique(segs$chrom)) {
@@ -303,11 +326,14 @@ calculate_hrdloh = function(segs,
     segs_loh = segs_loh[!which(segs_loh$chrom %in% chr_del), ] # remove if whole chromosome lost
     
     # Return values
-    data.frame(hrd_loh = nrow(segs_loh))
+    list(hrd_loh = nrow(segs_loh))
 }
 
 # Helper functions ------------------------------------------------------------------------------------------------
 parse_segs = function(segs, algorithm = c('em', 'cncf')) {
+    
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
+    
     if (algorithm == 'em') {
         segs$tcn = segs$tcn.em
         segs$lcn = segs$lcn.em
@@ -319,7 +345,7 @@ parse_segs = function(segs, algorithm = c('em', 'cncf')) {
 }
 
 get_sample_genome = function(segs, genome) {
-    ldply(unique(segs$chrom), function(x) {
+    map_dfr(unique(segs$chrom), function(x) {
         centromere = genome$centromere[which(genome$chrom == x)]
         chrstart = min(segs$start[which(segs$chrom == x)])
         chrend = max(segs$end[which(segs$chrom == x)])
@@ -327,14 +353,17 @@ get_sample_genome = function(segs, genome) {
         plength = centromere - chrstart
         if (plength < 0) plength = 0 # acrocentric chromosomes
         qlength = chrend - centromere
-        c(chr = x,
-          centromere = centromere,
-          chrstart = chrstart,
-          chrend = chrend,
-          size = size,
-          plength = plength,
-          qlength = qlength)
-    })
+        data.frame(
+            chr = x,
+            centromere = centromere,
+            chrstart = chrstart,
+            chrend = chrend,
+            size = size,
+            plength = plength,
+            qlength = qlength
+        )
+    }
+    )
 }
 
 # Join segments with identical copy number that are separated for some reason

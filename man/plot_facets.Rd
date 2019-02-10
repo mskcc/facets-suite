@@ -6,38 +6,50 @@
 \alias{valor_plot}
 \alias{cf_plot}
 \alias{icn_plot}
+\alias{closeup_plot}
 \title{Plot FACETS output}
 \usage{
-cnlr_plot(facets_data, cols = c("#0080FF", "#4CC4FF"),
-  subset_indices = NULL, plotX = FALSE, genome = c("hg19", "hg18",
-  "hg38"), gene_pos = NULL, adjust_diplogr = TRUE)
+cnlr_plot(facets_data, cols = c("#0080FF", "#4CC4FF"), plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
+  adjust_diplogr = TRUE, subset_snps = NULL, return_object = FALSE)
 
-valor_plot(facets_data, cols = c("#0080FF", "#4CC4FF"),
-  subset_indices = NULL, plotX = FALSE, genome = c("hg19", "hg18",
-  "hg38"), gene_pos = NULL)
+valor_plot(facets_data, cols = c("#0080FF", "#4CC4FF"), plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
+  subset_snps = NULL, return_object = FALSE)
 
 cf_plot(facets_data, method = c("em", "cncf"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"))
+  genome = c("hg19", "hg18", "hg38"), return_object = FALSE)
 
 icn_plot(facets_data, method = c("em", "cncf"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"), gene_pos = NULL)
+  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
+  return_object = FALSE)
+
+closeup_plot(facets_data, highlight_gene = NULL, plot_chroms = NULL,
+  method = c("em", "cncf"), genome = c("hg19", "hg18", "hg38"),
+  return_object = FALSE)
 }
 \arguments{
 \item{facets_data}{Output object from \code{run_facets}.}
 
 \item{cols}{Vector of two colors for alternating chromosomes.}
 
-\item{subset_indices}{???.}
-
 \item{plotX}{Plot chromosome X.}
 
 \item{genome}{Genome build.}
 
-\item{gene_pos}{Highlight gene.}
+\item{highlight_gene}{Highlight gene(s), provide gene symbol or mapped positions (internally).}
 
 \item{adjust_diplogr}{Normalize by sample dipLogR.}
 
+\item{subset_snps}{Subset the SNP profile to reduce weight of plotting, supply a factor by which to reduce or \code{TRUE} for default.}
+
+\item{return_object}{If \code{TRUE}, returns \code{ggplot2} object instead of printing plot.}
+
 \item{method}{When available, choose between plotting solution from \code{em} or \code{cncf} algorithm.}
+
+\item{plot_chroms}{Chromosomes to plot when using \code{closeup_plot}.}
+
+\item{subset_indices}{???.}
 }
 \value{
 \code{ggplot2} objects.

@@ -10,13 +10,14 @@
 #' @param min_nhet Minimum number of heterozygous SNPs on segment required for clustering, see `facets` help.
 #' @param genome Genome build.
 #' @param seed Seed value for random number generation, set to enable full reproducibility.
-#' @param rlib_path
 #'
 #' @return A list object with \code{out} and \code{fit} objects from Facets run.
 #'
 #' @examples
+#' \dontrun{
 #' library(pctGCdata)
 #' run_facets(test_read_counts, cval = 500, genome = 'hg38')
+#' }
 #' 
 #' @import facets
 #' @import pctGCdata
@@ -30,6 +31,10 @@ run_facets = function(read_counts,
                       min_nhet = 15,
                       genome = c('hg18', 'hg19', 'hg38', 'mm9', 'mm10'),
                       seed = 100) {
+    
+    # Check input 
+    check_read_counts(read_counts)
+    
     set.seed(seed)
     genome = match.arg(genome)
     
@@ -59,3 +64,15 @@ run_facets = function(read_counts,
     )
 }
 
+
+# Helper functions ------------------------------------------------------------------------------------------------
+
+# Check input, can be more elaborate
+check_read_counts = function(rc) {
+    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'),
+                           names(rc)) 
+    
+    if (length(missing_cols) > 0) {
+        stop(paste('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
+    }
+}

@@ -2,23 +2,28 @@ Package: facetsSuite
 Type: Package
 Title: What the package does (short line)
 Version: 1.0
-Date: 2018-12-06
 Author: Who wrote it
+URL: https://github.com/mskcc/facetsSuite
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
 RoxygenNote: 6.1.1
 LazyData: true
 Encoding: UTF-8
+Depends:
+    R (>= 2.10)
 Imports:
     facets (>= 0.5.2),
     pctGCdata (>= 0.3.0),
     data.table,
     dplyr,
     ggplot2,
-    purrr
+    purrr,
+    diptest,
+    tidyr,
+    egg
 Remotes:
-    mskcc/pctGCdata,
+    mskcc/facets,
     veseshan/pctGCdata
 NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp

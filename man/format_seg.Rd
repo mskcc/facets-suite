@@ -4,12 +4,14 @@
 \alias{format_seg}
 \title{Format .seg file}
 \usage{
-format_seg(facets_output, sample_id, normalize = TRUE)
+format_seg(facets_data, sample_id, normalize = TRUE)
 }
 \arguments{
+\item{facets_data}{Facets output, from `run_facets`.}
+
 \item{sample_id}{Sample name.}
 
-\item{out}{Facets out object.}
+\item{normalize}{Adjust copy-number log-ratio by dipLogR.}
 }
 \value{
 Segmentation output formatted for IGV.
