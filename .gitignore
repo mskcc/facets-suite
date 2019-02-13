@@ -17,7 +17,8 @@ vignettes/*.pdf
 # fix this somehow, ~50 Mb to large
 data/test_read_counts.rda
 
-# tmp dev files
-tmp/*
+# Raw data, too large for Github
 data-raw/countsMerged.gz
 data-raw/TCGA.GBM.mutect.da904cd3-79d7-4ae3-b6c0-e7127998b3e6.DR-10.0.somatic.maf.gz
+
+.Rproj.user

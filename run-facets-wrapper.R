@@ -116,9 +116,9 @@ print_segments = function(outfile,
 print_igv = function(outfile,
                      facets_output) {
     
-    ii = format_seg(facets_output = facets_output,
-                    sample_id = args$sample_id,
-                    normalize = T)
+    ii = format_igv_seg(facets_output = facets_output,
+                        sample_id = args$sample_id,
+                        normalize = T)
     
     write.table(ii, file = outfile, sep = '\t', quote = F, col.names = T, row.names = F)
 }

@@ -157,3 +157,57 @@ genes_hg38 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/rele
     ungroup()
 
 use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, internal = T, overwrite = T)
+
+
+# Copy-number states ----------------------------------------------------------------------------------------------
+copy_number_states = tibble::tribble(
+    ~wgd, ~mcn, ~lcn, ~numeric_call,          ~call,
+    # No genome doubling
+    FALSE,    0,    0,          -2,              'HOMDEL',
+    FALSE,    1,    0,          -1,             'HETLOSS',
+    FALSE,    2,    0,          -1,               'CNLOH',
+    FALSE,    3,    0,           1,        'CNLOH & GAIN',
+    FALSE,    4,    0,           1,        'CNLOH & GAIN',
+    FALSE,    5,    0,           2,           'AMP (LOH)',
+    FALSE,    6,    0,           2,           'AMP (LOH)',
+    FALSE,    1,    1,           0,             'DIPLOID',
+    FALSE,    2,    1,           1,                'GAIN',
+    FALSE,    3,    1,           1,                'GAIN',
+    FALSE,    4,    1,           2,                 'AMP',
+    FALSE,    5,    1,           2,                 'AMP',
+    FALSE,    6,    1,           2,                 'AMP',
+    FALSE,    2,    2,           1,          'TETRAPLOID',
+    FALSE,    3,    2,           2,                 'AMP',
+    FALSE,    4,    2,           2,                 'AMP',
+    FALSE,    5,    2,           2,                 'AMP',
+    FALSE,    6,    2,           2,                 'AMP',
+    FALSE,    3,    3,           2,      'AMP (BALANCED)',
+    FALSE,    4,    3,           2,                 'AMP',
+    FALSE,    5,    3,           2,                 'AMP',
+    FALSE,    6,    3,           2,                 'AMP',
+    # With genome doubling
+    TRUE,    0,    0,          -2,              'HOMDEL',
+    TRUE,    1,    0,          -1, 'LOSS BEFORE & AFTER',
+    TRUE,    2,    0,          -1,         'LOSS BEFORE',
+    TRUE,    3,    0,          -1, 'CNLOH BEFORE & LOSS',
+    TRUE,    4,    0,          -1,        'CNLOH BEFORE',
+    TRUE,    5,    0,           1, 'CNLOH BEFORE & GAIN',
+    TRUE,    6,    0,           2,           'AMP (LOH)',
+    TRUE,    1,    1,          -1,   'DOUBLE LOSS AFTER',
+    TRUE,    2,    1,          -1,          'LOSS AFTER',
+    TRUE,    3,    1,          -1,         'CNLOH AFTER',
+    TRUE,    4,    1,           1,         'LOSS & GAIN',
+    TRUE,    5,    1,           2,                 'AMP',
+    TRUE,    6,    1,           2,                 'AMP',
+    TRUE,    2,    2,           0,          'TETRAPLOID',
+    TRUE,    3,    2,           1,                'GAIN',
+    TRUE,    4,    2,           2,                 'AMP',
+    TRUE,    5,    2,           2,                 'AMP',
+    TRUE,    6,    2,           2,                 'AMP',
+    TRUE,    3,    3,           2,      'AMP (BALANCED)',
+    TRUE,    4,    3,           2,                 'AMP',
+    TRUE,    5,    3,           2,                 'AMP',
+    TRUE,    6,    3,           2,                 'AMP'
+)
+
+use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, copy_number_states, internal = T)

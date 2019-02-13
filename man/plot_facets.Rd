@@ -9,13 +9,13 @@
 \alias{closeup_plot}
 \title{Plot FACETS output}
 \usage{
-cnlr_plot(facets_data, cols = c("#0080FF", "#4CC4FF"), plotX = FALSE,
+cnlr_plot(facets_data, colors = c("#0080FF", "#4CC4FF"), plotX = FALSE,
   genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
   adjust_diplogr = TRUE, subset_snps = NULL, return_object = FALSE)
 
-valor_plot(facets_data, cols = c("#0080FF", "#4CC4FF"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
-  subset_snps = NULL, return_object = FALSE)
+valor_plot(facets_data, colors = c("#0080FF", "#4CC4FF"),
+  plotX = FALSE, genome = c("hg19", "hg18", "hg38"),
+  highlight_gene = NULL, subset_snps = NULL, return_object = FALSE)
 
 cf_plot(facets_data, method = c("em", "cncf"), plotX = FALSE,
   genome = c("hg19", "hg18", "hg38"), return_object = FALSE)
@@ -31,9 +31,9 @@ closeup_plot(facets_data, highlight_gene = NULL, plot_chroms = NULL,
 \arguments{
 \item{facets_data}{Output object from \code{run_facets}.}
 
-\item{cols}{Vector of two colors for alternating chromosomes.}
+\item{colors}{Vector of two colors for alternating chromosomes.}
 
-\item{plotX}{Plot chromosome X.}
+\item{plotX}{If \code{TRUE}, includes chromosome X.}
 
 \item{genome}{Genome build.}
 
@@ -48,11 +48,9 @@ closeup_plot(facets_data, highlight_gene = NULL, plot_chroms = NULL,
 \item{method}{When available, choose between plotting solution from \code{em} or \code{cncf} algorithm.}
 
 \item{plot_chroms}{Chromosomes to plot when using \code{closeup_plot}.}
-
-\item{subset_indices}{???.}
 }
 \value{
-\code{ggplot2} objects.
+\code{ggplot2} objects, see input parameter \code{return_object}.
 }
 \description{
 Generate the following plots:

@@ -1,6 +1,6 @@
 Package: facetsSuite
 Type: Package
-Title: What the package does (short line)
+Title: Functions to run and parse output from FACETS
 Version: 1.0
 Author: Who wrote it
 URL: https://github.com/mskcc/facetsSuite
@@ -17,11 +17,13 @@ Imports:
     pctGCdata (>= 0.3.0),
     data.table,
     dplyr,
+    plyr,
     ggplot2,
     purrr,
     diptest,
     tidyr,
-    egg
+    egg,
+    scales
 Remotes:
     mskcc/facets,
     veseshan/pctGCdata

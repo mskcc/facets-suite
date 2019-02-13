@@ -11,12 +11,13 @@ library(usethis)
 # Tumor BAM file: TCGA-06-0154-10A-01D-1491-08
 # snp-pileup -A -g -r 10,0 --pseudo-snps=50 dbsnp.vcf normal.bam tumor.bam countsMerged.gz
 test_read_counts = read_snp_matrix('data-raw/countsMerged.gz') %>%
-    group_by(Chromsome) %>%
+    group_by(Chromosome) %>%
     sample_frac(size = .75) %>%
     arrange(Chromosome, Position)
 
 # Output from run-facets.R
-test_facets_output = run_facets(test_read_counts, cval = 500, genome = 'hg38')
+read_counts = read_snp_matrix('data-raw/countsMerged.gz')
+test_facets_output = run_facets(read_counts, cval = 500, genome = 'hg38')
 
 # MAF file downloaded from GDC's data portal
 test_maf = fread('data-raw/TCGA.GBM.mutect.da904cd3-79d7-4ae3-b6c0-e7127998b3e6.DR-10.0.somatic.maf.gz') %>% 
