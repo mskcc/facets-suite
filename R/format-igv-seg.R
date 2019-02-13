@@ -12,7 +12,6 @@
 
 #' @export
 format_igv_seg = function(facets_data, sample_id, normalize = TRUE) {
-    
     seg = group_by(facets_data$snps, chrom, seg) %>% 
         summarize(loc.start = min(maploc),
                   loc.end = max(maploc)) %>% 

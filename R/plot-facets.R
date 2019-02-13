@@ -84,7 +84,7 @@ cnlr_plot = function(facets_data,
     }
     
     pt_cols = colors[c(snps$chrom %% 2) + 1]
-    
+
     # plot
     cnlr = ggplot(snps) +
         geom_point(aes(y = cnlr, x = chr_maploc), pch = 19, col = pt_cols, size = .4) +

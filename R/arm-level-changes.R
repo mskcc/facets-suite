@@ -8,7 +8,7 @@
 #' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
 #'
 #' @return List with one or more values from function.
-#' 
+#'
 #' @importFrom dplyr left_join filter summarize select %>% mutate_at case_when group_by
 #' @importFrom purrr map_dfr map_lgl map_chr discard
 #' @importFrom tidyr gather separate_rows
@@ -67,7 +67,7 @@ arm_level_changes = function(segs,
         filter(majority == TRUE,
                cn_state != 'DIPLOID',
                !arm %in% c('13p', '14p', '15p', '21p', '22p')) # acrocentric chromsomes
-    
+
     # Weighted fraction copy-number altered
     frac_altered_w = select(sample_chrom_info, chr, p = plength, q = qlength) %>%
         gather(arm, length, -chr) %>%
@@ -78,7 +78,7 @@ arm_level_changes = function(segs,
     list(
         genome_doubled = fcna_output$genome_doubled,
         fcna = fcna_output$fraction_cna,
-        weighted_fcna = fcna_output$weighted_fcna,
+        weighted_fcna = frac_altered_w,
         aneuploidy_score = length(altered_arms),
         altered_arms = paste(paste0(altered_arms$arm, ':', altered_arms$cn_state), collapse = ',')
     )

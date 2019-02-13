@@ -69,9 +69,7 @@ run_facets = function(read_counts,
 
 # Check input, can be more elaborate
 check_read_counts = function(rc) {
-    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'),
-                           names(rc)) 
-    
+    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(rc)) 
     if (length(missing_cols) > 0) {
         stop(paste('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
     }
