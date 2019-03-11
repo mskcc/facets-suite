@@ -1,16 +1,28 @@
-#!/opt/common/CentOS_6-dev/R/R-3.1.3/bin/Rscript
+#!/usr/bin/env Rscript
 
 # Generate gene-level TCN/LCN and CNA call, given cncf.txt files from a doFacets run
 
+## Require *hisens.cncf.txt
+## 
+
 library(argparse)
 library(data.table)
+library(plyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(reshape2)
+library(tidyr)
+library(jsonlite)
+
+"%ni%" = Negate("%in%")
 
 write.text <- function (...) {
-    write.table(..., quote = F, col.names = T, row.names = F, sep = "\t")
+    write.table(..., quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
 }
 
 getSDIR <- function(){
-    args=commandArgs(trailing=F)
+    args=commandArgs(trailing=FALSE)
     TAG="--file="
     path_idx=grep(TAG,args)
     SDIR=dirname(substr(args[path_idx],nchar(TAG)+1,nchar(args[path_idx])))
@@ -41,6 +53,13 @@ IMPACT468_targets = IMPACT468_targets[V5 %like% 'target']
 setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT468_targets, chr, start, end)
 
+## 
+oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
+oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
+
+
+
+
 #############################################
 ### definition of copy number calls in WGD
 FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
@@ -48,33 +67,34 @@ setkey(FACETS_CALL_table, WGD, mcn, lcn)
 #############################################
 
 annotate_integer_copy_number <- function(gene_level, amp_threshold){
-  ### Portal/TCGA copy number calls as well as
-  ### more advanced copy number calling, including CNLOH etc.
+    ### Portal/TCGA copy number calls as well as
+    ### more advanced copy number calling, including CNLOH etc.
 
-  ### lowest value of tcn for AMP
-  AMP_thresh_tcn <- amp_threshold + 1
+    ### lowest value of tcn for AMP
+    AMP_thresh_tcn <- amp_threshold + 1
 
-  ### assumes that WGD variable has already been set
-  input_key <- key(gene_level)
-  input_cols <- names(gene_level)
-  gene_level[, mcn := tcn - lcn]
-  setkey(gene_level, WGD, mcn, lcn)
+    ### assumes that WGD variable has already been set
+    input_key <- key(gene_level)
+    input_cols <- names(gene_level)
+    gene_level[, mcn := tcn - lcn]
+    setkey(gene_level, WGD, mcn, lcn)
 
-  if("FACETS_CNA" %in% names(gene_level)) gene_level[, FACETS_CNA := NULL]
-  if("FACETS_CALL" %in% names(gene_level)) gene_level[, FACETS_CALL := NULL]
+    if("FACETS_CNA" %in% names(gene_level)) gene_level[, FACETS_CNA := NULL]
+    if("FACETS_CALL" %in% names(gene_level)) gene_level[, FACETS_CALL := NULL]
 
-  gene_level <- merge(gene_level, FACETS_CALL_table, sort = F, all.x = T)
+    gene_level <- merge(gene_level, FACETS_CALL_table, sort = F, all.x = T)
 
-  gene_level[tcn >= AMP_thresh_tcn, FACETS_CNA := 2]
-  gene_level[tcn >= AMP_thresh_tcn, FACETS_CALL := "AMP"]
+    gene_level[tcn >= AMP_thresh_tcn, FACETS_CNA := 2]
+    gene_level[tcn >= AMP_thresh_tcn, FACETS_CALL := "AMP"]
 
-  output_cols <- c(input_cols, c("FACETS_CNA", "FACETS_CALL"))
-  setcolorder(gene_level, output_cols)
-  setkeyv(gene_level, input_key)
-  gene_level
+    output_cols <- c(input_cols, c("FACETS_CNA", "FACETS_CALL"))
+    setcolorder(gene_level, output_cols)
+    setkeyv(gene_level, input_key)
+    gene_level
 }
 
 get_gene_level_calls <- function(cncf_files,
+                                 cna_files, ## added parameter, parse files *.gene.cna.txt
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
@@ -83,49 +103,131 @@ get_gene_level_calls <- function(cncf_files,
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  fun.rename = function(filename){filename}){
 
-  ### check version of data.table
-  if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
+    ### check version of data.table
+    if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
 
-  ### concatenate input files
-  cncf_txt_list <- lapply(cncf_files, fread)
-  names(cncf_txt_list) <- cncf_files
-#  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = T)
-  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = T)
-  ### format concat_cncf_txt segment table
-  concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
+
+    ## THE FOLLOWING ASSUMES ONE INPUT FILE, *_hisens.cncf.txt
+    ## INPUTTING MULTIPLE INPUT FILES WILL RESULT IN ERRORS
+    ### concatenate input files
+    cncf_txt_list <- lapply(cncf_files, fread)
+    names(cncf_txt_list) <- cncf_files
+    ## concat_cncf_txt -- list of inputs as one data.table
+    concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = TRUE)
+
+    ## extract purity values
+    ## within *_hisens.cncf.txt file, the purity is calculated as the maximum value not 1.0 and not NA
+    ## subset cf.em; define purity as purity := max(cf.em)
+    ## ASSUMES that inputs are one  *_hisens.cncf.txt
+    subset = concat_cncf_txt[cf.em < 1, ]
+    purity_value = max(subset$cf.em)
+    concat_cncf_txt[, purity := purity_value]
+
+    ## define CFcut
+    concat_cncf_txt[, CFcut := 0.6 * purity]
+
+    ## handle NA values in cf.em
+    ## if there are NA values in cf.em, then make CFcut == 10
+    concat_cncf_txt[, CFcut := ifelse(is.na(cf.em), 10, CFcut)]
+    ## SHWETA CODE:
+    ## sample_pairing = sample_pairing %>% mutate(CFcut = ifelse(is.na(sample_pairing$CFcut),10,CFcut)) 
+
+
+    ## input cna files; again, ASSUMES ONE INPUT FILE as we concatenate into one R data.table
+    cna_txt_list = lapply(cna_files, fread)
+    names(cna_txt_list) = cna_files
+    ## cna_txt_list -- list of inputs as one data.table
+    curr_genelevel <- rbindlist(cna_txt_list, idcol = "filename", fill = TRUE)
+    
+    ### Step 2.1 CONVERT GENELEVEL CALLS CNCF-based to EM-based
+    genelevelcalls0 =  curr_genelevel %>% 
+                     mutate(segid = str_c(Tumor_Sample_Barcode,';',chr,';',seg.start,';',seg.end)) %>%
+                     mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start) 
+
+    u.genelevelcalls = genelevelcalls0 %>% 
+                   select(Tumor_Sample_Barcode,tcn,lcn,tcn.em,lcn.em,chr,seg.start,seg.end,frac_elev_major_cn,WGD,mcn,FACETS_CNA,FACETS_CALL) %>% distinct(.) %>%
+                   mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start)
+  
+    frac_elev_major_cn.em = u.genelevelcalls %>%  
+                          group_by(Tumor_Sample_Barcode) %>% 
+                          summarize(frac_elev_major_cn.em = sum(as.numeric(mcn.em >= 2)*as.numeric(seg.len), na.rm = T) / sum(as.numeric(seg.len)))
+  
+    genelevelcalls0 = left_join(genelevelcalls0,frac_elev_major_cn.em, by="Tumor_Sample_Barcode")
+
+    ### Step 2.2 Going back to original un-unique genelevel calls, just carry forward frac_elev_major_cn.em
+    genelevelcalls0 = genelevelcalls0 %>% 
+                            mutate(WGD.em = ifelse(frac_elev_major_cn.em > WGDcut, "WGD", "no WGD")) %>%
+                            mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
+          
+    genelevelcalls0 = genelevelcalls0 %>% 
+                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL)) %>% ##ASK
+                            mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
+                            mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
+    ##table(genelevelcalls0$FACETS_CALL.em)
+          
+    seg.count = plyr::count(genelevelcalls0, vars="segid") %>% 
+                            mutate(count = freq) %>% select(-c(freq))
+          
+    genelevelcalls0 = inner_join(genelevelcalls0,seg.count,by='segid')
+  
+    ### Step 3 SET columns needed for filters & APPLY filters
+    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, sample_pairing$T, sample_pairing$CFcut))
+  
+    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
+                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
+                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < 10000000 & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
+                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < 10000000 & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
+    ## table(genelevelcalls0$FACETS_CALL.em)
+          
+    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
+          
+    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
+                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
+                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
+                            select(-c(FACETS_CNA, FACETS_CALL, CFcut, FACETS_CALL.ori, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em ))
+          
+    genelevelcalls_final = genelevelcalls0 %>% 
+                            mutate(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em) %>%
+                            select(-c(FACETS_CALL.em,FACETS_CNA.em))
+          
+    ## table(genelevelcalls_final$FACETS_CNA, genelevelcalls_final$FACETS_CALL)       
+    ## head(genelevelcalls_final)
+  
+
+    ### format concat_cncf_txt segment table
+    concat_cncf_txt$chrom = as.character(concat_cncf_txt$chrom)
 #  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
-  concat_cncf_txt$Tumor_Sample_Barcode <- as.character(concat_cncf_txt$ID)
-  concat_cncf_txt[, filename := NULL]
-  concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
-  concat_cncf_txt[chrom == "23", chrom := "X"]
-  setkey(concat_cncf_txt, chrom, loc.start, loc.end)
+    concat_cncf_txt$Tumor_Sample_Barcode <- as.character(concat_cncf_txt$ID)
+    concat_cncf_txt[, filename := NULL]
+    concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
+    concat_cncf_txt[chrom == "23", chrom := "X"]
+    setkey(concat_cncf_txt, chrom, loc.start, loc.end)
 
-  if (!("tcn" %in% names(concat_cncf_txt))) {
-    concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
-  }
+    if (!("tcn" %in% names(concat_cncf_txt))) {
+        concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
+    }
 
   ### estimate fraction of the genome with more than one copy from a parent
   ### a large fraction implies whole genome duplication
-  concat_cncf_txt[, frac_elev_major_cn := sum(
-    as.numeric((tcn - lcn) >= 2) *
-      as.numeric(loc.end-loc.start), na.rm = T) /
+    concat_cncf_txt[, frac_elev_major_cn := sum(
+        as.numeric((tcn - lcn) >= 2) * as.numeric(loc.end-loc.start), na.rm = T) /
       sum(as.numeric(loc.end-loc.start)
       ),
     by=Tumor_Sample_Barcode]
 
-  ### Extract integer copy number for each probe from concat_cncf_txt
-  fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
-  fo_impact <- fo_impact[!is.na(ID)]
-  fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
+    ### Extract integer copy number for each probe from concat_cncf_txt
+    fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
+    fo_impact <- fo_impact[!is.na(ID)]
+    fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
   
-  if (!("cf" %in% names(fo_impact))) {
-    fo_impact[, cf := cf.em]
-  }
+    if (!("cf" %in% names(fo_impact))) {
+        fo_impact[, cf := cf.em]
+    }
 
-  ### Summarize copy number for each gene
+    ### Summarize copy number for each gene
 #  if(method == 'cncf'){
 
-  gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
+    gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
                           list(chr = unique(chr),
                                seg.start=unique(loc.start),
                                seg.end=unique(loc.end),
@@ -149,19 +251,22 @@ get_gene_level_calls <- function(cncf_files,
 #                         keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn.em, lcn=lcn.em)]
 #   }
 
-  ### fix bug where lcn == NA even when tcn is 1
-  gene_level[tcn == 1 & is.na(lcn), lcn := 0]
+    ### fix bug where lcn == NA even when tcn is 1
+    gene_level[tcn == 1 & is.na(lcn), lcn := 0]
 
-  ### apply WGD threshold
-  gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
-  setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
+    ### apply WGD threshold
+    gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
+    setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
 
-  ### If the segment is too long or cell fraction too low, set the gene to diploid
-  gene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD != "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(2, 1, 2, 1)]
-  gene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD == "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(4, 2, 4, 2)]
+    ## BUG
+    ## These are incorrect filters (25Mb and CF=0.6) which modifies outputs. 
+    ## This makes all calls diploid (2,1) or tetraploid (4,2) if there is WGD
+    ## DO NOT USE:
+    ## gene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD != "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(2, 1, 2, 1)]
+    ## ene_level[(as.numeric(seg.end-seg.start) > max_seg_length | as.numeric(cf) < min_cf) & WGD == "WGD", c("tcn", "lcn", "tcn.em", "lcn.em") := list(4, 2, 4, 2)]
 
-  ### focality requirement
-  ### get (weighted) mean total copy number for the chromosome
+    ### focality requirement
+    ### get (weighted) mean total copy number for the chromosome
 #   mean_tcn_per_chr <- concat_cncf_txt[, list(mean_tcn =
 #                                                sum(tcn * as.numeric(loc.end - loc.start)) /
 #                                                sum(as.numeric(loc.end - loc.start))),
@@ -172,25 +277,24 @@ get_gene_level_calls <- function(cncf_files,
 #                                                       chrom)))
 #   gene_level[, mean_tcn_per_chr := mean_tcn_per_chr_v[paste(Tumor_Sample_Barcode, chr)]]
 
-  ### annotate integer copy number
-  gene_level <- annotate_integer_copy_number(gene_level, amp_threshold)
+    ### annotate integer copy number
+    gene_level <- annotate_integer_copy_number(gene_level, amp_threshold)
 
-  ### remove duplicate entries for partial deletions
-  ### the lower value is chosen on the basis that a
-  ### partial deletion is a deletion but a
-  ### partial amplification is not an amplification
-  gene_level <- gene_level[order(FACETS_CNA, -Nprobes)]
-  gene_level <- gene_level[!duplicated(gene_level, by=c("Tumor_Sample_Barcode", "Hugo_Symbol"))]
+    ### remove duplicate entries for partial deletions
+    ### the lower value is chosen on the basis that a
+    ### partial deletion is a deletion but a
+    ### partial amplification is not an amplification
+    gene_level <- gene_level[order(FACETS_CNA, -Nprobes)]
+    gene_level <- gene_level[!duplicated(gene_level, by=c("Tumor_Sample_Barcode", "Hugo_Symbol"))]
 
-  ### Sort & set column classes
-  gene_level[, FACETS_CNA := factor(FACETS_CNA, levels = c(-2:2))]
-  gene_level[, chr := factor(chr, levels = c(1:22, "X", "Y"))]
-  setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
-  gene_level
+    ### Sort & set column classes
+    gene_level[, FACETS_CNA := factor(FACETS_CNA, levels = c(-2:2))]
+    gene_level[, chr := factor(chr, levels = c(1:22, "X", "Y"))]
+    setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
+    gene_level
 }
 
 convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
-
     data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "FACETS_CNA")]
     portal_output <- dcast(data_to_convert, Hugo_Symbol ~ Tumor_Sample_Barcode, value.var = "FACETS_CNA" )
     portal_output
@@ -211,49 +315,43 @@ convert_gene_level_calls_to_matrix_ascna <- function(gene_level_calls){
 
 if(!interactive()){
 
-  parser = ArgumentParser()
-  parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
-  parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
-  parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
-  parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
-  args=parser$parse_args()
+    parser = ArgumentParser()
+    parser$add_argument('-f', '--cncf_filenames', type='character', nargs='+', help='list cncf files to be processed, to be concatenated into one R data.table.')
+    parser$add_argument('-c', '--cna_filenames', type='character', nargs='+', help='list cna files to be processed, to be concatenated into one R data.table.')
+    parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
+    parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
+    parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
+    args=parser$parse_args()
 
-  filenames = args$filenames
-  outfile = args$outfile
-  method = args$method
+    cncf_filenames = args$cncf_filenames
+    cna_filenames = args$cna_filenames
 
-  if(args$targetFile=="IMPACT341") {
+    outfile = args$outfile
+    method = args$method
 
-    geneTargets=IMPACT341_targets
+    if(args$targetFile=="IMPACT341") {
+        geneTargets=IMPACT341_targets
+    } else if(args$targetFile=="IMPACT410") {
+        geneTargets=IMPACT410_targets
+    } else if(args$targetFile=="IMPACT468") {
+        geneTargets=IMPACT468_targets
+    } else {
+        # Note the target file needs to not only be in the PICARD interval list format
+        # But the names must match the regex: /GENESYMBOL_.*/ (e.g. TP53_target_02)
+        geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
+        setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
+        setkey(geneTargets, chr, start, end)
+    }
 
-  } else if(args$targetFile=="IMPACT410") {
+    gene_level_calls = get_gene_level_calls(cncf_filenames, cna_filenames, geneTargets)
+    write.text(gene_level_calls, outfile)
 
-    geneTargets=IMPACT410_targets
-
-  } else if(args$targetFile=="IMPACT468") {
-  
-    geneTargets=IMPACT468_targets
-
-  }
-  else {
-
-    # Note the target file needs to not only be in the PICARD interval list format
-    # But the names must match the regex: /GENESYMBOL_.*/ (e.g. TP53_target_02)
-    geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
-    setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
-    setkey(geneTargets, chr, start, end)
-
-  }
-
-  gene_level_calls = get_gene_level_calls(filenames, geneTargets)
-  write.text(gene_level_calls, outfile)
-
-  if(tolower(method) == 'scna'){
-    scna_outfile = gsub(".txt", ".scna.txt", outfile) 
-    ascna_outfile = gsub(".txt", ".ascna.txt", outfile) 
-    portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
-    ascna_output = convert_gene_level_calls_to_matrix_ascna(gene_level_calls)
-    write.text(portal_output, scna_outfile)
-    write.text(ascna_output, ascna_outfile)
-  }
+    if(tolower(method) == 'scna'){
+        scna_outfile = gsub(".txt", ".scna.txt", outfile) 
+        ascna_outfile = gsub(".txt", ".ascna.txt", outfile) 
+        portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
+        ascna_output = convert_gene_level_calls_to_matrix_ascna(gene_level_calls)
+        write.text(portal_output, scna_outfile)
+        write.text(ascna_output, ascna_outfile)
+    }
 }
