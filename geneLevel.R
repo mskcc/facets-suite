@@ -17,6 +17,8 @@ library(jsonlite)
 
 "%ni%" = Negate("%in%")
 
+
+
 write.text <- function (...) {
     write.table(..., quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
 }
@@ -54,6 +56,9 @@ setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT468_targets, chr, start, end)
 
 ## 
+
+WGDcut = 0.5
+
 oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
 oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
 
@@ -327,7 +332,7 @@ if(!interactive()){
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
-    parser$add_argument('-r', '--review_output_file', type='ccs_homdeltsg_review_candidates.txt', default='', help="Output text file of canddiates for manual review")
+    parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', default='', help="Output text file of canddiates for manual review")
     args=parser$parse_args()
 
     filenames = args$filenames
