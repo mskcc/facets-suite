@@ -93,8 +93,8 @@ annotate_integer_copy_number <- function(gene_level, amp_threshold){
     gene_level
 }
 
+
 get_gene_level_calls <- function(cncf_files,
-                                 cna_files, ## added parameter, parse files *.gene.cna.txt
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
@@ -115,84 +115,20 @@ get_gene_level_calls <- function(cncf_files,
     ## concat_cncf_txt -- list of inputs as one data.table
     concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = TRUE)
 
-    ## extract purity values
+    ## Extract purity values
+    ## March 2019, for filters
     ## within *_hisens.cncf.txt file, the purity is calculated as the maximum value not 1.0 and not NA
-    ## subset cf.em; define purity as purity := max(cf.em)
-    ## ASSUMES that inputs are one  *_hisens.cncf.txt
-    subset = concat_cncf_txt[cf.em < 1, ]
-    purity_value = max(subset$cf.em)
-    concat_cncf_txt[, purity := purity_value]
+    ## For each input filename: 
+    ##     subset cf.em; define purity as purity := max(cf.em)
+    concat_cncf_txt[cf.em < 1, purity:=max(cf.em), by=ID]
 
-    ## define CFcut
+    ## define CFcut, the cut-off set for CF
+    ## We suspect 60% of CF is pretty high, so that's the cutoff
     concat_cncf_txt[, CFcut := 0.6 * purity]
 
     ## handle NA values in cf.em
     ## if there are NA values in cf.em, then make CFcut == 10
-    concat_cncf_txt[, CFcut := ifelse(is.na(cf.em), 10, CFcut)]
-    ## SHWETA CODE:
-    ## sample_pairing = sample_pairing %>% mutate(CFcut = ifelse(is.na(sample_pairing$CFcut),10,CFcut)) 
-
-
-    ## input cna files; again, ASSUMES ONE INPUT FILE as we concatenate into one R data.table
-    cna_txt_list = lapply(cna_files, fread)
-    names(cna_txt_list) = cna_files
-    ## cna_txt_list -- list of inputs as one data.table
-    curr_genelevel <- rbindlist(cna_txt_list, idcol = "filename", fill = TRUE)
-    
-    ### Step 2.1 CONVERT GENELEVEL CALLS CNCF-based to EM-based
-    genelevelcalls0 =  curr_genelevel %>% 
-                     mutate(segid = str_c(Tumor_Sample_Barcode,';',chr,';',seg.start,';',seg.end)) %>%
-                     mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start) 
-
-    u.genelevelcalls = genelevelcalls0 %>% 
-                   select(Tumor_Sample_Barcode,tcn,lcn,tcn.em,lcn.em,chr,seg.start,seg.end,frac_elev_major_cn,WGD,mcn,FACETS_CNA,FACETS_CALL) %>% distinct(.) %>%
-                   mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start)
-  
-    frac_elev_major_cn.em = u.genelevelcalls %>%  
-                          group_by(Tumor_Sample_Barcode) %>% 
-                          summarize(frac_elev_major_cn.em = sum(as.numeric(mcn.em >= 2)*as.numeric(seg.len), na.rm = T) / sum(as.numeric(seg.len)))
-  
-    genelevelcalls0 = left_join(genelevelcalls0,frac_elev_major_cn.em, by="Tumor_Sample_Barcode")
-
-    ### Step 2.2 Going back to original un-unique genelevel calls, just carry forward frac_elev_major_cn.em
-    genelevelcalls0 = genelevelcalls0 %>% 
-                            mutate(WGD.em = ifelse(frac_elev_major_cn.em > WGDcut, "WGD", "no WGD")) %>%
-                            mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
-          
-    genelevelcalls0 = genelevelcalls0 %>% 
-                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL)) %>% ##ASK
-                            mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
-                            mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
-    ##table(genelevelcalls0$FACETS_CALL.em)
-          
-    seg.count = plyr::count(genelevelcalls0, vars="segid") %>% 
-                            mutate(count = freq) %>% select(-c(freq))
-          
-    genelevelcalls0 = inner_join(genelevelcalls0,seg.count,by='segid')
-  
-    ### Step 3 SET columns needed for filters & APPLY filters
-    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, sample_pairing$T, sample_pairing$CFcut))
-  
-    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
-                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
-                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < 10000000 & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
-                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < 10000000 & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
-    ## table(genelevelcalls0$FACETS_CALL.em)
-          
-    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
-          
-    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
-                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
-                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
-                            select(-c(FACETS_CNA, FACETS_CALL, CFcut, FACETS_CALL.ori, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em ))
-          
-    genelevelcalls_final = genelevelcalls0 %>% 
-                            mutate(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em) %>%
-                            select(-c(FACETS_CALL.em,FACETS_CNA.em))
-          
-    ## table(genelevelcalls_final$FACETS_CNA, genelevelcalls_final$FACETS_CALL)       
-    ## head(genelevelcalls_final)
-  
+    concat_cncf_txt[, CFcut := ifelse(is.na(CFcut), 10, CFcut)]
 
     ### format concat_cncf_txt segment table
     concat_cncf_txt$chrom = as.character(concat_cncf_txt$chrom)
@@ -291,7 +227,78 @@ get_gene_level_calls <- function(cncf_files,
     gene_level[, FACETS_CNA := factor(FACETS_CNA, levels = c(-2:2))]
     gene_level[, chr := factor(chr, levels = c(1:22, "X", "Y"))]
     setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
-    gene_level
+
+    ## Apply filters from Allison Richards and Shweta Chavan, March 2019
+    ## Use FACETS EM as it gives more accurate results
+    ## 
+    ## Decision tree:
+    ## Inputs: AMP, AMP (LOH), HOMDEL
+    ## 
+    ## For HOMDELs, keep if and only if size <10 Mb and # of genes <= 10
+    ## Otherwise, throw awawy
+    ## For AMPs and AMP (LOH) events, throw away if <10 Mb. Check TCN.em > 8, em.CF > 0.6 * purity. If both false, check # of gene <=10. 
+    ## If false, throw this event away. 
+    ## 
+    ## The 10 gene cut-off is based all annotated genes; for WES use
+    ## 
+
+    ## SHWETA CODE:
+    ## sample_pairing = sample_pairing %>% mutate(CFcut = ifelse(is.na(sample_pairing$CFcut),10,CFcut)) 
+
+    ### Step 2.1 CONVERT GENELEVEL CALLS CNCF-based to EM-based
+    genelevelcalls0 = gene_level  %>% 
+                     mutate(segid = str_c(Tumor_Sample_Barcode,';',chr,';',seg.start,';',seg.end)) %>%
+                     mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start) 
+
+    u.genelevelcalls = genelevelcalls0 %>% 
+                   select(Tumor_Sample_Barcode,tcn,lcn,tcn.em,lcn.em,chr,seg.start,seg.end,frac_elev_major_cn,WGD,mcn,FACETS_CNA,FACETS_CALL) %>% distinct(.) %>%
+                   mutate(mcn.em = tcn.em - lcn.em, seg.len = seg.end - seg.start)
+  
+    frac_elev_major_cn.em = u.genelevelcalls %>%  
+                          group_by(Tumor_Sample_Barcode) %>% 
+                          summarize(frac_elev_major_cn.em = sum(as.numeric(mcn.em >= 2)*as.numeric(seg.len), na.rm = T) / sum(as.numeric(seg.len)))
+  
+    genelevelcalls0 = left_join(genelevelcalls0,frac_elev_major_cn.em, by="Tumor_Sample_Barcode")
+
+    ### Step 2.2 Going back to original un-unique genelevel calls, just carry forward frac_elev_major_cn.em
+    genelevelcalls0 = genelevelcalls0 %>% 
+                            mutate(WGD.em = ifelse(frac_elev_major_cn.em > WGDcut, "WGD", "no WGD")) %>%
+                            mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
+          
+    genelevelcalls0 = genelevelcalls0 %>% 
+                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL)) %>% ##ASK
+                            mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
+                            mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
+    ##table(genelevelcalls0$FACETS_CALL.em)
+          
+    seg.count = plyr::count(genelevelcalls0, vars="segid") %>% 
+                            mutate(count = freq) %>% select(-c(freq))
+          
+    genelevelcalls0 = inner_join(genelevelcalls0,seg.count,by='segid')
+  
+    ### Step 3 SET columns needed for filters & APPLY filters
+    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, sample_pairing$T, sample_pairing$CFcut))
+  
+    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
+                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
+                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < 10000000 & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
+                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < 10000000 & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
+    ## table(genelevelcalls0$FACETS_CALL.em)
+          
+    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
+          
+    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
+                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
+                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
+                            select(-c(FACETS_CNA, FACETS_CALL, CFcut, FACETS_CALL.ori, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em ))
+          
+    genelevelcalls_final = genelevelcalls0 %>% 
+                            mutate(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em) %>%
+                            select(-c(FACETS_CALL.em,FACETS_CNA.em))
+
+    
+    return(genelevelcalls_final)
+
 }
 
 convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
@@ -316,15 +323,13 @@ convert_gene_level_calls_to_matrix_ascna <- function(gene_level_calls){
 if(!interactive()){
 
     parser = ArgumentParser()
-    parser$add_argument('-f', '--cncf_filenames', type='character', nargs='+', help='list cncf files to be processed, to be concatenated into one R data.table.')
-    parser$add_argument('-c', '--cna_filenames', type='character', nargs='+', help='list cna files to be processed, to be concatenated into one R data.table.')
+    parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list cncf files to be processed, to be concatenated into one R data.table.')
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
     args=parser$parse_args()
 
-    cncf_filenames = args$cncf_filenames
-    cna_filenames = args$cna_filenames
+    filenames = args$filenames
 
     outfile = args$outfile
     method = args$method
@@ -343,7 +348,7 @@ if(!interactive()){
         setkey(geneTargets, chr, start, end)
     }
 
-    gene_level_calls = get_gene_level_calls(cncf_filenames, cna_filenames, geneTargets)
+    gene_level_calls = get_gene_level_calls(filenames, geneTargets)
     write.text(gene_level_calls, outfile)
 
     if(tolower(method) == 'scna'){
