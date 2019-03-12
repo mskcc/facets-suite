@@ -297,14 +297,14 @@ get_gene_level_calls <- function(cncf_files,
                             select(-c(FACETS_CALL.em,FACETS_CNA.em))
 
     
-    return(genelevelcalls_final)
+    return(list(genelevelcalls_final, homdeltsg_review))
 
 }
 
 convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
     data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "FACETS_CNA")]
     portal_output <- dcast(data_to_convert, Hugo_Symbol ~ Tumor_Sample_Barcode, value.var = "FACETS_CNA" )
-    portal_output
+    return(portal_output)
 }
 
 convert_gene_level_calls_to_matrix_ascna <- function(gene_level_calls){
@@ -313,7 +313,7 @@ convert_gene_level_calls_to_matrix_ascna <- function(gene_level_calls){
     data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "ascna")]
     ascna_output <- dcast(data_to_convert, Hugo_Symbol ~ Tumor_Sample_Barcode, value.var = "ascna" )
     ascna_output[is.na(ascna_output)] <- 'NA;NA'
-    ascna_output
+    return(ascna_output)
 }
 
 #####################################################################################
@@ -327,12 +327,14 @@ if(!interactive()){
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
+    parser$add_argument('-r', '--review_output_file', type='ccs_homdeltsg_review_candidates.txt', default='', help="Output text file of canddiates for manual review")
     args=parser$parse_args()
 
     filenames = args$filenames
 
     outfile = args$outfile
     method = args$method
+    review_candidates = args$review_output_file
 
     if(args$targetFile=="IMPACT341") {
         geneTargets=IMPACT341_targets
@@ -349,7 +351,8 @@ if(!interactive()){
     }
 
     gene_level_calls = get_gene_level_calls(filenames, geneTargets)
-    write.text(gene_level_calls, outfile)
+    write.text(gene_level_calls$genelevelcalls_final, outfile)
+    fwrite(gene_level_calls$homdeltsg_review, row.names=FALSE, quote=FALSE, sep="\t")
 
     if(tolower(method) == 'scna'){
         scna_outfile = gsub(".txt", ".scna.txt", outfile) 
