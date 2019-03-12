@@ -5,6 +5,7 @@
 ## Require *hisens.cncf.txt
 ## 
 
+
 library(argparse)
 library(data.table)
 library(plyr)
@@ -69,6 +70,13 @@ oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
 ### definition of copy number calls in WGD
 FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
+
+## variable for filters, Shweta and Allison filters
+fc_lu_table = FACETS_CALL_table %>% mutate(emtag = str_c(WGD,';',mcn,';',lcn))
+## hey[, emtag := paste0(WGD,';',mcn,';',lcn)]
+
+
+
 #############################################
 
 annotate_integer_copy_number <- function(gene_level, amp_threshold){
@@ -105,8 +113,8 @@ get_gene_level_calls <- function(cncf_files,
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  max_seg_length = 25000000, ### genes in segments longer than this will be treated as diploid
                                  min_cf = 0.6, ### genes in segments with cell fraction less than this will be treated as diploid
-                                 mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
-                                 fun.rename = function(filename){filename}){
+                                 mean_chrom_threshold = 0 ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
+                                 ){
 
     ### check version of data.table
     if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
@@ -120,24 +128,8 @@ get_gene_level_calls <- function(cncf_files,
     ## concat_cncf_txt -- list of inputs as one data.table
     concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename", fill = TRUE)
 
-    ## Extract purity values
-    ## March 2019, for filters
-    ## within *_hisens.cncf.txt file, the purity is calculated as the maximum value not 1.0 and not NA
-    ## For each input filename: 
-    ##     subset cf.em; define purity as purity := max(cf.em)
-    concat_cncf_txt[cf.em < 1, purity:=max(cf.em), by=ID]
-
-    ## define CFcut, the cut-off set for CF
-    ## We suspect 60% of CF is pretty high, so that's the cutoff
-    concat_cncf_txt[, CFcut := 0.6 * purity]
-
-    ## handle NA values in cf.em
-    ## if there are NA values in cf.em, then make CFcut == 10
-    concat_cncf_txt[, CFcut := ifelse(is.na(CFcut), 10, CFcut)]
-
     ### format concat_cncf_txt segment table
     concat_cncf_txt$chrom = as.character(concat_cncf_txt$chrom)
-#  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
     concat_cncf_txt$Tumor_Sample_Barcode <- as.character(concat_cncf_txt$ID)
     concat_cncf_txt[, filename := NULL]
     concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
@@ -197,6 +189,7 @@ get_gene_level_calls <- function(cncf_files,
 
     ### apply WGD threshold
     gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
+
     setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
 
     ## BUG
@@ -231,7 +224,25 @@ get_gene_level_calls <- function(cncf_files,
     ### Sort & set column classes
     gene_level[, FACETS_CNA := factor(FACETS_CNA, levels = c(-2:2))]
     gene_level[, chr := factor(chr, levels = c(1:22, "X", "Y"))]
+    gene_level = as.data.table(gene_level)
     setkey(gene_level, Tumor_Sample_Barcode, Hugo_Symbol)
+
+
+    ## Extract purity values
+    ## March 2019, for filters
+    ## within *_hisens.cncf.txt file, the purity is calculated as the maximum value not 1.0 and not NA
+    ## For each unique Tumor_Sample_Barcode
+    ##     subset cf.em; define purity as purity := max(cf.em)
+    gene_level[cf.em < 1, purity:=max(cf.em), by=Tumor_Sample_Barcode]
+
+    ## define CFcut, the cut-off set for CF
+    ## We suspect 60% of CF is pretty high, so that's the cutoff
+    gene_level[, CFcut := 0.6 * purity]
+
+    ## handle NA values in cf.em
+    ## if there are NA values in cf.em, then make CFcut == 10
+    gene_level[, CFcut := ifelse(is.na(CFcut), 10, CFcut)]
+
 
     ## Apply filters from Allison Richards and Shweta Chavan, March 2019
     ## Use FACETS EM as it gives more accurate results
@@ -282,7 +293,7 @@ get_gene_level_calls <- function(cncf_files,
     genelevelcalls0 = inner_join(genelevelcalls0,seg.count,by='segid')
   
     ### Step 3 SET columns needed for filters & APPLY filters
-    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, sample_pairing$T, sample_pairing$CFcut))
+    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
   
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
                            FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
@@ -305,6 +316,7 @@ get_gene_level_calls <- function(cncf_files,
     return(list(genelevelcalls_final, homdeltsg_review))
 
 }
+
 
 convert_gene_level_calls_to_matrix_portal <- function(gene_level_calls){
     data_to_convert <- gene_level_calls[, c("Tumor_Sample_Barcode", "Hugo_Symbol", "FACETS_CNA")]
@@ -355,7 +367,7 @@ if(!interactive()){
         setkey(geneTargets, chr, start, end)
     }
 
-    gene_level_calls = get_gene_level_calls(filenames, geneTargets)
+    gene_level_calls = suppressWarnings(get_gene_level_calls(filenames, geneTargets))
     write.text(gene_level_calls$genelevelcalls_final, outfile)
     fwrite(gene_level_calls$homdeltsg_review, row.names=FALSE, quote=FALSE, sep="\t")
 
