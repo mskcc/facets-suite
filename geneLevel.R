@@ -313,7 +313,7 @@ get_gene_level_calls <- function(cncf_files,
                             select(-c(FACETS_CALL.em,FACETS_CNA.em))
 
     
-    return(list(genelevelcalls_final, homdeltsg_review))
+    return(list(genelevelcalls_final = genelevelcalls_final, homdeltsg_review = homdeltsg_review)) ## return a list, and access these below
 
 }
 
@@ -344,7 +344,7 @@ if(!interactive()){
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
-    parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', default='', help="Output text file of canddiates for manual review")
+    parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
     args=parser$parse_args()
 
     filenames = args$filenames
@@ -367,7 +367,7 @@ if(!interactive()){
         setkey(geneTargets, chr, start, end)
     }
 
-    gene_level_calls = suppressWarnings(get_gene_level_calls(filenames, geneTargets))
+    gene_level_calls = get_gene_level_calls(filenames, geneTargets)
     write.text(gene_level_calls$genelevelcalls_final, outfile)
     fwrite(gene_level_calls$homdeltsg_review, row.names=FALSE, quote=FALSE, sep="\t")
 
