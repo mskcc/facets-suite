@@ -58,7 +58,6 @@ setkey(IMPACT468_targets, chr, start, end)
 
 ## 
 
-WGDcut = 0.5
 
 oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
 oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
@@ -121,7 +120,6 @@ get_gene_level_calls <- function(cncf_files,
 
 
     ## THE FOLLOWING ASSUMES ONE INPUT FILE, *_hisens.cncf.txt
-    ## INPUTTING MULTIPLE INPUT FILES WILL RESULT IN ERRORS
     ### concatenate input files
     cncf_txt_list <- lapply(cncf_files, fread)
     names(cncf_txt_list) <- cncf_files
@@ -234,13 +232,14 @@ get_gene_level_calls <- function(cncf_files,
     ## For each unique Tumor_Sample_Barcode
     ##     subset cf.em; define purity as purity := max(cf.em)
     gene_level[cf.em < 1, purity:=max(cf.em), by=Tumor_Sample_Barcode]
-
+    gene_level[, purity:=unique(purity)[!is.na(unique(purity))], by=Tumor_Sample_Barcode]
+    
     ## define CFcut, the cut-off set for CF
     ## We suspect 60% of CF is pretty high, so that's the cutoff
     gene_level[, CFcut := 0.6 * purity]
 
-    ## handle NA values in cf.em
-    ## if there are NA values in cf.em, then make CFcut == 10
+    ## handle NA values in purity
+    ## if there are NA values in purity, then make CFcut == 10
     gene_level[, CFcut := ifelse(is.na(CFcut), 10, CFcut)]
 
 
@@ -278,7 +277,7 @@ get_gene_level_calls <- function(cncf_files,
 
     ### Step 2.2 Going back to original un-unique genelevel calls, just carry forward frac_elev_major_cn.em
     genelevelcalls0 = genelevelcalls0 %>% 
-                            mutate(WGD.em = ifelse(frac_elev_major_cn.em > WGDcut, "WGD", "no WGD")) %>%
+                            mutate(WGD.em = ifelse(frac_elev_major_cn.em > WGD_threshold, "WGD", "no WGD")) %>%
                             mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
           
     genelevelcalls0 = genelevelcalls0 %>% 
@@ -286,14 +285,46 @@ get_gene_level_calls <- function(cncf_files,
                             mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
                             mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
     ##table(genelevelcalls0$FACETS_CALL.em)
-          
-    seg.count = plyr::count(genelevelcalls0, vars="segid") %>% 
+    
+    ##This line only works if processing exomes
+    # 10 Genes cut-off is too large if processing IMPACT so need to count genes based on the exome bed file from ensembl, version 75
+    # This section replicates what would happen if the whole exome bed was used instead of the IMPACT bed and counts the number of annotated genes in a given segment to be used for filtering in a later step
+    exome_bed <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
+    setnames(exome_bed, c("chr", "start", "end", "name","blank","strand"))
+    setkey(exome_bed, chr, start, end)
+    cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch=NA)
+    cross <- cross[!is.na(ID)]
+    cross[,Hugo_Symbol:=gsub(":.*$", "", name)]
+    genecount <- cross[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
+                            list(chr = unique(chr),
+                                 seg.start=unique(loc.start),
+                                 seg.end=unique(loc.end),
+                                 frac_elev_major_cn=unique(frac_elev_major_cn),
+                                 Nprobes = .N),
+                            keyby=list(Tumor_Sample_Barcode, Hugo_Symbol, tcn=tcn, lcn=lcn, cf=cf,
+                                       tcn.em = tcn.em, lcn.em = lcn.em, cf.em = cf.em)]
+    ### fix bug where lcn == NA even when tcn is 1
+    genecount[tcn == 1 & is.na(lcn), lcn := 0]
+    ### apply WGD threshold
+    genecount[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
+    setkey(genecount, Tumor_Sample_Barcode, Hugo_Symbol)
+    ### annotate integer copy number
+    genecount <- annotate_integer_copy_number(genecount, amp_threshold)
+    ### remove duplicate entries for partial deletions
+    ### the lower value is chosen on the basis that a
+    ### partial deletion is a deletion but a
+    ### partial amplification is not an amplification
+    genecount <- genecount[order(FACETS_CNA, -Nprobes)]
+    genecount <- genecount[!duplicated(genecount, by=c("Tumor_Sample_Barcode", "Hugo_Symbol"))]
+    genecount = genecount  %>% 
+      mutate(segid = str_c(Tumor_Sample_Barcode,';',chr,';',seg.start,';',seg.end))
+    seg.count = plyr::count(genecount, vars="segid") %>%
                             mutate(count = freq) %>% select(-c(freq))
-          
-    genelevelcalls0 = inner_join(genelevelcalls0,seg.count,by='segid')
+    
+    genelevelcalls0 = dplyr::inner_join(genelevelcalls0,seg.count,by='segid')
   
     ### Step 3 SET columns needed for filters & APPLY filters
-    genelevelcalls0 = genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
+    #genelevelcalls0= genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
   
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
                            FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
@@ -369,6 +400,9 @@ if(!interactive()){
 
     gene_level_calls = get_gene_level_calls(filenames, geneTargets)
     write.text(gene_level_calls$genelevelcalls_final, outfile)
+    # This writes out homozygous deletions in known tumor suppressor genes that have been suppressed due to size or the number of genes
+    # Known false negatives exist, such as RB1 that exists in a gene-rich region and so often (but not always) fails the 10 gene cut-off
+    # This list is meant to be looked at manually to be sure that a true homdel is not suppressed (this will be improved in the next version)
     fwrite(gene_level_calls$homdeltsg_review, row.names=FALSE, quote=FALSE, sep="\t")
 
     if(tolower(method) == 'scna'){
