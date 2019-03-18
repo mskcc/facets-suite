@@ -59,7 +59,9 @@ setkey(IMPACT468_targets, chr, start, end)
 ## 
 
 
-oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
+oncokb = fromJSON(readLines('oncokb_genes_apiv1_18March2019.json', warn=FALSE))
+## oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
+
 oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
 
 
