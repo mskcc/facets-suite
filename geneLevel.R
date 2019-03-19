@@ -385,7 +385,7 @@ if(!interactive()){
     method = args$method
     review_candidates = args$review_output_file
     min_cf_cutoff = args$min_cf_cutoff
-    max_seg_length = arsg$max_seg_length
+    max_seg_length = args$max_seg_length
 
     ## Check that min_cf_cutoff is a fraction, i.e. 0<=min_cf_cutoff<=1
     ## Otherwise, throw an error
