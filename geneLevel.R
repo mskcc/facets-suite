@@ -3,7 +3,6 @@
 # Generate gene-level TCN/LCN and CNA call, given cncf.txt files from a doFacets run
 
 ## Require *hisens.cncf.txt
-## 
 
 
 library(argparse)
@@ -17,7 +16,6 @@ library(tidyr)
 library(jsonlite)
 
 "%ni%" = Negate("%in%")
-
 
 
 write.text <- function (...) {
@@ -110,8 +108,8 @@ get_gene_level_calls <- function(cncf_files,
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
-                                 max_seg_length = 25000000, ### genes in segments longer than this will be treated as diploid
-                                 min_cf = 0.6, ### genes in segments with cell fraction less than this will be treated as diploid
+                                 max_seg_length = max_seg_length, ### genes in segments longer than this will be treated as diploid
+                                 min_ccf = min_cf_cutoff, ### genes in segments with cell fraction less than this will be treated as diploid
                                  mean_chrom_threshold = 0 ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  ){
 
@@ -236,7 +234,8 @@ get_gene_level_calls <- function(cncf_files,
     
     ## define CFcut, the cut-off set for CF
     ## We suspect 60% of CF is pretty high, so that's the cutoff
-    gene_level[, CFcut := 0.6 * purity]
+    ## value set by min_cf_cutoff
+    gene_level[, CFcut := min_ccf * purity]
 
     ## handle NA values in purity
     ## if there are NA values in purity, then make CFcut == 10
@@ -332,7 +331,7 @@ get_gene_level_calls <- function(cncf_files,
                                                 ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < 10000000 & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
     ## table(genelevelcalls0$FACETS_CALL.em)
           
-    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
+    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < max_seg_length)
           
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
                             mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
@@ -376,6 +375,8 @@ if(!interactive()){
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
     parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
+    parser$add_argument('--min_cf_cutoff', type='double', default=0.6, help="The cell fraction cutoff such that genes in segments with cell fraction less than this will be treated as diploid")
+    parser$add_argument('--max_seg_length', type='double', default=25000000, help="Genes in segments longer than this will be treated as diploid")
     args=parser$parse_args()
 
     filenames = args$filenames
@@ -383,6 +384,22 @@ if(!interactive()){
     outfile = args$outfile
     method = args$method
     review_candidates = args$review_output_file
+    min_cf_cutoff = args$min_cf_cutoff
+    max_seg_length = arsg$max_seg_length
+
+    ## Check that min_cf_cutoff is a fraction, i.e. 0<=min_cf_cutoff<=1
+    ## Otherwise, throw an error
+
+    if (min_cf_cutoff > 1 || min_cf_cutoff < 0){
+        stop("min_cf_cutoff must be a fraction, a numeric between 0 and 1; please revise input min_cf_cutoff")
+    }
+
+    ## Check that max_seg_length is greater than 0
+
+    if (max_seg_length < 0){
+        stop("max_seg_length must be a numeric greater than 0; please revise input max_seg_length")
+    }
+
 
     if(args$targetFile=="IMPACT341") {
         geneTargets=IMPACT341_targets
