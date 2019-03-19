@@ -106,7 +106,7 @@ get_gene_level_calls <- function(cncf_files,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  max_seg_length = maxseg, ### genes in segments longer than this will be treated as diploid
-                                 min_ccf = min_cf_cutoff, ### genes in segments with cell fraction less than this will be treated as diploid
+                                 min_cf = min_cf_cutoff, ### genes in segments with cell fraction less than this will be treated as diploid
                                  mean_chrom_threshold = 0 ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  ){
 
@@ -232,7 +232,7 @@ get_gene_level_calls <- function(cncf_files,
     ## define CFcut, the cut-off set for CF
     ## We suspect 60% of CF is pretty high, so that's the cutoff
     ## value set by min_cf_cutoff
-    gene_level[, CFcut := min_ccf * purity]
+    gene_level[, CFcut := min_cf * purity]
 
     ## handle NA values in purity
     ## if there are NA values in purity, then make CFcut == 10
