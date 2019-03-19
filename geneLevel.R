@@ -105,7 +105,7 @@ get_gene_level_calls <- function(cncf_files,
                                  gene_targets,
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
-                                 max_seg_length = max_seg_length, ### genes in segments longer than this will be treated as diploid
+                                 max_seg_length = maxseg, ### genes in segments longer than this will be treated as diploid
                                  min_ccf = min_cf_cutoff, ### genes in segments with cell fraction less than this will be treated as diploid
                                  mean_chrom_threshold = 0 ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
                                  ){
@@ -324,11 +324,11 @@ get_gene_level_calls <- function(cncf_files,
   
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
                            FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
-                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < 10000000 & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
-                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < 10000000 & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
+                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < max_seg_length & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
+                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
     ## table(genelevelcalls0$FACETS_CALL.em)
           
-    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < max_seg_length)
+    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
           
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
                             mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
@@ -373,7 +373,7 @@ if(!interactive()){
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
     parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
     parser$add_argument('--min_cf_cutoff', type='double', default=0.6, help="The cell fraction cutoff such that genes in segments with cell fraction less than this will be treated as diploid")
-    parser$add_argument('--max_seg_length', type='double', default=25000000, help="Genes in segments longer than this will be treated as diploid")
+    parser$add_argument('--max_seg_length', type='double', default=10000000, help="Genes in segments longer than this will be treated as diploid")
     args=parser$parse_args()
 
     filenames = args$filenames
@@ -382,7 +382,7 @@ if(!interactive()){
     method = args$method
     review_candidates = args$review_output_file
     min_cf_cutoff = args$min_cf_cutoff
-    max_seg_length = args$max_seg_length
+    maxseg = args$max_seg_length
 
     ## Check that min_cf_cutoff is a fraction, i.e. 0<=min_cf_cutoff<=1
     ## Otherwise, throw an error
