@@ -24,7 +24,7 @@ getSDIR <- function(){
 }
 
 ### get IMPACT341 loci and gene names
-arm_definitions <- suppressWarnings(fread(file.path(getSDIR(), 'CytobandTableRed.Ensemblgrch37.txt')))
+arm_definitions <- suppressWarnings(fread(file.path(getSDIR(), 'data/CytobandTableRed.Ensemblgrch37.txt')))
 setnames(arm_definitions, c("chr", "start", "end", "arm"))
 arm_definitions <- arm_definitions[chr != "Y"]
 arm_definitions[, arm := factor(arm, levels = unique(arm))]
@@ -34,7 +34,7 @@ setkey(arm_definitions, chr, start, end)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
+FACETS_CALL_table <- fread(file.path(getSDIR(), 'data/FACETS_CALL_table.tsv'))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 ### lowest value of tcn for AMP
 AMP_thresh_tcn <- 6

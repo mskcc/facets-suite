@@ -35,21 +35,18 @@ getSDIR <- function(){
 }
 
 # Get IMPACT341 loci and gene names
-msk_impact_341 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/genelist', what="", quiet = TRUE)
-IMPACT341_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv3/picard_targets.interval_list'))
+IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact341_targets.ilist")))
 setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT341_targets, chr, start, end)
 
 # Get IMPACT410 loci and gene names
-msk_impact_410 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/genelist', what="", quiet = TRUE)
-IMPACT410_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv5/picard_targets.interval_list'))
+IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact410_targets.ilist")))
 IMPACT410_targets = IMPACT410_targets[V5 %like% 'target']
 setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT410_targets, chr, start, end)
 
 # Get IMPACT468 loci and gene names
-msk_impact_468 <- scan('/ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv6/genelist', what="", quiet = TRUE)
-IMPACT468_targets <- suppressWarnings(fread('grep -v ^@ /ifs/depot/resources/dmp/data/mskdata/interval-lists/VERSIONS/cv6/picard_targets.interval_list'))
+IMPACT468_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact468_targets.ilist")))
 IMPACT468_targets = IMPACT468_targets[V5 %like% 'target']
 setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT468_targets, chr, start, end)
@@ -57,7 +54,7 @@ setkey(IMPACT468_targets, chr, start, end)
 ## 
 
 # Fetch a versioned freeze of OncoKB curated tumor-suppressors and oncogenes
-oncokb = fromJSON(readLines('OncoKB_allCuratedGenes_v1.19_patch_1.json', warn=FALSE))
+oncokb = fromJSON(readLines(file.path(getSDIR(), 'data/OncoKB_allCuratedGenes_v1.19_patch_1.json'), warn=FALSE))
 # If you have internet access, use the alternative below for the latest
 ## oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
 oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
@@ -65,7 +62,7 @@ oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
 
 #############################################
 ### definition of copy number calls in WGD
-FACETS_CALL_table <- fread(paste0(getSDIR(), "/FACETS_CALL_table.tsv"))
+FACETS_CALL_table <- fread(file.path(getSDIR(), 'data/FACETS_CALL_table.tsv'))
 setkey(FACETS_CALL_table, WGD, mcn, lcn)
 
 ## variable for filters, Shweta and Allison filters
@@ -288,7 +285,7 @@ get_gene_level_calls <- function(cncf_files,
     ##This line only works if processing exomes
     # 10 Genes cut-off is too large if processing IMPACT so need to count genes based on the exome bed file from ensembl, version 75
     # This section replicates what would happen if the whole exome bed was used instead of the IMPACT bed and counts the number of annotated genes in a given segment to be used for filtering in a later step
-    exome_bed <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
+    exome_bed <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
     setnames(exome_bed, c("chr", "start", "end", "name","blank","strand"))
     setkey(exome_bed, chr, start, end)
     cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch=NA)
