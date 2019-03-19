@@ -58,13 +58,11 @@ setkey(IMPACT468_targets, chr, start, end)
 
 ## 
 
-
-oncokb = fromJSON(readLines('oncokb_genes_apiv1_18March2019.json', warn=FALSE))
+# Fetch a versioned freeze of OncoKB curated tumor-suppressors and oncogenes
+oncokb = fromJSON(readLines('OncoKB_allCuratedGenes_v1.19_patch_1.json', warn=FALSE))
+# If you have internet access, use the alternative below for the latest
 ## oncokb = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn=FALSE))
-
 oncokb_tsg = filter(oncokb, tsg=="TRUE") %>% select(hugoSymbol) %>% distinct(.)
-
-
 
 
 #############################################
