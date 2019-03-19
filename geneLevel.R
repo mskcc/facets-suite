@@ -121,7 +121,7 @@ get_gene_level_calls <- function(cncf_files,
     if(packageVersion("data.table") < "1.9.6"){stop("please update data.table to v1.9.6")}
 
 
-    ## THE FOLLOWING ASSUMES ONE INPUT FILE, *_hisens.cncf.txt
+    
     ### concatenate input files
     cncf_txt_list <- lapply(cncf_files, fread)
     names(cncf_txt_list) <- cncf_files
