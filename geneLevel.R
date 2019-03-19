@@ -393,7 +393,7 @@ if(!interactive()){
 
     ## Check that max_seg_length is greater than 0
 
-    if (max_seg_length < 0){
+    if (maxseg < 0){
         stop("max_seg_length must be a numeric greater than 0; please revise input max_seg_length")
     }
 
