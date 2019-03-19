@@ -82,7 +82,7 @@ get_gene_level_calls <- function(cncf_files,
   ### concatenate input files
   cncf_txt_list <- lapply(cncf_files, fread)
   names(cncf_txt_list) <- cncf_files
-  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename")
+  concat_cncf_txt <- rbindlist(cncf_txt_list, idcol = "filename",fill=TRUE)
 
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
