@@ -62,11 +62,10 @@ calculate_fraction_cna = function(segs,
     wgd = frac_elevated_mcn > wgd_treshold
     
     # Calculate fraction of genome altered
-    sample_ploidy = ifelse(wgd, round(ploidy), 2)
     if (!wgd) {
-        diploid_length = sum(segs$length[which(segs$tcn == sample_ploidy & segs$lcn == 1)])
+        diploid_length = sum(segs$length[which(segs$tcn == 2 & segs$lcn == 1)])
     } else if (wgd) {
-        diploid_length = sum(segs$length[which(segs$tcn == sample_ploidy & segs$lcn >= 1)])
+        diploid_length = sum(segs$length[which(segs$tcn == 4 & segs$lcn == 2)])
     }
     frac_altered = (interrogated_genome - diploid_length) / interrogated_genome
     
