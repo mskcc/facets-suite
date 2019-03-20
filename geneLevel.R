@@ -41,13 +41,11 @@ setkey(IMPACT341_targets, chr, start, end)
 
 # Get IMPACT410 loci and gene names
 IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact410_targets.ilist")))
-IMPACT410_targets = IMPACT410_targets[V5 %like% 'target']
 setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT410_targets, chr, start, end)
 
 # Get IMPACT468 loci and gene names
 IMPACT468_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact468_targets.ilist")))
-IMPACT468_targets = IMPACT468_targets[V5 %like% 'target']
 setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
 setkey(IMPACT468_targets, chr, start, end)
 
@@ -405,8 +403,6 @@ if(!interactive()){
     } else if(args$targetFile=="IMPACT468") {
         geneTargets=IMPACT468_targets
     } else {
-        # Note the target file needs to not only be in the PICARD interval list format
-        # But the names must match the regex: /GENESYMBOL_.*/ (e.g. TP53_target_02)
         geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
         setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
         setkey(geneTargets, chr, start, end)
