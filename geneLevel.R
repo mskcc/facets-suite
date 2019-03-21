@@ -142,7 +142,7 @@ get_gene_level_calls <- function(cncf_files,
     ### Extract integer copy number for each probe from concat_cncf_txt
     fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
     fo_impact <- fo_impact[!is.na(ID)]
-    fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
+    fo_impact[,Hugo_Symbol:=name]
   
     if (!("cf" %in% names(fo_impact))) {
         fo_impact[, cf := cf.em]
@@ -151,8 +151,7 @@ get_gene_level_calls <- function(cncf_files,
     ### Summarize copy number for each gene
 #  if(method == 'cncf'){
 
-    gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
-                          list(chr = unique(chr),
+    gene_level <- fo_impact[, list(chr = unique(chr),
                                seg.start=unique(loc.start),
                                seg.end=unique(loc.end),
                                frac_elev_major_cn=unique(frac_elev_major_cn),
@@ -164,8 +163,7 @@ get_gene_level_calls <- function(cncf_files,
 ### Collapsed into one call, see above
 #   if(method == 'em'){
 
-#       gene_level <- fo_impact[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
-#                         list(chr = unique(chr),
+#       gene_level <- fo_impact[, list(chr = unique(chr),
 #                              seg.start=unique(loc.start),
 #                              seg.end=unique(loc.end),
 # #                                start=unique(start),   ### with these uncommented, the per-gene summarization is broken (??)
@@ -289,8 +287,7 @@ get_gene_level_calls <- function(cncf_files,
     cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch=NA)
     cross <- cross[!is.na(ID)]
     cross[,Hugo_Symbol:=gsub(":.*$", "", name)]
-    genecount <- cross[!Hugo_Symbol %in% c("Tiling", "FP", "intron"),
-                            list(chr = unique(chr),
+    genecount <- cross[, list(chr = unique(chr),
                                  seg.start=unique(loc.start),
                                  seg.end=unique(loc.end),
                                  frac_elev_major_cn=unique(frac_elev_major_cn),
@@ -406,6 +403,9 @@ if(!interactive()){
         geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
         setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
         setkey(geneTargets, chr, start, end)
+        # If user gave us a DMP-IMPACT interval list, remove non-coding targets and reduce exon labels to gene names
+        geneTargets <- geneTargets[grep("^Tiling_|^FP_|_intron_|_pseudo_|_MSI_|_tiling_|_promoter_", name, invert=TRUE),]
+        geneTargets$name <- gsub("_target_.*$", "", geneTargets$name)
     }
 
     gene_level_calls = get_gene_level_calls(filenames, geneTargets)
