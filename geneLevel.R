@@ -225,15 +225,10 @@ get_gene_level_calls <- function(cncf_files,
     gene_level[cf.em < 1, purity:=max(cf.em), by=Tumor_Sample_Barcode]
     gene_level[, purity:=unique(purity)[!is.na(unique(purity))], by=Tumor_Sample_Barcode]
     
-    ## define CFcut, the cut-off set for CF
-    ## We suspect 60% of CF is pretty high, so that's the cutoff
-    ## value set by min_cf_cutoff
+    ## Define CFcut, the cut-off for cell fraction, corrected for purity
+    ## We suspect 60% of CF is pretty high, so that's the cutoff value set by min_cf_cutoff
+    ## If purity is NA, then this cut-off will be ignored in downstream filters
     gene_level[, CFcut := min_cf * purity]
-
-    ## handle NA values in purity
-    ## if there are NA values in purity, then make CFcut == 10
-    gene_level[, CFcut := ifelse(is.na(CFcut), 10, CFcut)]
-
 
     ## Apply filters from Allison Richards and Shweta Chavan, March 2019
     ## Use FACETS EM as it gives more accurate results
@@ -248,9 +243,6 @@ get_gene_level_calls <- function(cncf_files,
     ## 
     ## The 10 gene cut-off is based all annotated genes; for WES use
     ## 
-
-    ## SHWETA CODE:
-    ## sample_pairing = sample_pairing %>% mutate(CFcut = ifelse(is.na(sample_pairing$CFcut),10,CFcut)) 
 
     ### Step 2.1 CONVERT GENELEVEL CALLS CNCF-based to EM-based
     genelevelcalls0 = gene_level  %>% 
@@ -318,8 +310,8 @@ get_gene_level_calls <- function(cncf_files,
     #genelevelcalls0= genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
   
     genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em, 
-                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"), 
-                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < max_seg_length & (tcn.em > 8 | count <=10 | cf.em > CFcut )), FACETS_CALL.em, 
+                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"),
+                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut ))), FACETS_CALL.em,
                                                 ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em )) 
     ## table(genelevelcalls0$FACETS_CALL.em)
           
