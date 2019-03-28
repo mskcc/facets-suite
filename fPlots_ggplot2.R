@@ -325,7 +325,7 @@ get.cumulative.chr.maploc = function(mat, load.genome=FALSE){
 }
 
 
-get.gene.pos = function(hugo.symbol,my.path=paste0(getSDIR(),'/Homo_sapiens.GRCh37.75.canonical_exons.bed'),load.genome=FALSE){
+get.gene.pos = function(hugo.symbol,my.path=file.path(getSDIR(),'data/Homo_sapiens.GRCh37.75.canonical_exons.bed'),load.genome=FALSE){
 
   if(load.genome){
     require(BSgenome.Hsapiens.UCSC.hg19)
