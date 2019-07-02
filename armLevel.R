@@ -1,4 +1,4 @@
-#!/opt/common/CentOS_6-dev/R/R-3.1.3/bin/Rscript
+#!/usr/bin/env Rscript
 
 #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
 
