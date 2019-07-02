@@ -261,9 +261,12 @@ get_gene_level_calls <- function(cncf_files,
     exome_bed <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
     setnames(exome_bed, c("chr", "start", "end", "name","blank","strand"))
     setkey(exome_bed, chr, start, end)
+    exome_bed[,Hugo_Symbol:=gsub(":.*$", "", name)]
+    rm_genes = unique(exome_bed[, list(Hugo_Symbol, chr)])[, .N, keyby = Hugo_Symbol][N > 1] # these genes are mapping to multiple chromosomes
+    exome_bed = exome_bed[Hugo_Symbol %ni% rm_genes$Hugo_Symbol]
     cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch=NA)
     cross <- cross[!is.na(ID)]
-    cross[,Hugo_Symbol:=gsub(":.*$", "", name)]
+    # cross[,Hugo_Symbol:=gsub(":.*$", "", name)]
     genecount <- cross[, list(chr = unique(chr),
                                  seg.start=unique(loc.start),
                                  seg.end=unique(loc.end),
