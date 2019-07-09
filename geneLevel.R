@@ -390,7 +390,7 @@ if(!interactive()){
     # This writes out homozygous deletions in known tumor suppressor genes that have been suppressed due to size or the number of genes
     # Known false negatives exist, such as RB1 that exists in a gene-rich region and so often (but not always) fails the 10 gene cut-off
     # This list is meant to be looked at manually to be sure that a true homdel is not suppressed (this will be improved in the next version)
-    fwrite(gene_level_calls$homdeltsg_review, paste0(gsub("[.]txt","",outfile),"_TSG_ManualReview.txt"),row.names=FALSE, quote=FALSE, sep="\t")
+    fwrite(gene_level_calls$homdeltsg_review, paste0(gsub("[.]tsv|[.]txt","",outfile),"_TSG_ManualReview.txt"),row.names=FALSE, quote=FALSE, sep="\t")
 
     if(tolower(method) == 'scna'){
         scna_outfile = gsub(".txt", ".scna.txt", outfile)
