@@ -1,4 +1,4 @@
-#!/opt/common/CentOS_6-dev/bin/current/python
+#!/usr/bin/env python3
 descr = "Concatenate FACETS out files into tabular per-sample format and cncf files into a long table. Output is OUT and CNCF."
 import argparse, subprocess, os, re, glob
 
