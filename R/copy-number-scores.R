@@ -298,7 +298,7 @@ calculate_lst = function(segs,
     }
     
     # Return values
-    list(lst = lst)
+    list(lst = sum(lst))
 }
 
 #' @export 
