@@ -9,7 +9,7 @@
 #'
 #' @return List with one or more values from function.
 #'
-#' @importFrom dplyr left_join filter summarize select %>% mutate_at case_when group_by
+#' @importFrom dplyr left_join filter summarize select %>% mutate_at case_when group_by rowwise
 #' @importFrom purrr map_dfr map_lgl map_chr discard
 #' @importFrom tidyr gather separate_rows
 #' @importFrom plyr mapvalues
@@ -22,7 +22,7 @@ arm_level_changes = function(segs,
                              genome = c('hg19', 'hg18', 'hg38'),
                              algorithm = c('em', 'cncf')) {
     
-    genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
+    genome_choice = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
     algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
     
     # Get WGD status
@@ -31,7 +31,7 @@ arm_level_changes = function(segs,
     sample_ploidy = ifelse(wgd, round(ploidy), 2)
     
     # Create chrom_info for sample
-    sample_chrom_info = get_sample_genome(segs, genome)
+    sample_chrom_info = get_sample_genome(segs, genome_choice)
     segs = parse_segs(segs, algorithm) %>% 
         left_join(., select(sample_chrom_info, chr, centromere), by = c('chrom' = 'chr'))
     

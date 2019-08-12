@@ -3,6 +3,12 @@
 \name{annotate_maf}
 \alias{annotate_maf}
 \title{Estimate CCFs of somatic mutations}
+\format{Output columns:
+\describe{
+  \item{ccf_Mcopies*}{Inferred CCF if mutation is on the major allele.}
+  \item{ccf_1copy*}{Inferred CCF if mutation exists in one copy.}
+  \item{ccf_expected_copies*}{Inferred CCF if mutation exists in number of copies expected from observed VAF and local ploidy.}
+}}
 \usage{
 annotate_maf(maf, segs, purity, algorithm = c("em", "cncf"))
 }
@@ -21,10 +27,4 @@ MAF file annotated with clonality estimates for each mutation.
 \description{
 Based on FACETS data, infer cancer-cell fraction (CCF) for somatic mutations in a sample.
 Output columns:
-#' @format Output columns:
-\describe{
-  \item{ccf_Mcopies*}{Inferred CCF if mutation is on the major allele.}
-  \item{ccf_1copy*}{Inferred CCF if mutation exists in one copy.}
-  \item{ccf_expected_copies*}{Inferred CCF if mutation exists in number of copies expected from observed VAF and local ploidy.}
-}
 }

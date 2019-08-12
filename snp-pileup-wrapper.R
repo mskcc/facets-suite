@@ -3,6 +3,12 @@ suppressPackageStartupMessages({
     library(argparse)
 })
 
+args = commandArgs(TRUE)
+if (length(args) == 0) {
+    message('Run snp-pileup-wrapper.R --help for list of input arguments.')
+    quit()
+}
+
 parser = ArgumentParser(description = 'Generate SNP read counts from matched tumor-normal BAM files.')
 
 parser$add_argument('-v', '--verbose', action="store_true", default = TRUE,
@@ -31,7 +37,7 @@ snp_pileup_path = '$HOME/git/facets/inst/extcode/snp-pileup'
 
 if (is.null(args$normal_name)) args$normal_name = gsub('.bam$', '', basename(args$normal_bam))
 if (is.null(args$tumor_name)) args$tumor_name = gsub('.bam$', '', basename(args$tumor_bam))
-if (is.null(args$output_file)) args$output_file = paste0('countsMerged_', args$tumor_name, '_', args$normal_name, '.gz')
+if (is.null(args$output_file)) args$output_file = paste0(args$tumor_name, '_', args$normal_name, 'snp_pileup.gz')
 if (file.exists(args$output_file)) stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
 
 default_args = c('--count-orphans', '--gzip')

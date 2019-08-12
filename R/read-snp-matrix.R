@@ -10,7 +10,7 @@
 #'
 #' @return Count matrix.
 #' 
-#' @importFrom data.table fread :=
+#' @import data.table
 
 #' @export
 read_snp_matrix = function(input_file,

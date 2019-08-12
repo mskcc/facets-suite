@@ -2,7 +2,7 @@
 #' 
 #' Creates an IGV-like graphical representation of the copy-number segments across the samples in a segmentation object, as output by \code{run_facets}.
 #'
-#' @param segs FACETS segment output. 
+#' @param segs FACETS segment output, IGV formatted. 
 #' @param plotX If \code{TRUE}, includes chromosome X.
 #' @param sample_order Manual order of samples.
 #' @param cap_log_ratios Cap log-ratios at the absolute value.
@@ -16,12 +16,12 @@
 #' @import ggplot2
  
 #' @export
-plot_segmentation_profile = function(segs,
-                                     plotX = FALSE,
-                                     sample_order = NULL,
-                                     cap_log_ratios = TRUE,
-                                     colors = c('darkblue', 'white', 'red'),
-                                     return_ojbect = FALSE) {
+plot_segmentation = function(segs,
+                             plotX = FALSE,
+                             sample_order = NULL,
+                             cap_log_ratios = TRUE,
+                             colors = c('darkblue', 'white', 'red'),
+                             return_object = FALSE) {
     
     if (!plotX) { 
         segs = filter(segs, chrom != 23)
@@ -43,7 +43,7 @@ plot_segmentation_profile = function(segs,
         list(chrom = x,
              chrom_length = as.numeric(chrom_max - chrom_min))
     }) %>% 
-        mutate(rel_length = chrom_length/sum(chrom_length))
+        mutate(.data, rel_length = chrom_length/sum(chrom_length))
     segs = left_join(segs, chrom_lengths, by = 'chrom')
     
     
@@ -63,24 +63,27 @@ plot_segmentation_profile = function(segs,
     }
     
     # Set Y-axis
-    sample_number = length(unique(seg$ID))
+    sample_number = length(unique(segs$ID))
     increments = 100 / sample_number
     max_vec = cumsum(rep(increments, sample_number))
     min_vec = c(0, max_vec[-length(max_vec)])
     segs = mutate(segs,
-                  y_min = min_vec[match(ID, factor(unique(seg$ID)))],
-                  y_max = max_vec[match(ID, factor(unique(seg$ID)))])
+                  y_min = min_vec[match(ID, factor(unique(segs$ID)))],
+                  y_max = max_vec[match(ID, factor(unique(segs$ID)))])
+    
+    y_labs = distinct(segs, ID, .keep_all = T) %>% 
+        mutate(pos = (y_max-y_min)/2 + y_min)
     
     # Plot 
     seg_plot = ggplot(segs, aes(xmin = loc.start, xmax = loc.end, ymin = y_min, ymax = y_max, fill = seg.mean)) +
         geom_rect() +
         scale_fill_gradient2(low = colors[1], mid = colors[2], high = colors[3], guide = 'colourbar',
                              'Log ratio', breaks = legend_breaks, labels = round(legend_breaks)) +
-        scale_y_continuous(expand = c(0,0)) +
+        scale_y_continuous(expand = c(0,0), breaks = y_labs$pos, labels = y_labs$ID) +
         facet_grid(.~chrom, space = 'free_x', scales = 'free_x', switch = 'x') +
         theme(
             axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-            axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+            axis.ticks.y = element_blank(),
             panel.spacing.x = unit(-.5, 'lines'),
             panel.spacing.y = unit(0, 'lines'),
             strip.background = element_rect(fill = 'white'),

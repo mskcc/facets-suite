@@ -11,3 +11,4 @@
 #' Test MAF
 #' @format Mutation annotation format (MAF) with standard columns.
 #' @source \url{portal.gdc.cancer.gov}
+'test_maf'

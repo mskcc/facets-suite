@@ -2,7 +2,7 @@
 #'
 #' Based on FACETS data, infer cancer-cell fraction (CCF) for somatic mutations in a sample.
 #' Output columns:
-#' #' @format Output columns:
+#' @format Output columns:
 #' \describe{
 #'   \item{ccf_Mcopies*}{Inferred CCF if mutation is on the major allele.}
 #'   \item{ccf_1copy*}{Inferred CCF if mutation exists in one copy.}

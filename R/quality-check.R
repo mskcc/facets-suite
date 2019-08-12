@@ -1,15 +1,31 @@
+#' Sample QC
+#' 
+#' Generate QC metrics for sample. Can use mutation calls in MAF file.
+#'
+#' @param facets_output 
+#' @param maf 
+#' @param algorithm 
+#'
 #' @importFrom dplyr distinct
 
-assess_quality = function(facets_output,
-                          maf = NULL,
-                          algorithm = c('em', 'cncf')) {
+quality_check = function(facets_output,
+                         maf = NULL,
+                         genome = c('hg19', 'hg18', 'hg38'),
+                         algorithm = c('em', 'cncf')) {
     
-    fcna_output = calculate_fcna(segs, ploidy, genome, algorithm)
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = F)
+    genome = match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = F)
+    
+    fcna_output = calculate_fraction_cna(facets_output$segs, facets_output$ploidy, genome, algorithm)
     
     genome = get(genome)
     
     # Create chrom_info for sample
     segs = parse_segs(segs, algorithm)
+    
+    # Check diplogr
+    diplogr_flag = abs(facets_output$diplogr) > 1
+    
     
     # Check for mutations in homdels
     if (!is.null(maf)) {
@@ -18,8 +34,6 @@ assess_quality = function(facets_output,
         
     }
     
-    # Check diplogr
-    diplogr_flag = abs(facets_output$diplogr) > 1
     
     # Balanced diploid regions in WGD case
     if (wgd) {

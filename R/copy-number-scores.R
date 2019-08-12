@@ -43,7 +43,7 @@ calculate_fraction_cna = function(segs,
                                   genome = c('hg19', 'hg18', 'hg38'),
                                   algorithm = c('em', 'cncf')) {
     
-    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = F)
+    algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
     
     # Centromere locations
     genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
@@ -89,8 +89,8 @@ calculate_loh = function(segs,
     genome = get(match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE))
     
     # Create chrom_info for sample
-    segs = parse_segs(segs, algorithm) %>% 
-        filter(chrom %in% 1:22)
+    segs = parse_segs(segs, algorithm)
+    segs = filter(segs, chrom %in% 1:22)
     
     # Fraction LOH
     frac_loh = group_by(segs, chrom) %>% 
@@ -179,7 +179,7 @@ calculate_ntai = function(segs,
             summarize(tcn_total = sum(length)) %>%
             filter(tcn_total == max(tcn_total) & tcn > 0) %>% 
             pull(tcn)
-        chrom_segs$chrom_ploidy = chrom_ploidy # update "ploidy" column, so the new calculated value can be returned
+        chrom_segs$chrom_ploidy = as.integer(chrom_ploidy) # update "ploidy" column, so the new calculated value can be returned
         
         if (chrom_ploidy %% 2 == 0) { # if even
             chrom_segs$AI = c(0, 2)[match(chrom_segs$mcn == chrom_segs$lcn, c('TRUE', 'FALSE'))]
@@ -298,7 +298,7 @@ calculate_lst = function(segs,
     }
     
     # Return values
-    list(lst = lst)
+    list(lst = sum(lst))
 }
 
 #' @export 
@@ -322,7 +322,9 @@ calculate_hrdloh = function(segs,
     segs_loh = segs[!is.na(segs$lcn), ] # remove segments with lcn = NA
     segs_loh = segs_loh[which(segs_loh$lcn == 0 & segs_loh$mcn != 0), ]
     segs_loh = segs_loh[which(segs_loh$length > 15e6), ] # check if segment is long enough
-    segs_loh = segs_loh[!which(segs_loh$chrom %in% chr_del), ] # remove if whole chromosome lost
+    if (length(chr_del) > 0) {
+        segs_loh = segs_loh[-which(segs_loh$chrom %in% chr_del), ] # remove if whole chromosome lost
+    }
     
     # Return values
     list(hrd_loh = nrow(segs_loh))

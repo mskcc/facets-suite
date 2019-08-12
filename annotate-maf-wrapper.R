@@ -2,8 +2,15 @@
 suppressPackageStartupMessages({
     library(argparse)
     library(data.table)
+    library(parallel)
     library(facetsSuite)
 })
+
+args = commandArgs(TRUE)
+if (length(args) == 0) {
+    message('Run annotate-maf-wrapper.R --help for list of input arguments.')
+    quit()
+}
 
 parser = ArgumentParser(description = 'Annotate MAF with local copy number and CCF estimates.')
 parser$add_argument('-m', '--maf-file', required = T,
@@ -42,7 +49,7 @@ annotate_sample = function(sample_id) {
 }
 
 if (args$parallel == TRUE) {
-    output_maf = parallel::mclapply(common_samples, annotate_sample, mc.cores = parallel::detectCores())
+    output_maf = mclapply(common_samples, annotate_sample, mc.cores = detectCores())
 } else {
     output_maf = lapply(common_samples, annotate_sample)
 }

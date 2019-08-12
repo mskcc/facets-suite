@@ -2,11 +2,13 @@ Package: facetsSuite
 Type: Package
 Title: Functions to run and parse output from FACETS
 Version: 1.0
-Author: Who wrote it
+Authors@R: person(given = "Philip",
+             family = "Jonsson",
+             role = c("aut", "cre"),
+             email = "philip.jonsson@gmail.com")
 URL: https://github.com/mskcc/facetsSuite
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Description: This package provides functions that wrap the FACETS package for allele-specific copy-number analysis as well as functions to perform post-hoc analyses thereof.
+License: MIT + file LICENSE
 RoxygenNote: 6.1.1
 LazyData: true
 Encoding: UTF-8
@@ -30,4 +32,5 @@ Remotes:
 NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp
 Suggests: 
-    covr
+    covr,
+    testthat

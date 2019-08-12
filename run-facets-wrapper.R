@@ -1,15 +1,21 @@
 #!/usr/bin/env Rscript --vanilla
 suppressPackageStartupMessages({
+    library(facets)
     library(facetsSuite)
     library(argparse)
     library(dplyr)
-    library(facets)
     library(ggplot2)
     library(Cairo)
     library(egg)
 })
 
-parser = ArgumentParser(description = 'Execute FACETS and generate various output, input SNP read counts from snp-pileup.')
+args = commandArgs(TRUE)
+if (length(args) == 0) {
+    message('Run run-facets-wrapper.R --help for list of input arguments.')
+    quit()
+}
+
+parser = ArgumentParser(description = 'Run FACETS and associated output, input SNP read counts from snp-pileup.')
 
 parser$add_argument('-v', '--verbose', action="store_true", default = TRUE,
                     help = 'Print run info')
@@ -18,18 +24,18 @@ parser$add_argument('-f', '--counts-file', required = T,
 parser$add_argument('-s', '--sample-id', required = F,
                     help = 'Sample ID, preferrable Tumor_Normal to keep track of the normal used')
 parser$add_argument('-D', '--directory', required = F,
-                    help = 'Output directory [default sample_id')
+                    help = 'Output directory [default current directory')
 parser$add_argument('-g', '--genome', required = F,
                     choices = c('hg18', 'hg19', 'hg38'),
                     default = 'hg19', help = 'Reference genome [default %(default)s]')
 parser$add_argument('-c', '--cval', required = F, type = 'integer',
                     default = 100, help = 'Segmentation parameter (cval) [default %(default)s]')
 parser$add_argument('-pc', '--purity-cval', required = F, type = 'integer',
-                    default = NULL, help = 'If two-pass, purity segmentation parameter (cval)')
+                    default = NULL, help = 'If two pass, purity segmentation parameter (cval)')
 parser$add_argument('-m', '--min-nhet', required = F,
                     default = 15, help = 'Min. number of heterozygous SNPs required for clustering [default %(default)s]')
 parser$add_argument('-pm', '--purity-min-nhet', required = F,
-                    default = 15, help = 'If two-pass, purity min. number of heterozygous SNPs (cval) [default %(default)s]')
+                    default = 15, help = 'If two pass, purity min. number of heterozygous SNPs (cval) [default %(default)s]')
 parser$add_argument('-n', '--snp-window-size', required = F,
                     default = 250, help = 'Window size for heterozygous SNPs [default %(default)s]')
 parser$add_argument('-nd', '--normal-depth', required = F,
@@ -50,30 +56,22 @@ print_run_details = function(outfile,
                              diplogr,
                              flags = NULL) {
     
-    run_details = c(
-        '# Input parameters',
-        paste0('TAG = ', args$sample_id),
-        paste0('Facets version = ', packageVersion('facets')),
-        paste0('Input = ', basename(args$counts_file)),
-        paste0('Seed = ', args$seed),
-        paste0('snp_nbhd = ', args$snp_window_size),
-        paste0('ndepth = ', args$normal_depth),
-        paste0('cval = ', cval),
-        paste0('min.nhet = ', min_nhet),
-        paste0('genome = ', args$genome),
-        '\n# FACETS output',
-        paste0('Purity = ', purity),
-        paste0('Ploidy = ', ploidy),
-        paste0('dipLogR = ', diplogr),
-        paste0('output flags = ', flags)
-    )
+    run_details = data.frame(
+        'sample' = args$sample_id,
+        'purity' = purity,
+        'ploidy' = ploidy,
+        'diplogr' = diplogr,
+        'facets_version' = packageVersion('facets'),
+        'cval' = cval,
+        'snp_nbhd' = args$snp_window_size,
+        'min_nhet' = min_nhet,
+        'ndepth' = args$normal_depth,
+        'genome' = args$genome,
+        'seed' = args$seed,
+        'flags' = flags,
+        'input_file' = basename(args$counts_file))
     
-    invisible(
-        Map(f = function(x) {
-            cat(x, file = outfile, sep = '\n', append = T)
-        },
-        run_details)
-    )
+    write.table(run_details, file = outfile, quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
 }
 
 # Default set of output plots
@@ -100,7 +98,7 @@ print_plots = function(outfile,
             ),
             ncol = 1,
             nrow = 6,
-            heights = c(1, 1, 1, .25, 1, .25),
+            heights = c(1, 1, 1, .15, 1, .15),
             top = plot_title)
     )
     dev.off()
@@ -116,7 +114,7 @@ print_segments = function(outfile,
 print_igv = function(outfile,
                      facets_output) {
     
-    ii = format_igv_seg(facets_output = facets_output,
+    ii = format_igv_seg(facets_data = facets_output,
                         sample_id = args$sample_id,
                         normalize = T)
     
@@ -172,9 +170,9 @@ if (is.null(args$directory)) {
 }
 
 if (dir.exists(args$directory)) {
-    stop('Output directory already exists, specify different one.')
+    stop('Output directory already exists, specify a different one.')
 } else {
-    system(paste('mkdir', args$directory))
+    system(paste('mkdir -p', args$directory))
 }
 
 message(paste('Reading', args$counts_file))

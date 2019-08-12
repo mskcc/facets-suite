@@ -90,7 +90,7 @@ cnlr_plot = function(facets_data,
         geom_point(aes(y = cnlr, x = chr_maploc), pch = 19, col = pt_cols, size = .4) +
         scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
         scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin, ymax)) +
-        geom_hline(yintercept = diplogr, color = 'sandybrown', size = .8) +
+        geom_hline(yintercept = 0, color = 'sandybrown', size = .8) +
         geom_segment(data = segs, aes(x = my_starts$chr_maploc, xend = my_ends$chr_maploc,
                                       y = my_starts$cnlr_median, yend = my_ends$cnlr_median),
                      col = 'red3', size = 1, lineend = 'butt') +
@@ -216,6 +216,7 @@ cf_plot = function(facets_data,
                    return_object = FALSE) {
     
     genome = match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE)
+    method = match.arg(method, c('em', 'cncf'), several.ok = FALSE)
     
     snps = facets_data$snps
     segs = facets_data$segs
@@ -255,7 +256,7 @@ cf_plot = function(facets_data,
               panel.grid.minor.y = element_blank(),
               panel.grid.major.x = element_blank(),
               panel.grid.minor.x = element_blank(),
-              plot.margin = unit(c(0, 1, 0, 0), 'lines'))
+              plot.margin = unit(c(0, 1, .5, 0), 'lines'))
     
     if (return_object == TRUE) {
         cf 
@@ -274,6 +275,7 @@ icn_plot = function(facets_data,
                     return_object = FALSE) {
     
     genome = match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE)
+    method = match.arg(method, c('em', 'cncf'), several.ok = FALSE)
     
     snps = facets_data$snps
     segs = facets_data$segs
@@ -316,7 +318,7 @@ icn_plot = function(facets_data,
         geom_segment(col = 'black', size = 1, 
                      aes(x = my_tcn_starts$chr_maploc, xend = my_tcn_ends$chr_maploc, 
                          y = my_tcn_starts$tcn, yend = my_tcn_ends$tcn)) +
-        scale_y_continuous(breaks=c(0:5, 5 + seq_len(35) / 3), labels = 0:40, limits = c(0, NA)) +
+        # scale_y_continuous(breaks=c(0:5, 5 + seq_len(35) / 3), labels = 0:40, limits = c(0, NA)) +
         scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
         labs(x = NULL, y = my_ylab) +
         theme_bw() +
@@ -325,14 +327,25 @@ icn_plot = function(facets_data,
               text = element_text(size = 10),
               panel.grid.minor.x = element_line(colour = 'grey', size = .2),
               panel.grid.major.x = element_line(colour = 'grey', size = 0),
+              panel.grid.minor.y = element_blank(),
               plot.margin = unit(c(0, 1, 0, 0), 'lines'))
 
+    max_tcn = max(segs$tcn, na.rm = T)
+    if (max_tcn > 10) {
+        top = 5*round(43/5)
+        icn = icn + 
+            scale_y_continuous(breaks = c(0:10, seq(15, 45, 5)), labels = c(0:10, seq(15, 45, 5)), limits = c(0, max_tcn))
+    } else {
+        icn = icn + 
+            scale_y_continuous(breaks = 0:max_tcn, labels = 0:max_tcn, limits = c(0, max_tcn))
+    }
+    
     if (!is.null(highlight_gene)) {
         if (is.character(highlight_gene)) {
-            gene_pos = get_gene_position(gene_pos)
+            highlight_gene = get_gene_position(gene_pos)
         }
         icn = icn +
-            geom_vline(xintercept = gene_pos$mid, color = 'palevioletred1')
+            geom_vline(xintercept = highlight_gene$mid, color = 'palevioletred1')
     }
     
     if (return_object == TRUE) {
@@ -374,9 +387,9 @@ closeup_plot = function(facets_data,
 
     cnlr = cnlr_plot(facets_data, genome = genome, highlight_gene = highlight_gene, return_object = TRUE)
     valor = valor_plot(facets_data, genome = genome, highlight_gene = highlight_gene, return_object = TRUE)
-    icn = icn_plot(facets_data, genome = genome, method = method, highlight_gene = highlight_gene, return_object = T)
+    icn = icn_plot(facets_data, genome = genome, method = method, highlight_gene = highlight_gene, return_object = TRUE)
     
-    if (return_oject == TRUE) {
+    if (return_object == TRUE) {
         list(cnlr, valor, icn)
     } else {
         suppressWarnings(ggarrange(plots = list(cnlr, valor, icn), ncol = 1))
