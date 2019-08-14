@@ -15,7 +15,7 @@ vignettes/*.html
 vignettes/*.pdf
 
 # fix this somehow, ~50 Mb to large
-data/test_read_counts.rda
+#data/test_read_counts.rda
 
 # Raw data, too large for Github
 data-raw/countsMerged.gz
