@@ -1,23 +1,26 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 branches:
     only:
-    - Rpackagev2
+        - Rpackagev2
 
 language: r
 sudo: false
 cache: packages
 latex: false
 
+env:
+    CODECOV_TOKEN="2d831214-3130-40e3-8b4b-31c86cd41ca7"
+    
 r_packages:
-  - covr
-  - devtools
+    - covr
+    - devtools
 
 warnings_are_errors: true
 
 notifications:
     email:
-    on_success: change
-    on_failure: always
+        on_success: change
+        on_failure: always
 
 after_success:
-    - Rscript -e 'covr::codecov()'
+    - Rscript -e 'covr::codecov(type = "all")'
