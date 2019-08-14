@@ -26,6 +26,3 @@ test_maf = fread('data-raw/TCGA.GBM.mutect.da904cd3-79d7-4ae3-b6c0-e7127998b3e6.
     filter(GDC_FILTER == '')
 
 use_data(test_read_counts, test_facets_output, test_maf, compress = 'bzip2', overwrite = T)
-
-
-
