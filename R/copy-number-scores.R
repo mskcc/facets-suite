@@ -52,16 +52,10 @@ calculate_fraction_cna = function(segs,
     segs = parse_segs(segs, algorithm)
     sample_chrom_info = get_sample_genome(segs, genome)
     
-    # Calculated length of interrogated genome
-    interrogated_genome = sum(sample_chrom_info$size)
-    autosomal_genome = sum(sample_chrom_info$size[sample_chrom_info$chr %in% 1:22])
-    
-    # Check for whole-genome duplication // PMID 30013179
-    wgd_treshold = 0.5 # treshold
-    frac_elevated_mcn = sum(segs$length[which(segs$mcn >= 2 & segs$chrom %in% 1:22)]) / autosomal_genome
-    wgd = frac_elevated_mcn > wgd_treshold
+    wgd = is_genome_doubled(segs, sample_chrom_info, treshold = 0.5)
     
     # Calculate fraction of genome altered
+    interrogated_genome = sum(sample_chrom_info$size)
     if (!wgd) {
         diploid_length = sum(segs$length[which(segs$tcn == 2 & segs$lcn == 1)])
     } else if (wgd) {
@@ -308,6 +302,7 @@ calculate_hrdloh = function(segs,
                             algorithm = c('em', 'cncf')) {
     
     algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
+    
     segs = parse_segs(segs, algorithm) %>% 
         filter(chrom %in% 1:22)
     
@@ -367,6 +362,18 @@ get_sample_genome = function(segs, genome) {
     )
 }
 
+is_genome_doubled = function(segs, chrom_info, treshold = 0.5) {
+    
+    # Calculated length of autosomal
+    autosomal_genome = sum(chrom_info$size[chrom_info$chr %in% 1:22])
+    
+    # Check for whole-genome duplication // PMID 30013179
+    frac_elevated_mcn = sum(segs$length[which(segs$mcn >= 2 & segs$chrom %in% 1:22)]) / autosomal_genome
+    wgd = frac_elevated_mcn > treshold
+    
+    wgd
+}
+
 # Join segments with identical copy number that are separated for some reason
 # Logic: if different tcn ==> don't join
 # if any NAs in mcn/lcn ==> don't join
@@ -377,7 +384,7 @@ join_segments = function(chrom_seg) {
     } else {
         new_chr = chrom_seg
         seg_class = c(1)
-        for(j in 2:nrow(new_chr)) {
+        for (j in 2:nrow(new_chr)) {
             # if adjacent segments have same allelic content, assign to same class
             if (new_chr[(j - 1), 'tcn'] != new_chr[j, 'tcn']) { # if tcn differs, definitely don't condense
                 seg_class = c(seg_class, seg_class[j - 1] + 1)
@@ -390,7 +397,7 @@ join_segments = function(chrom_seg) {
                 seg_class = c(seg_class, seg_class[j - 1] + 1)
             }
         }
-        for(j in unique(seg_class)) {
+        for (j in unique(seg_class)) {
             # condense segments belonging to same class
             new_chr[seg_class %in% j, 'end'] = max(new_chr[seg_class %in% j, 'end'])
             new_chr[seg_class %in% j, 'num.mark'] = sum(new_chr[seg_class %in% j, 'num.mark'])

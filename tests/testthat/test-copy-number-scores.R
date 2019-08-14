@@ -25,10 +25,10 @@ test_that('hrd-loh output works', {
     expect_true(all(test_hrdloh_columns %in% names(test_hrdloh)))
 })
 
-test_that('ntai output works', {
-    
-    test_ntai = calculate_ntai(test_facets_output$segs, test_facets_output$ploidy)
-    
-    test_ntai_columns = c('ntelomeric_ai')
-    expect_true(all(test_ntai_columns %in% names(test_ntai)))
-})
+# test_that('ntai output works', {
+#     
+#     test_ntai = calculate_ntai(test_facets_output$segs, test_facets_output$ploidy)
+#     
+#     test_ntai_columns = c('ntelomeric_ai')
+#     expect_true(all(test_ntai_columns %in% names(test_ntai)))
+# })

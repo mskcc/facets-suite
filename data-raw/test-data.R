@@ -10,6 +10,7 @@ library(usethis)
 # Normal BAM file: TCGA-06-0154-01A-03D-1491-08
 # Tumor BAM file: TCGA-06-0154-10A-01D-1491-08
 # snp-pileup -A -g -r 10,0 --pseudo-snps=50 dbsnp.vcf normal.bam tumor.bam countsMerged.gz
+# zcat countsMerged.gz | head -100 > countsMerged_mini.gz
 test_read_counts = read_snp_matrix('data-raw/countsMerged.gz') %>%
     group_by(Chromosome) %>%
     sample_frac(size = .75) %>%
