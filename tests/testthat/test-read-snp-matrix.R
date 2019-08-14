@@ -1,6 +1,4 @@
 
-library(facetsSuite)
-
 # test_that('read function works', {
 #     
 #     test_snp_matrix = read_snp_matrix(system.file('data-raw/countsMerged_mini.gz', package = 'facetsSuite'))

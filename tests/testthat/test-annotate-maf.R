@@ -1,5 +1,4 @@
 
-library(facetsSuite)
 test_annotation = annotate_maf(test_maf, test_facets_output$segs, test_facets_output$purity)
 
 test_that('output is data frame', {

@@ -1,7 +1,4 @@
 
-library(facetsSuite)
-library(pctGCdata)
-
 test_that('function returns output', {
     
     test_facets_run = run_facets(test_read_counts)

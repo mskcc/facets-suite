@@ -1,5 +1,4 @@
 
-library(facetsSuite)
 test_output = format_igv_seg(test_facets_output, 'test')
 
 test_that('output is data frame', {

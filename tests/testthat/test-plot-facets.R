@@ -1,6 +1,4 @@
 
-library(facetsSuite)
-
 test_cnlr = cnlr_plot(test_facets_output, return_object = TRUE)
 test_valor = valor_plot(test_facets_output, return_object = TRUE)
 test_cf = cf_plot(test_facets_output, return_object = TRUE)

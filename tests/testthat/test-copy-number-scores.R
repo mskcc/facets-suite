@@ -1,6 +1,4 @@
 
-library(facetsSuite)
-
 test_that('fcna output works', {
     
     test_fcna = calculate_fraction_cna(test_facets_output$segs, test_facets_output$ploidy)
