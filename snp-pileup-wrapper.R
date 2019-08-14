@@ -35,25 +35,25 @@ args = parser$parse_args()
 # Prepare output --------------------------------------------------------------------------------------------------
 snp_pileup_path = '$HOME/git/facets/inst/extcode/snp-pileup'
 
-if (is.null(args$normal_name)) args$normal_name = gsub('.bam$', '', basename(args$normal_bam))
-if (is.null(args$tumor_name)) args$tumor_name = gsub('.bam$', '', basename(args$tumor_bam))
-if (is.null(args$output_file)) args$output_file = paste0(args$tumor_name, '_', args$normal_name, 'snp_pileup.gz')
-if (file.exists(args$output_file)) stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
+normal_name = args$normal_name %||% gsub('.bam$', '', basename(args$normal_bam))
+tumor_name  = args$tumor_name  %||% gsub('.bam$', '', basename(args$tumor_bam))
+output_file = args$output_file %||% paste0(tumor_name, '_', normal_name, '.snp_pileup.gz')
 
-default_args = c('--count-orphans', '--gzip')
+if (file.exists(args$output_file)) {
+    stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
+}
 
-pilup_cmd = paste(
+default_args = c('--count-orphans --gzip')
+
+pileup_cmd = paste(
     snp_pileup_path,
     default_args,
     '-P', args$pseudo_snps,
     '-d', args$max_depth,
     args$vcf_file,
-    args$output_file,
+    output_file,
     args$normal_bam,
     args$tumor_bam
     )
 
-system(pilup_cmd)
-
-
-
+system(pileup_cmd)

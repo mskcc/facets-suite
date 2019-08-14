@@ -63,7 +63,7 @@ print_run_details = function(outfile,
     params = c(...)
     
     run_details = data.frame(
-        'sample' = args$sample_id,
+        'sample' = sample_id,
         'purity' = signif(purity, 2),
         'ploidy' = signif(ploidy, 2),
         'diplogr' = signif(diplogr, 2),
@@ -96,7 +96,7 @@ print_plots = function(outfile,
                        facets_output,
                        cval) {
     
-    plot_title = paste0(args$sample_id,
+    plot_title = paste0(sample_id,
                         ' | cval=', cval,
                         ' | purity=', round(facets_output$purity, 2),
                         ' | ploidy=', round(facets_output$ploidy, 2),
@@ -132,7 +132,7 @@ print_igv = function(outfile,
                      facets_output) {
     
     ii = format_igv_seg(facets_data = facets_output,
-                        sample_id = args$sample_id,
+                        sample_id = sample_id,
                         normalize = T)
     
     write.table(ii, file = outfile, sep = '\t', quote = F, col.names = T, row.names = F)
@@ -171,31 +171,27 @@ facets_iteration = function(name_prefix, ...) {
 # Run -------------------------------------------------------------------------------------------------------------
 
 # Name files and create output directory
-if (is.null(args$sample_id)) args$sample_id = gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
-if (is.null(args$directory)) {
-    args$directory = paste0(getwd(), '/', args$sample_id)
-} else {
-    args$directory = paste0(gsub('[\\/]$', '', args$directory), '/', args$sample_id)
-}
+sample_id = args$sample_id  %||% gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
+directory = paste0(gsub('[\\/]$', '', args$directory), '/', sample_id) %||% paste0(getwd(), '/', sample_id)
 
-if (dir.exists(args$directory)) {
+if (dir.exists(directory)) {
     stop('Output directory already exists, specify a different one.')
 } else {
-    system(paste('mkdir -p', args$directory))
+    system(paste('mkdir -p', directory))
 }
 
 message(paste('Reading', args$counts_file))
-message(paste('Writing to', args$directory))
+message(paste('Writing to', directory))
 
 # Read SNP counts file
 read_counts = read_snp_matrix(args$counts_file)
 
 # Determine if running two-pass
 if (!is.null(args$purity_cval)) {
-    name = paste0(args$directory, '/', args$sample_id)
+    name = paste0(directory, '/', sample_id)
     
     purity_output = facets_iteration(name_prefix = paste0(name, '_purity'), 
-                                     sample_id = args$sample_id,
+                                     sample_id = sample_id,
                                      diplogr = args$diplogr,
                                      cval = args$purity_cval,
                                      ndepth = args$normal_depth,
@@ -205,7 +201,7 @@ if (!is.null(args$purity_cval)) {
                                      seed = args$seed)
     
     hisens_output = facets_iteration(name_prefix = paste0(name, '_hisens'),
-                                     sample_id = args$sample_id,
+                                     sample_id = sample_id,
                                      diplogr = purity_output$diplogr,
                                      cval = args$cval,
                                      ndepth = args$normal_depth,
@@ -236,10 +232,10 @@ if (!is.null(args$purity_cval)) {
     saveRDS(hisens_output, paste0(name, '_hisens.rds'))
     
 } else {
-    name = paste0(args$directory, '/', args$sample_id)
+    name = paste0(directory, '/', sample_id)
     
     output = facets_iteration(name_prefix = name, 
-                              sample_id = args$sample_id,
+                              sample_id = sample_id,
                               cval = args$cval,
                               ndepth = args$normal_depth,
                               snp_nbhd = args$snp_window_size,
@@ -266,5 +262,5 @@ if (!is.null(args$purity_cval)) {
                       flags = paste0(output$flags, collapse = '; '),
                       metadata)
     
-    saveRDS(output, paste0(args$directory, '/', args$sample_id, '.rds'))
+    saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
 }

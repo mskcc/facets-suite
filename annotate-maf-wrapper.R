@@ -25,7 +25,7 @@ parser$add_argument('-p', '--parallel', required = F,
                     default = FALSE,  help = 'Parallelize [default FALSE]')
 args = parser$parse_args()
 
-if (is.null(args$output)) args$output = paste0(gsub('\\.[a-z]+$', '', args$maf_file), '.ccf.maf')
+output = args$output %||% paste0(gsub('\\.[a-z]+$', '', args$maf_file), '.ccf.maf')
 
 # Match sample IDs in input ---------------------------------------------------------------------------------------
 sample_map = fread(args$sample_mapping, header = TRUE, col.names = c('sample', 'file'))
@@ -59,5 +59,5 @@ output_maf = rbindlist(output_maf)
 output_maf = rbind.fill(output_maf,
                         maf[!which(maf$Tumor_Sample_Barcode %in% sample_map$sample), ])
 
-write.table(output_maf, args$output, quote = F, sep = '\t', col.names = T, row.names = F)
+write.table(output_maf, output, quote = F, sep = '\t', col.names = T, row.names = F)
  
