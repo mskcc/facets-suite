@@ -8,8 +8,9 @@ sudo: false
 cache: packages
 latex: false
 
-r_github_packages:
-  - jimhester/lintr
+r_packages:
+  - covr
+  - devtools
 
 warnings_are_errors: true
 
@@ -20,4 +21,3 @@ notifications:
 
 after_success:
     - Rscript -e 'covr::codecov()'
-    - Rscript -e 'lintr::lint_package()'
