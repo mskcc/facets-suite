@@ -69,7 +69,7 @@ if (!is.null(args$sample_mapping)) {
     common_samples = unique(maf$Tumor_Sample_Barcode)
     sample_map = list(file = args$facets_output, sample = common_samples)
     
-    message(paste0('Annotating sample', common_samples, '.'))
+    message(paste0('Annotating sample ', common_samples, '.'))
 }
 
 # Annotate --------------------------------------------------------------------------------------------------------
@@ -88,8 +88,10 @@ if (args$parallel == TRUE) {
 output_maf = rbindlist(output_maf)
 
 # Add back samples that were missing in sample map
-output_maf = rbind.fill(output_maf,
-                        maf[!which(maf$Tumor_Sample_Barcode %in% sample_map$sample), ])
+if (any(maf$Tumor_Sample_Barcode %nin% sample_map$sample)) {
+    output_maf = rbindlist(output_maf,
+                           maf[!which(maf$Tumor_Sample_Barcode %in% sample_map$sample), ],
+                           use.names = TRUE, fill = TRUE)
+}
 
 write.table(output_maf, output, quote = F, sep = '\t', col.names = T, row.names = F)
- 
