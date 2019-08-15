@@ -172,7 +172,7 @@ facets_iteration = function(name_prefix, ...) {
 
 # Name files and create output directory
 sample_id = args$sample_id  %||% gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
-directory = paste0(gsub('[\\/]$', '', args$directory), '/', sample_id) %||% paste0(getwd(), '/', sample_id)
+directory = gsub('^\\/', '', paste0(gsub('[\\/]$', '', args$directory), '/', sample_id))
 
 if (dir.exists(directory)) {
     stop('Output directory already exists, specify a different one.')
