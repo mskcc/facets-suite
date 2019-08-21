@@ -5,7 +5,6 @@
 library(argparse)
 library(data.table)
 
-
 write.text <- function (...) {
   write.table(..., quote = F, col.names = T, row.names = F,
               sep = "\t")
@@ -67,7 +66,7 @@ annotate_integer_copy_number <- function(gene_level){
 }
 
 get_gene_level_calls <- function(cncf_files,
-                                 method,
+                                 method = 'em',
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
@@ -114,42 +113,44 @@ get_gene_level_calls <- function(cncf_files,
   #fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
+  # Remove lcn=NA
+  
   if(method == 'cncf'){
-
+      
+      fo_impact = fo_impact[!is.na(lcn)]
       gene_level <- fo_impact[,
-                       list(frac_elev_major_cn=unique(frac_elev_major_cn),
-                            Nsegments = .N,
-                            length_CN = sum(as.numeric(loc.end - loc.start))),
-                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
-
+                              list(frac_elev_major_cn=unique(frac_elev_major_cn),
+                                   Nsegments = .N,
+                                   length_CN = sum(as.numeric(loc.end - loc.start))),
+                              by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
   }
   if(method == 'em'){
-
+      
+      fo_impact = fo_impact[!is.na(lcn.em)]
       gene_level <- fo_impact[,
-                          list(frac_elev_major_cn=unique(frac_elev_major_cn),
-                               Nsegments = .N,
-                               length_CN = sum(as.numeric(loc.end - loc.start))),
-                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
+                              list(frac_elev_major_cn=unique(frac_elev_major_cn),
+                                   Nsegments = .N,
+                                   length_CN = sum(as.numeric(loc.end - loc.start))),
+                              by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
   }
   
   setkey(gene_level, Tumor_Sample_Barcode, arm)
   ### for each CN status, calculate fraction of arm covered
   setkey(arm_definitions, arm)
-  gene_level[, arm_frac:= round(length_CN / arm_definitions[as.character(gene_level$arm), as.numeric(end - start)], digits = 4)]
+  gene_level[, arm_frac := round(length_CN / arm_definitions[as.character(gene_level$arm), as.numeric(end - start)], digits = 4)]
   setkey(arm_definitions, chr, start, end)
   ### ignore CN status valuesif present in less than 10% of arm
   ## gene_level <- gene_level[arm_frac >= 0.1 ]
   gene_level <- gene_level[order(Tumor_Sample_Barcode, arm, -arm_frac)]
   ### estimate WGD from frac_elev_major_cn
   gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
-
+  
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
-
-
+  
   ### annotate integer copy number
   gene_level <- annotate_integer_copy_number(gene_level)
-
+  
   ### remove duplicate entries for partial deletions
   ### the lower value is chosen on the basis that a
   ### partial deletion is a deletion but a
