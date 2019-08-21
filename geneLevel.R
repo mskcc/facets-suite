@@ -349,7 +349,7 @@ get_gene_level_calls <- function(cncf_files,
                             rename(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em)
 
     # return(list(genelevelcalls_final = genelevelcalls_final, homdeltsg_review = homdeltsg_review)) ## return a list, and access these below
-    filter(genelevelcalls_final, FACETS_CALL != 'DIPLOID')
+    genelevelcalls_final
 }
 
 
