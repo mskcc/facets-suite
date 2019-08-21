@@ -4,15 +4,17 @@
 
 ## Require *hisens.cncf.txt
 
-library(argparse)
-library(data.table)
-library(plyr)
-library(dplyr)
-library(stringr)
-library(ggplot2)
-library(reshape2)
-library(tidyr)
-library(jsonlite)
+suppressPackageStartupMessages({
+    library(argparse)
+    library(data.table)
+    library(plyr)
+    library(dplyr)
+    library(stringr)
+    library(ggplot2)
+    library(reshape2)
+    library(tidyr)
+    library(jsonlite)  
+})
 
 "%ni%" = Negate("%in%")
 
@@ -274,7 +276,7 @@ get_gene_level_calls <- function(cncf_files,
                             mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
 
     genelevelcalls0 = genelevelcalls0 %>%
-                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL)) %>% ##ASK
+                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL, warn_missing = FALSE)) %>% ##ASK
                             mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
                             mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
     ##table(genelevelcalls0$FACETS_CALL.em)
@@ -323,26 +325,28 @@ get_gene_level_calls <- function(cncf_files,
     #genelevelcalls0= genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
 
     genelevelcalls0 = genelevelcalls0 %>%
-        mutate(FACETS_CALL.ori = FACETS_CALL.em,
-               FACETS_CALL.em = ifelse(FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"),
-                                        ifelse((FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut ))), FACETS_CALL.em,
-                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em ),
-               review = FACETS_CALL.em == 'ccs_filter' & FACETS_CALL.ori == "HOMDEL" & Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000,
-               FACETS_CALL.em = FACETS_CALL.ori)
-    ## table(genelevelcalls0$FACETS_CALL.em)
+        mutate(
+            # CCS filter flag amplifications and homdels at given thresholds
+            ccs_filter = case_when(
+                FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") &
+                    seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut )) ~ TRUE,
+                FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10 ~ TRUE,
+                TRUE ~ FALSE),
+            # Flag for review certain homdels
+            review = ccs_filter == TRUE & FACETS_CALL.em == "HOMDEL" &
+                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000
+            )
 
     # homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
 
     genelevelcalls0 = genelevelcalls0 %>%
-        mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
+        mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA, warn_missing = FALSE)) %>%
         # mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
-        mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
-        select(-c(FACETS_CNA, FACETS_CALL, CFcut, FACETS_CALL.ori, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em))
+        # mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
+        select(-c(FACETS_CNA, FACETS_CALL, CFcut, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em))
     
     genelevelcalls_final = genelevelcalls0 %>%
-                            mutate(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em) %>%
-                            select(-c(FACETS_CALL.em,FACETS_CNA.em))
-
+                            rename(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em)
 
     # return(list(genelevelcalls_final = genelevelcalls_final, homdeltsg_review = homdeltsg_review)) ## return a list, and access these below
     filter(genelevelcalls_final, FACETS_CALL != 'DIPLOID')
