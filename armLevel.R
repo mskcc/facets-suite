@@ -2,8 +2,10 @@
 
 #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
 
-library(argparse)
-library(data.table)
+suppressPackageStartupMessages({
+    library(argparse)
+    library(data.table)
+})
 
 write.text <- function (...) {
   write.table(..., quote = F, col.names = T, row.names = F,
