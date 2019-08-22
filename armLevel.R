@@ -90,19 +90,6 @@ get_gene_level_calls <- function(cncf_files,
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
   concat_cncf_txt[chrom == "23", chrom := "X"]
   setkey(concat_cncf_txt, chrom, loc.start, loc.end)
-
-  if (!("tcn" %in% names(concat_cncf_txt))) {
-    concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
-  }
-
-  ### estimate fraction of the genome with more than one copy from a parent
-  ### a large fraction implies whole genome duplication
-  concat_cncf_txt[, frac_elev_major_cn := sum(
-    as.numeric((tcn - lcn) >= 2) *
-      as.numeric(loc.end-loc.start), na.rm = T) /
-      sum(as.numeric(loc.end-loc.start)
-      ),
-    by=Tumor_Sample_Barcode]
   
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(arm_definitions, concat_cncf_txt, nomatch=NA)
@@ -113,26 +100,26 @@ get_gene_level_calls <- function(cncf_files,
   #fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
-  # Remove lcn=NA
   
-  if(method == 'cncf'){
-      
-      fo_impact = fo_impact[!is.na(lcn)]
-      gene_level <- fo_impact[,
-                              list(frac_elev_major_cn=unique(frac_elev_major_cn),
-                                   Nsegments = .N,
-                                   length_CN = sum(as.numeric(loc.end - loc.start))),
-                              by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
+  if (method == 'em') {
+      concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
   }
-  if(method == 'em'){
-      
-      fo_impact = fo_impact[!is.na(lcn.em)]
-      gene_level <- fo_impact[,
-                              list(frac_elev_major_cn=unique(frac_elev_major_cn),
-                                   Nsegments = .N,
-                                   length_CN = sum(as.numeric(loc.end - loc.start))),
-                              by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
-  }
+  concat_cncf_txt[, `:=` (tcn.em = NULL, lcn.em = NULL)]
+  
+  fo_impact = fo_impact[!is.na(lcn)]
+  
+  fo_impact[, frac_elev_major_cn := sum(
+      as.numeric((tcn - lcn) >= 2) *
+          as.numeric(loc.end-loc.start), na.rm = T) /
+          sum(as.numeric(loc.end-loc.start)
+          ),
+      by=Tumor_Sample_Barcode]
+  
+  gene_level <- fo_impact[,
+                          list(frac_elev_major_cn=unique(frac_elev_major_cn),
+                               Nsegments = .N,
+                               length_CN = sum(as.numeric(loc.end - loc.start))),
+                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
   
   setkey(gene_level, Tumor_Sample_Barcode, arm)
   ### for each CN status, calculate fraction of arm covered
