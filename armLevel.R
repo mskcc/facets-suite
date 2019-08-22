@@ -2,9 +2,10 @@
 
 #### usage ./get_gene_level_calls.R output_file.txt *_cncf.txt
 
-library(argparse)
-library(data.table)
-
+suppressPackageStartupMessages({
+    library(argparse)
+    library(data.table)
+})
 
 write.text <- function (...) {
   write.table(..., quote = F, col.names = T, row.names = F,
@@ -67,7 +68,7 @@ annotate_integer_copy_number <- function(gene_level){
 }
 
 get_gene_level_calls <- function(cncf_files,
-                                 method,
+                                 method = 'em',
                                  WGD_threshold = 0.5, ### least value of frac_elev_major_cn for WGD
                                  amp_threshold = 5, ### total copy number greater than this value for an amplification
                                  mean_chrom_threshold = 0, ### total copy number also greater than this value multiplied by the chromosome mean for an amplification
@@ -86,24 +87,11 @@ get_gene_level_calls <- function(cncf_files,
 
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
-  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
-  concat_cncf_txt[, filename := NULL]
+  concat_cncf_txt[, Tumor_Sample_Barcode := ID]
+  concat_cncf_txt[, `:=` (filename = NULL, ID = NULL)]
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
   concat_cncf_txt[chrom == "23", chrom := "X"]
   setkey(concat_cncf_txt, chrom, loc.start, loc.end)
-
-  if (!("tcn" %in% names(concat_cncf_txt))) {
-    concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
-  }
-
-  ### estimate fraction of the genome with more than one copy from a parent
-  ### a large fraction implies whole genome duplication
-  concat_cncf_txt[, frac_elev_major_cn := sum(
-    as.numeric((tcn - lcn) >= 2) *
-      as.numeric(loc.end-loc.start), na.rm = T) /
-      sum(as.numeric(loc.end-loc.start)
-      ),
-    by=Tumor_Sample_Barcode]
   
   ### Extract integer copy number for each probe from concat_cncf_txt
   fo_impact <- foverlaps(arm_definitions, concat_cncf_txt, nomatch=NA)
@@ -114,42 +102,44 @@ get_gene_level_calls <- function(cncf_files,
   #fo_impact[,Hugo_Symbol:=gsub("_.*$", "", name)]
 
   ### Summarize copy number for each gene
-  if(method == 'cncf'){
-
-      gene_level <- fo_impact[,
-                       list(frac_elev_major_cn=unique(frac_elev_major_cn),
-                            Nsegments = .N,
-                            length_CN = sum(as.numeric(loc.end - loc.start))),
-                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
-
+  
+  if (method == 'em') {
+      concat_cncf_txt[, c("tcn", "lcn") := list(tcn.em, lcn.em)]
   }
-  if(method == 'em'){
-
-      gene_level <- fo_impact[,
+  concat_cncf_txt[, `:=` (tcn.em = NULL, lcn.em = NULL)]
+  
+  fo_impact = fo_impact[!is.na(lcn)]
+  
+  fo_impact[, frac_elev_major_cn := sum(
+      as.numeric((tcn - lcn) >= 2) *
+          as.numeric(loc.end-loc.start), na.rm = T) /
+          sum(as.numeric(loc.end-loc.start)
+          ),
+      by=Tumor_Sample_Barcode]
+  
+  gene_level <- fo_impact[,
                           list(frac_elev_major_cn=unique(frac_elev_major_cn),
                                Nsegments = .N,
                                length_CN = sum(as.numeric(loc.end - loc.start))),
-                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn.em, lcn=lcn.em)]
-  }
+                          by=list(Tumor_Sample_Barcode, arm, tcn=tcn, lcn=lcn)]
   
   setkey(gene_level, Tumor_Sample_Barcode, arm)
   ### for each CN status, calculate fraction of arm covered
   setkey(arm_definitions, arm)
-  gene_level[, arm_frac:= round(length_CN / arm_definitions[as.character(gene_level$arm), as.numeric(end - start)], digits = 4)]
+  gene_level[, arm_frac := round(length_CN / arm_definitions[as.character(gene_level$arm), as.numeric(end - start)], digits = 4)]
   setkey(arm_definitions, chr, start, end)
   ### ignore CN status valuesif present in less than 10% of arm
   ## gene_level <- gene_level[arm_frac >= 0.1 ]
   gene_level <- gene_level[order(Tumor_Sample_Barcode, arm, -arm_frac)]
   ### estimate WGD from frac_elev_major_cn
   gene_level[, WGD := factor(ifelse(frac_elev_major_cn > WGD_threshold, "WGD", "no WGD"))]
-
+  
   ### fix bug where lcn == NA even when tcn is 1
   gene_level[tcn == 1 & is.na(lcn), lcn := 0]
-
-
+  
   ### annotate integer copy number
   gene_level <- annotate_integer_copy_number(gene_level)
-
+  
   ### remove duplicate entries for partial deletions
   ### the lower value is chosen on the basis that a
   ### partial deletion is a deletion but a
@@ -181,7 +171,7 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
-  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em')
+  parser$add_argument('-m', '--method', type='character', default='em', help='Method used to calculate integer copy number. Allowed values cncf or em')
 
   args=parser$parse_args()
 

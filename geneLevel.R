@@ -4,15 +4,17 @@
 
 ## Require *hisens.cncf.txt
 
-library(argparse)
-library(data.table)
-library(plyr)
-library(dplyr)
-library(stringr)
-library(ggplot2)
-library(reshape2)
-library(tidyr)
-library(jsonlite)
+suppressPackageStartupMessages({
+    library(argparse)
+    library(data.table)
+    library(plyr)
+    library(dplyr)
+    library(stringr)
+    library(ggplot2)
+    library(reshape2)
+    library(tidyr)
+    library(jsonlite)  
+})
 
 "%ni%" = Negate("%in%")
 
@@ -33,19 +35,42 @@ getSDIR <- function(){
 }
 
 # Get IMPACT341 loci and gene names
-IMPACT341_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact341_targets.ilist")))
-setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
-setkey(IMPACT341_targets, chr, start, end)
+IMPACT341_targets = function() {
+    IMPACT341_targets = suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact341_targets.ilist")))
+    setnames(IMPACT341_targets, c("chr", "start", "end", "strand", "name"))
+    setkey(IMPACT341_targets, chr, start, end)
+    IMPACT341_targets
+} 
 
 # Get IMPACT410 loci and gene names
-IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact410_targets.ilist")))
-setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
-setkey(IMPACT410_targets, chr, start, end)
+IMPACT410_targets = function() {
+    IMPACT410_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact410_targets.ilist")))
+    setnames(IMPACT410_targets, c("chr", "start", "end", "strand", "name"))
+    setkey(IMPACT410_targets, chr, start, end)
+    IMPACT410_targets
+}
 
 # Get IMPACT468 loci and gene names
-IMPACT468_targets <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact468_targets.ilist")))
-setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
-setkey(IMPACT468_targets, chr, start, end)
+IMPACT468_targets = function() {
+    IMPACT468_targets = suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/impact468_targets.ilist")))
+    setnames(IMPACT468_targets, c("chr", "start", "end", "strand", "name"))
+    setkey(IMPACT468_targets, chr, start, end)
+    IMPACT468_targets
+}
+
+# Get exome-wide targets
+exome_targets = function() {
+    exome_targets = suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
+    setnames(exome_targets, c('chr', 'start', 'end', 'name', 'null', 'strand'))
+    exome_targets$name = str_extract(exome_targets$name, '^[^:]+(?=:)')
+    exome_targets[, null := NULL]
+    exome_targets = exome_targets[chr %in% c(seq(1, 22), 'X')] # retain only autosomes and X
+    exome_targets[, Hugo_Symbol := gsub(":.*$", "", name)]
+    exome_targets[, Hugo_Symbol := ifelse(name %like% 'ENSG00000217792', 'LSP1P1', Hugo_Symbol)] # manual fix of bad annotation
+    rm_genes = unique(exome_targets[, list(Hugo_Symbol, chr)])[, .N, keyby = Hugo_Symbol][N > 1] # these genes are mapping to multiple chromosomes
+    exome_targets = exome_targets[Hugo_Symbol %ni% rm_genes$Hugo_Symbol]
+    exome_targets
+}
 
 ##
 
@@ -133,7 +158,9 @@ get_gene_level_calls <- function(cncf_files,
     by=Tumor_Sample_Barcode]
 
     ### Extract integer copy number for each probe from concat_cncf_txt
-    fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch=NA)
+    fo_impact <- foverlaps(gene_targets, concat_cncf_txt, nomatch = NA,
+                           by.x = c('chr', 'start', 'end'),
+                           by.y = c('chrom', 'loc.start', 'loc.end'))
     fo_impact <- fo_impact[!is.na(ID)]
     fo_impact[,Hugo_Symbol:=name]
 
@@ -142,7 +169,6 @@ get_gene_level_calls <- function(cncf_files,
     }
 
     ### Summarize copy number for each gene
-
     gene_level <- fo_impact[, list(chr = unique(chr),
                                seg.start=unique(loc.start),
                                seg.end=unique(loc.end),
@@ -250,7 +276,7 @@ get_gene_level_calls <- function(cncf_files,
                             mutate(emtag = str_c(WGD.em,';',mcn.em,';',lcn.em))
 
     genelevelcalls0 = genelevelcalls0 %>%
-                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL)) %>% ##ASK
+                            mutate(FACETS_CALL.em = plyr::mapvalues(emtag, fc_lu_table$emtag, fc_lu_table$FACETS_CALL, warn_missing = FALSE)) %>% ##ASK
                             mutate(FACETS_CALL.em = ifelse(tcn.em >= 6,"AMP",FACETS_CALL.em)) %>%
                             mutate(FACETS_CALL.em = ifelse( (!is.na(tcn.em) & !is.na(lcn.em) & FACETS_CALL.em %ni% c(unique(fc_lu_table$FACETS_CALL)) ), "ILLOGICAL", FACETS_CALL.em))
     ##table(genelevelcalls0$FACETS_CALL.em)
@@ -258,15 +284,14 @@ get_gene_level_calls <- function(cncf_files,
     ##This line only works if processing exomes
     # 10 Genes cut-off is too large if processing IMPACT so need to count genes based on the exome bed file from ensembl, version 75
     # This section replicates what would happen if the whole exome bed was used instead of the IMPACT bed and counts the number of annotated genes in a given segment to be used for filtering in a later step
-    exome_bed <- suppressWarnings(fread(paste0('grep -v "^@" ',getSDIR(),"/data/Homo_sapiens.GRCh37.75.canonical_exons.bed")))
-    setnames(exome_bed, c("chr", "start", "end", "name","blank","strand"))
-    setkey(exome_bed, chr, start, end)
-    exome_bed = exome_bed[chr %in% c(seq(1, 22), 'X')] # retain only autosomes and X
-    exome_bed[, Hugo_Symbol := gsub(":.*$", "", name)]
-    exome_bed[, Hugo_Symbol := ifelse(name %like% 'ENSG00000217792', 'LSP1P1', Hugo_Symbol)] # manual fix of bad annotation
-    rm_genes = unique(exome_bed[, list(Hugo_Symbol, chr)])[, .N, keyby = Hugo_Symbol][N > 1] # these genes are mapping to multiple chromosomes
-    exome_bed = exome_bed[Hugo_Symbol %ni% rm_genes$Hugo_Symbol]
-    cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch=NA)
+    if (args$targetFile == 'exome') {
+        exome_bed = gene_targets
+    } else {
+        exome_bed = exome_targets()
+    }
+    cross <- foverlaps(exome_bed, concat_cncf_txt, nomatch = NA,
+                       by.x = c('chr', 'start', 'end'),
+                       by.y = c('chrom', 'loc.start', 'loc.end'))
     cross <- cross[!is.na(ID)]
     # cross[,Hugo_Symbol:=gsub(":.*$", "", name)]
     genecount <- cross[, list(chr = unique(chr),
@@ -294,30 +319,37 @@ get_gene_level_calls <- function(cncf_files,
     seg.count = plyr::count(genecount, vars="segid") %>%
                             mutate(count = freq) %>% select(-c(freq))
 
-    genelevelcalls0 = dplyr::inner_join(genelevelcalls0,seg.count,by='segid')
+    genelevelcalls0 = dplyr::inner_join(genelevelcalls0, seg.count, by = 'segid')
 
     ### Step 3 SET columns needed for filters & APPLY filters
     #genelevelcalls0= genelevelcalls0 %>% mutate(CFcut = plyr::mapvalues(Tumor_Sample_Barcode, gene_level$T, gene_level$CFcut))
 
-    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CALL.ori = FACETS_CALL.em,
-                           FACETS_CALL.em = ifelse( FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)","HOMDEL"),
-                                              ifelse( (FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") & seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut ))), FACETS_CALL.em,
-                                                ifelse( (FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10), FACETS_CALL.em, "ccs_filter")), FACETS_CALL.em ))
-    ## table(genelevelcalls0$FACETS_CALL.em)
+    genelevelcalls0 = genelevelcalls0 %>%
+        mutate(
+            # CCS filter flag amplifications and homdels at given thresholds
+            ccs_filter = case_when(
+                FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") &
+                    seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut )) ~ TRUE,
+                FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10 ~ TRUE,
+                TRUE ~ FALSE),
+            # Flag for review certain homdels
+            review = ccs_filter == TRUE & FACETS_CALL.em == "HOMDEL" &
+                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000
+            )
 
-    homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
+    # homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
 
-    genelevelcalls0 = genelevelcalls0 %>% mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA)) %>%
-                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
-                            mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
-                            select(-c(FACETS_CNA, FACETS_CALL, CFcut, FACETS_CALL.ori, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em ))
-
+    genelevelcalls0 = genelevelcalls0 %>%
+        mutate(FACETS_CNA.em = plyr::mapvalues(FACETS_CALL.em, fc_lu_table$FACETS_CALL, fc_lu_table$FACETS_CNA, warn_missing = FALSE)) %>%
+        # mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ccs_filter",0,FACETS_CNA.em)) %>%
+        # mutate(FACETS_CNA.em = ifelse(FACETS_CALL.em=="ILLOGICAL",NA,FACETS_CNA.em)) %>%
+        select(-c(FACETS_CNA, FACETS_CALL, CFcut, count, segid, seg.len, emtag, WGD.em, mcn, mcn.em, frac_elev_major_cn.em))
+    
     genelevelcalls_final = genelevelcalls0 %>%
-                            mutate(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em) %>%
-                            select(-c(FACETS_CALL.em,FACETS_CNA.em))
+                            rename(FACETS_CNA = FACETS_CNA.em, FACETS_CALL = FACETS_CALL.em)
 
-
-    return(list(genelevelcalls_final = genelevelcalls_final, homdeltsg_review = homdeltsg_review)) ## return a list, and access these below
+    # return(list(genelevelcalls_final = genelevelcalls_final, homdeltsg_review = homdeltsg_review)) ## return a list, and access these below
+    genelevelcalls_final
 }
 
 
@@ -347,7 +379,7 @@ if(!interactive()){
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
     parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
-    parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
+    # parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
     parser$add_argument('--min_cf_cutoff', type='double', default=0.6, help="The cell fraction cutoff such that genes in segments with cell fraction less than this will be treated as diploid")
     parser$add_argument('--max_seg_length', type='double', default=10000000, help="Genes in segments longer than this will be treated as diploid")
     args=parser$parse_args()
@@ -370,12 +402,14 @@ if(!interactive()){
         stop("max_seg_length must be a numeric greater than 0; please revise input max_seg_length")
     }
 
-    if(args$targetFile=="IMPACT341") {
-        geneTargets=IMPACT341_targets
-    } else if(args$targetFile=="IMPACT410") {
-        geneTargets=IMPACT410_targets
-    } else if(args$targetFile=="IMPACT468") {
-        geneTargets=IMPACT468_targets
+    if (args$targetFile == "IMPACT341") {
+        geneTargets = IMPACT341_targets()
+    } else if (args$targetFile == "IMPACT410") {
+        geneTargets = IMPACT410_targets()
+    } else if (args$targetFile == "IMPACT468") {
+        geneTargets = IMPACT468_targets()
+    } else if (args$targetFile == 'exome') {
+        geneTargets = exome_targets()
     } else {
         geneTargets <- suppressWarnings(fread(paste0('grep -v "^@" ',args$targetFile)))
         setnames(geneTargets, c("chr", "start", "end", "strand", "name"))
@@ -386,11 +420,11 @@ if(!interactive()){
     }
 
     gene_level_calls = get_gene_level_calls(filenames, geneTargets)
-    write.text(gene_level_calls$genelevelcalls_final, outfile)
+    write.text(gene_level_calls, outfile)
     # This writes out homozygous deletions in known tumor suppressor genes that have been suppressed due to size or the number of genes
     # Known false negatives exist, such as RB1 that exists in a gene-rich region and so often (but not always) fails the 10 gene cut-off
     # This list is meant to be looked at manually to be sure that a true homdel is not suppressed (this will be improved in the next version)
-    fwrite(gene_level_calls$homdeltsg_review, paste0(gsub("[.]tsv|[.]txt","",outfile),"_TSG_ManualReview.txt"),row.names=FALSE, quote=FALSE, sep="\t")
+    # fwrite(gene_level_calls$homdeltsg_review, paste0(gsub("[.]tsv|[.]txt","",outfile),"_TSG_ManualReview.txt"),row.names=FALSE, quote=FALSE, sep="\t")
 
     if(tolower(method) == 'scna'){
         scna_outfile = gsub(".txt", ".scna.txt", outfile)
