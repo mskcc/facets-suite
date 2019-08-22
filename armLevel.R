@@ -85,8 +85,8 @@ get_gene_level_calls <- function(cncf_files,
 
   ### format concat_cncf_txt segment table
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
-  concat_cncf_txt[,Tumor_Sample_Barcode := fun.rename(filename)]
-  concat_cncf_txt[, filename := NULL]
+  concat_cncf_txt[, Tumor_Sample_Barcode := ID]
+  concat_cncf_txt[, `:=` (filename = NULL, ID = NULL)]
   concat_cncf_txt$chrom <- as.character(concat_cncf_txt$chrom)
   concat_cncf_txt[chrom == "23", chrom := "X"]
   setkey(concat_cncf_txt, chrom, loc.start, loc.end)
