@@ -182,7 +182,7 @@ if(!interactive()){
   parser = ArgumentParser()
   parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list of filenames to be processed.')
   parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
-  parser$add_argument('-m', '--method', type='character', default='cncf', help='Method used to calculate integer copy number. Allowed values cncf or em')
+  parser$add_argument('-m', '--method', type='character', default='em', help='Method used to calculate integer copy number. Allowed values cncf or em')
 
   args=parser$parse_args()
 
