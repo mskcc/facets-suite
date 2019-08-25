@@ -4,15 +4,17 @@
 \alias{check_fit}
 \title{Sample QC}
 \usage{
-check_fit(facets_output, maf = NULL, genome = c("hg19", "hg18",
-  "hg38"), algorithm = c("em", "cncf"))
+check_fit(facets_output, genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"), maf = NULL)
 }
 \arguments{
 \item{facets_output}{Output from \code{run_facets}.}
 
-\item{maf}{A MAF file with somatic mutations from sample (optional).}
+\item{genome}{Genome build.}
 
 \item{algorithm}{Choose assessing the fit from the \code{em} or \code{cncf} algorithm.}
+
+\item{maf}{Optional: mutation calls for assessed samples, should only include mutations for given sample.}
 }
 \description{
 Generate QC metrics for sample. Can use mutation calls in MAF file.

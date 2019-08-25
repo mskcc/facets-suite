@@ -333,6 +333,7 @@ parse_segs = function(segs, algorithm = c('em', 'cncf')) {
     if (algorithm == 'em') {
         segs$tcn = segs$tcn.em
         segs$lcn = segs$lcn.em
+        segs$cf = segs$cf.em
     }
     mutate(segs,
            length = end - start,

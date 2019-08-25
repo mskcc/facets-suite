@@ -37,7 +37,9 @@ arm_level_changes = function(segs,
     
     # Find altered arms
     # Split centromere-spanning segments
-    segs = rowwise(segs) %>% 
+    # Remove segments where lcn is NA
+    segs = filter(segs, !is.na(lcn)) %>% 
+        rowwise() %>% 
         mutate(
             arm = case_when(
                 start < centromere & end <= centromere ~ 'p',

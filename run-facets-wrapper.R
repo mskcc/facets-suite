@@ -217,6 +217,7 @@ if (!is.null(args$purity_cval)) {
             map_dfr(list(purity_output, hisens_output), function(x) calculate_ntai(x$segs, x$ploidy, args$genome)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_hrdloh(x$segs, x$ploidy)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_loh(x$segs, x$snps, args$genome)))
+        qc = map_dfr(list(purity_output, hisens_output), function(x) check_fit(x, genome = args$genome))
     }
     
     print_run_details(outfile = paste0(name, '.txt'),
@@ -226,7 +227,8 @@ if (!is.null(args$purity_cval)) {
                       ploidy = c(purity_output$ploidy, hisens_output$ploidy),
                       diplogr = c(purity_output$diplogr, hisens_output$ploidy),
                       flags = map(list(purity_output$flags, hisens_output$flags), function(x) paste0(x, collapse = '; ')),
-                      metadata)
+                      metadata,
+                      qc)
     
     saveRDS(purity_output, paste0(name, '_purity.rds'))
     saveRDS(hisens_output, paste0(name, '_hisens.rds'))
