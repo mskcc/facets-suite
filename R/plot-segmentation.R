@@ -9,7 +9,7 @@
 #' @param colors Vector of three colors, giving the low-, mid- and high-point of the color scale.
 #' @param return_object If \code{TRUE}, returns \code{ggplot2} object instead of printing plot.
 #'
-#' @return \code{ggplot2} objects, see input parameter \code{return_object}.
+#' @return Output plots in viewer, unless \code{return_object} is used and \code{ggplot2} objects are returned.
 #'
 #' @importFrom dplyr mutate left_join
 #' @importFrom purrr map_dfr

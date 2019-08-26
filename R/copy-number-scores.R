@@ -163,16 +163,18 @@ calculate_ntai = function(segs,
     
     # Loop through chromosomes
     for (chr in unique(segs$chrom)) {
-        
+
         # Subset on chromosome, proceed to next if no segment
         chrom_segs = segs[which(segs$chrom == chr), ]
         if(nrow(chrom_segs) == 0) next 
         
         # Determine major ploidy for chromosome
         chrom_ploidy = group_by(chrom_segs, tcn) %>% 
-            summarize(tcn_total = sum(length)) %>%
+            summarize(tcn_total = sum(length, na.rm = T)) %>%
             filter(tcn_total == max(tcn_total) & tcn > 0) %>% 
             pull(tcn)
+        
+        if (length(chrom_ploidy) == 0) { next } 
         chrom_segs$chrom_ploidy = as.integer(chrom_ploidy) # update "ploidy" column, so the new calculated value can be returned
         
         if (chrom_ploidy %% 2 == 0) { # if even

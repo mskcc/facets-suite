@@ -7,9 +7,38 @@
 #' @param algorithm Choose assessing the fit from the \code{em} or \code{cncf} algorithm.
 #' @param maf Optional: mutation calls for assessed samples, should only include mutations for given sample.
 #'
+#' @return A list object with the following items:
+#' \itemize{
+#'       \item{\code{diplogr_flag}:} {Boolean indicating extreme dipLogR value.}
+#'       \item{\code{n_alternative_diplogr}:} {Number of alternative dipLogR values.}
+#'       \item{\code{n_dip_bal_segs}, \code{frac_dip_bal_segs}:} {Number of balanced segments at dipLogR and the fraction of genome they represent.}
+#'       \item{\code{n_dip_imbal_segs}, \code{frac_dip_imbal_segs}:} {Number of imbalanced segments at dipLogR and the fraction of genome they represent.}
+#'       \item{\code{n_amp}:} {Number of segments at total copy number >= 10.}
+#'       \item{\code{n_homdels}:} {Number of homozygously deleted segments (total copy number = 0).}
+#'       \item{\code{n_homdels_clonal}, \code{frac_homdels_clonal}:} {Number of clonal homdel segments and the fraction of the genome they represent.}
+#'       \item{\code{n_cn_states}:} {Number of unique copy-number states (i.e. combinations of major and minor copy number).}
+#'       \item{\code{n_segs}:} {Number of segments.}
+#'       \item{\code{n_cnlr_clusters}:} {Number of copy-number log-ratio clusters}
+#'       \item{\code{n_lcn_na}:} {Number of segments where no minor copy number was inferred (lcn is NA).}
+#'       \item{\code{n_loh}, \code{n_loh}:} {Number of segments where the minor copy number is 0 and the fraction of the genome they represent.}
+#'       \item{\code{n_snps}:} {Number of SNPs used for segmentation.}
+#'       \item{\code{n_het_snps}, \code{frac_het_snps}:} {Number of heterozyous SNPs used for segmentation and their fraction of the total.}
+#'       \item{\code{n_het_snps_hom_in_tumor_1pct}, \code{frac_het_snps_hom_in_tumor_1pct}:} {Number of heterozyous SNPs where the tumor allele frequency is <0.01/>0.99 their fraction of the total.}
+#'       \item{\code{n_het_snps_hom_in_tumor_5pct}, \code{frac_het_snps_hom_in_tumor_5pct}:} {Number of heterozyous SNPs where the tumor allele frequency is <0.05/>0.95 their fraction of the total.}
+#'       \item{\code{mean_cnlr_residual}, \code{sd_cnlr_residual}:} {Mean and standard deviation of SNPs' log-ratio from their segments copy-number log-ratio.}
+#'       \item{\code{n_segs_discordant_tcn}, \code{frac_segs_discordant_tcn}:} {Number of segments where the naïve and EM algorithm estimates of the total copy number are discordant and the fraction of the genome they represent.}
+#'       \item{\code{n_segs_discordant_lcn}, \code{frac_segs_discordant_lcn}:} {Number of segments where the naïve and EM algorithm estimates of the minor copy number are discordant and the fraction of the genome they represent.}
+#'       \item{\code{n_segs_discordant_both}, \code{frac_segs_discordant_both}:} {Number of segments where the naïve and EM algorithm estimates of the both copy numbers are discordant and the fraction of the genome they represent.}
+#'       \item{\code{n_segs_icn_cnlor_discordant}, \code{frac_icn_cnlor_discordant}:} {Number of clonal segments where the log-ratio shows balance but the copy-number solution does not, and the reverse, and the fraction of the genome they represent.}
+#'       \item{\code{dip_median_vaf}:} {If MAF input: median tumor VAF of somatic mutations on clonal segments with total copy number 2 and allelic balance.}
+#'       \item{\code{n_homdel_muts}:} {If MAF input: number of somatic mutations in homozygously deleted segments.}
+#'       \item{\code{median_vaf_homdel_muts}:} {If MAF input: Median tumor VAF of somatic  mutations homozygously deleted segments.}
+#'    }
+#'
 #' @importFrom dplyr distinct
 #' @import data.table
 
+#' @export
 check_fit = function(facets_output,
                      genome = c('hg19', 'hg18', 'hg38'),
                      algorithm = c('em', 'cncf'),
@@ -92,10 +121,10 @@ check_fit = function(facets_output,
     het_snps = snps[het == 1]
     n_het_snps = nrow(het_snps)
     frac_het_snps = n_het_snps/n_snps
-    n_het_snps_vafT_homzyg_1pt = nrow(het_snps[ vafT < 0.01 | vafT > 0.99, ])
-    n_het_snps_vafT_homzyg_5pt = nrow(het_snps[ vafT < 0.05 | vafT > 0.95, ])
-    frac_het_snps_hom_in_tumor_1pct = n_het_snps_vafT_homzyg_1pt/n_het_snps
-    frac_het_snps_hom_in_tumor_5pct = n_het_snps_vafT_homzyg_5pt/n_het_snps
+    n_het_snps_hom_in_tumor_1pct = nrow(het_snps[ vafT < 0.01 | vafT > 0.99, ])
+    n_het_snps_hom_in_tumor_5pct = nrow(het_snps[ vafT < 0.05 | vafT > 0.95, ])
+    frac_het_snps_hom_in_tumor_1pct = n_het_snps_hom_in_tumor_1pct/n_het_snps
+    frac_het_snps_hom_in_tumor_5pct = n_het_snps_hom_in_tumor_5pct/n_het_snps
 
     # Check the mean/standard deviation of the cnlr
     snps[, cnlr_residual := cnlr - median(cnlr), by = seg]
@@ -157,8 +186,8 @@ check_fit = function(facets_output,
         n_snps = n_snps,
         n_het_snps = n_het_snps,
         frac_het_snps = frac_het_snps,
-        n_het_snps_vafT_homzyg_1pt = n_het_snps_vafT_homzyg_1pt,
-        n_het_snps_vafT_homzyg_5pt = n_het_snps_vafT_homzyg_5pt,
+        n_het_snps_hom_in_tumor_1pct = n_het_snps_hom_in_tumor_1pct,
+        n_het_snps_hom_in_tumor_5pct = n_het_snps_hom_in_tumor_5pct,
         frac_het_snps_hom_in_tumor_1pct = frac_het_snps_hom_in_tumor_1pct,
         frac_het_snps_hom_in_tumor_5pct = frac_het_snps_hom_in_tumor_5pct,
         mean_cnlr_residual = mean_cnlr_residual,
@@ -176,10 +205,11 @@ check_fit = function(facets_output,
     # If input MAF is provided add some stats based on this
     if (!is.null(maf)) {
         maf = as.data.table(maf)
+        
         maf[, `:=` (
-            Chromosome = ifelse(Chromosome == 'X', as.integer(23), as.integer(Chromosome)),
+            Chromosome = ifelse(Chromosome == 'X', 23, Chromosome),
             t_var_freq = t_alt_count/(t_alt_count+t_ref_count)
-            )]
+            )][, Chromosome := as.integer(Chromosome)]
         setkey(maf, Chromosome, Start_Position, End_Position)
         maf = foverlaps(maf, segs, mult = 'first', nomatch = NA,
                         by.x = c('Chromosome', 'Start_Position', 'End_Position'),

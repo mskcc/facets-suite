@@ -22,7 +22,7 @@ plot_segmentation(segs, plotX = FALSE, sample_order = NULL,
 \item{return_object}{If \code{TRUE}, returns \code{ggplot2} object instead of printing plot.}
 }
 \value{
-\code{ggplot2} objects, see input parameter \code{return_object}.
+Output plots in viewer, unless \code{return_object} is used and \code{ggplot2} objects are returned.
 }
 \description{
 Creates an IGV-like graphical representation of the copy-number segments across the samples in a segmentation object, as output by \code{run_facets}.

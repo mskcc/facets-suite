@@ -33,4 +33,4 @@ NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp
 Suggests: 
     covr,
-    testthat
+    testthat (>= 2.1.0)

@@ -155,8 +155,9 @@ facets_iteration = function(name_prefix, ...) {
                         genome = params$genome,
                         seed = params$seed)
     
-    print_segments(outfile = paste0(name_prefix, '.cncf.txt'),
-                   facets_output = output)
+    # No need to print the segmentation
+    # print_segments(outfile = paste0(name_prefix, '.cncf.txt'), 
+    #                facets_output = output)
     
     print_igv(outfile = paste0(name_prefix, '.seg'),
               facets_output = output)
@@ -171,7 +172,7 @@ facets_iteration = function(name_prefix, ...) {
 # Run -------------------------------------------------------------------------------------------------------------
 
 # Name files and create output directory
-sample_id = args$sample_id  %||% gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
+sample_id = args$sample_id %||% gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
 directory = gsub('^\\/', '', paste0(gsub('[\\/]$', '', args$directory), '/', sample_id))
 
 if (dir.exists(directory)) {
@@ -216,8 +217,13 @@ if (!is.null(args$purity_cval)) {
             map_dfr(list(purity_output, hisens_output), function(x) calculate_lst(x$segs, x$ploidy, args$genome)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_ntai(x$segs, x$ploidy, args$genome)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_hrdloh(x$segs, x$ploidy)),
-            map_dfr(list(purity_output, hisens_output), function(x) calculate_loh(x$segs, x$snps, args$genome)))
-        qc = map_dfr(list(purity_output, hisens_output), function(x) check_fit(x, genome = args$genome))
+            map_dfr(list(purity_output, hisens_output), function(x) calculate_loh(x$segs, x$snps, args$genome))
+            )
+        
+        qc = map_dfr(list(purity_output, hisens_output), function(x) check_fit(x, genome = args$genome)) %>% 
+            add_column(cval = c(args$purity_cval, args$cval), .before = 1)
+    
+        write.table(qc, file = paste0(name, '.qc.txt'), quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
     }
     
     print_run_details(outfile = paste0(name, '.txt'),
@@ -227,8 +233,7 @@ if (!is.null(args$purity_cval)) {
                       ploidy = c(purity_output$ploidy, hisens_output$ploidy),
                       diplogr = c(purity_output$diplogr, hisens_output$ploidy),
                       flags = map(list(purity_output$flags, hisens_output$flags), function(x) paste0(x, collapse = '; ')),
-                      metadata,
-                      qc)
+                      metadata)
     
     saveRDS(purity_output, paste0(name, '_purity.rds'))
     saveRDS(hisens_output, paste0(name, '_hisens.rds'))
@@ -253,6 +258,10 @@ if (!is.null(args$purity_cval)) {
             calculate_hrdloh(output$segs, output$ploidy),
             calculate_loh(output$segs, output$snps, args$genome)
         )
+        
+        qc = check_fit(output, genome = args$genome)
+        qc = c(cval = args$cval, qc)
+        write.table(qc, file = paste0(name, '.qc.txt'), quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
     }
     
     print_run_details(outfile = paste0(name, '.txt'),

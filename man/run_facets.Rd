@@ -26,7 +26,18 @@ run_facets(read_counts, cval = 100, diplogr = NULL, ndepth = 35,
 \item{seed}{Seed value for random number generation, set to enable full reproducibility.}
 }
 \value{
-A list object with \code{out} and \code{fit} objects from Facets run.
+A list object containing the following items. See \href{www.github.com/mskcc/facets}{FACETS documentation} for more details:
+\itemize{
+      \item{\code{snps}:} {SNPs used for copy-number segmentation, \code{het==1} for heterozygous loci.}
+      \item{\code{segs}:} {Inferred copy-number segmentation.}
+      \item{\code{purity}:} {Inferred sample purity, i.e. fraction of tumor cells of the total cellular population.}
+      \item{\code{ploidy}:} {Inferred sample ploidy.}
+      \item{\code{diplogr}:} {Inferred dipLogR, the sample-specific baseline corresponding to the diploid state.}
+      \item{\code{alballogr}:} {Alternative dipLogR value(s) at which a balanced solution was found.}
+      \item{\code{flags}:} {Warning flags from the naïve segmentation algorithm.}
+      \item{\code{em_flags}:} {Warning flags from the expectation-maximization segmentation algorithm.}
+      \item{\code{loglik}:} {Log-likelihood value of the fitted model.}
+}
 }
 \description{
 Runs FACETS on an input count file, with specified parameter settings.
