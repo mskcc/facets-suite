@@ -1,7 +1,7 @@
 
-test_check_fit = check_fit(test_facets_output, maf = test_maf)
-
 test_that('function works', {
+    
+    test_check_fit = check_fit(test_facets_output, maf = test_maf)
     
     expect_is(test_check_fit, 'list')
     
