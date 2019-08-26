@@ -15,6 +15,8 @@ devtools::install_github("mskcc/facets-suite", ref = "Rpackagev2")
 
 Also follow the [instructions for installing FACETS](https://github.com/mskcc/facets).
 
+_Note: For the wrapper script `snp-pileup-wrapper.R` you need to specift the variable `snp_pileup_path` in the script to point to the installation path of snp-pileup._
+
 ## Usage
 
 ### R functions
