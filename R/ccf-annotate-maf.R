@@ -20,13 +20,13 @@
 #' @return MAF file annotated with clonality estimates for each mutation.
 
 #' @export
-annotate_maf = function(maf,
-                        segs,
-                        purity,
-                        algorithm = c('em', 'cncf')) {
+ccf_annotate_maf = function(maf,
+                            segs,
+                            purity,
+                            algorithm = c('em', 'cncf')) {
     
     algorithm = match.arg(algorithm, c('em', 'cncf'), several.ok = FALSE)
-
+    
     if (!all(c('t_alt_count', 't_ref_count') %in% names(maf))) {
         stop('Columns t_alt_count and t_depth required.')
     }
@@ -84,7 +84,7 @@ estimate_ccf = function(purity,
     
     probs = sapply(ccfs, function(c) {
         stats::dbinom(t_alt_count, t_depth, expected_vaf(c, purity, total_copies))
-        })
+    })
     probs = probs / sum(probs)
     
     ccf_max = which.max(probs)

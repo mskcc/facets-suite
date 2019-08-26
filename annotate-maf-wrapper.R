@@ -77,7 +77,7 @@ if (!is.null(args$sample_mapping)) {
 annotate_sample = function(sample_id) {
     sample_maf = maf[maf$Tumor_Sample_Barcode == sample_id,]
     sample_facets = readRDS(sample_map$file[which(sample_map$sample == sample_id)])
-    annotate_maf(sample_maf, sample_facets$segs, sample_facets$purity)
+    ccf_annotate_maf(sample_maf, sample_facets$segs, sample_facets$purity)
 }
 
 if (args$parallel == TRUE) {
