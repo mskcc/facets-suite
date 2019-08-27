@@ -1,12 +1,12 @@
 #' Copy-number based scores
 #' 
 #' Calculate the following 
-#' \itemize{
-#'  \item{Fraction of genome altered:} {Fraction of genome altered and genome doubling flag.}
-#'  \item{Fraction LOH:} {Fraction of genome with LOH and flag for hypoploidy.}
-#'  \item{LST score:} {Large-scale state transitions, see source URL.}
-#'  \item{NtAI:} {Telomeric allelic imbalance, see source URL.}
-#'  \item{HRD-LOH:} {HRD-LOH score, see source URL.}
+#' \describe{
+#'  \item{\strong{Fraction of genome altered:}}{Fraction of genome altered and genome doubling flag.}
+#'  \item{\strong{Fraction LOH:}}{Fraction of genome with LOH and flag for hypoploidy.}
+#'  \item{\strong{LST score:}}{Large-scale state transitions, see source URL.}
+#'  \item{\strong{NtAI:}}{Telomeric allelic imbalance, see source URL.}
+#'  \item{\strong{HRD-LOH:}}{HRD-LOH score, see source URL.}
 #' }
 #'
 #' @param segs FACETS segmentation output.
@@ -22,7 +22,7 @@
 #'
 #' @return List with one or more values from function.
 #'
-#' @importFrom dplyr left_join summarize filter mutate group_by pull %>%
+#' @importFrom dplyr left_join summarize filter mutate group_by pull %>% select matches
 #' @importFrom purrr map_dfr
 #' @importFrom diptest dip.test
 #' 
@@ -340,7 +340,8 @@ parse_segs = function(segs, algorithm = c('em', 'cncf')) {
     mutate(segs,
            length = end - start,
            lcn = ifelse(tcn <= 1, 0, lcn),  # correct mcn, lcn for cases of tcn = 1 // sometimes FACETS set lcn = NA when tcn = 1, when it clearly has to be 0
-           mcn = tcn - lcn)
+           mcn = tcn - lcn) %>% 
+        select(-matches('.em$'))
 }
 
 get_sample_genome = function(segs, genome) {

@@ -1,9 +1,11 @@
-library(dplyr)
-library(data.table)
-library(stringr)
-library(readr)
-library(purrr)
-library(usethis)
+suppressPackageStartupMessages({
+    library(dplyr)
+    library(data.table)
+    library(stringr)
+    library(readr)
+    library(purrr)
+    library(usethis)
+})
 
 # Genome builds ---------------------------------------------------------------------------------------------------
 # The code use to download the genome builds is commented, the resulting data is in the form of tribbles below.
@@ -137,9 +139,9 @@ hg38 = tibble::tribble(
 genes_hg19 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/gencode.v29lift37.basic.annotation.gtf.gz',
                    header = F, skip = 'chr1',
                    col.names = c('chrom', 'source', 'type', 'start', 'end', 'na_1', 'strand', 'na_2', 'info')) %>%
-    mutate(chrom = str_replace(chrom, 'chr', ''),
-           gene = str_extract(info, '(?<=gene_name ")[A-Z0-9\\.\\-]+(?=";)')) %>%
     filter(type == 'gene', info %like% 'protein_coding') %>%
+    mutate(chrom = str_replace(chrom, 'chr', ''),
+           gene = str_extract(info, '(?<=gene_name ")[A-Za-z0-9\\.\\-]+(?=";)')) %>%
     group_by(gene, chrom) %>%
     summarize(start = min(start),
               end = max(end)) %>%
@@ -148,16 +150,15 @@ genes_hg19 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/rele
 genes_hg38 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.basic.annotation.gtf.gz',
                    header = F, skip = 'chr1',
                    col.names = c('chrom', 'source', 'type', 'start', 'end', 'na_1', 'strand', 'na_2', 'info')) %>%
-    mutate(chrom = str_replace(chrom, 'chr', ''),
-           gene = str_extract(info, '(?<=gene_name ")[A-Z0-9\\.\\-]+(?=";)')) %>%
     filter(type == 'gene', info %like% 'protein_coding') %>%
+    mutate(chrom = str_replace(chrom, 'chr', ''),
+           gene = str_extract(info, '(?<=gene_name ")[A-Za-z0-9\\.\\-]+(?=";)')) %>%
     group_by(gene, chrom) %>%
     summarize(start = min(start),
               end = max(end)) %>%
     ungroup()
 
-use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, internal = T, overwrite = T)
-
+# use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, internal = T, overwrite = T)
 
 # Copy-number states ----------------------------------------------------------------------------------------------
 copy_number_states = tibble::tribble(
@@ -208,6 +209,6 @@ copy_number_states = tibble::tribble(
     TRUE,    4,    3,           2,                 'AMP',
     TRUE,    5,    3,           2,                 'AMP',
     TRUE,    6,    3,           2,                 'AMP'
-)
+) %>% mutate(map_string := paste(wgd, mcn, lcn, sep = ':'))
 
-use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, copy_number_states, internal = T)
+use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, copy_number_states, internal = T, overwrite = T)

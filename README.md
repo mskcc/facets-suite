@@ -21,7 +21,10 @@ _Note: For the wrapper script `snp-pileup-wrapper.R` you need to specift the var
 
 ### R functions
 
-The R functions in this package are documented and their description and usage is available in R by doing `?facetsSuite::function_name`.
+The R functions in this package are documented and their description and usage is available in R by doing:
+```r
+?facetsSuite::function_name
+```
 
 ### Wrapper scripts
 

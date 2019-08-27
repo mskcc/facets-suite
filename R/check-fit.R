@@ -57,7 +57,8 @@ check_fit = function(facets_output,
     fcna_output = calculate_fraction_cna(segs, facets_output$ploidy, genome, algorithm)
     wgd = fcna_output$genome_doubled
     
-    segs[, `:=` (tcn.original = tcn, lcn.original = lcn, cf.original = cf)] # these are retained since the parse_segs function consolidates cncf/em solutions
+    segs[, `:=` (tcn.original = tcn, lcn.original = lcn, cf.original = cf,
+                 tcn.em.original = tcn.em, lcn.em.original = lcn.em, cf.em.original = cf.em)] # these are retained since the parse_segs function consolidates cncf/em solutions
     segs = parse_segs(segs, algorithm)
     
     segs = as.data.table(segs)
@@ -92,9 +93,9 @@ check_fit = function(facets_output,
     
     # Number of high-level amplifications and homozygous deletions
     # Clonal homdels, how much of the genome do they represent
-    n_amps = nrow(segs[tcn.em >= 10])
-    n_homdels = nrow(segs[tcn.em == 0])
-    clonal_homdels = auto_segs[tcn.em == 0 & clonal == TRUE]
+    n_amps = nrow(segs[tcn >= 10])
+    n_homdels = nrow(segs[tcn == 0])
+    clonal_homdels = auto_segs[tcn == 0 & clonal == TRUE]
     n_homdels_clonal = nrow(clonal_homdels)
     frac_homdels_clonal = sum(clonal_homdels$length)/sum(auto_segs$length)
     
@@ -133,9 +134,9 @@ check_fit = function(facets_output,
     
     # Check concordance between CNCF and EM fits 
     discordant_segs = auto_segs[, `:=` (
-        discordant_tcn = (tcn.em != tcn.original | (is.na(tcn.em) | is.na(tcn.original))) & !(is.na(tcn.em) & is.na(tcn.original)),
-        discordant_lcn = (lcn.em != lcn.original | (is.na(lcn.em) | is.na(lcn.original))) & !(is.na(lcn.em) & is.na(lcn.original))
-    )][(discordant_tcn == TRUE | discordant_lcn == TRUE) & tcn.em < 10]
+        discordant_tcn = (tcn.em.original != tcn.original | (is.na(tcn.em.original) | is.na(tcn.original))) & !(is.na(tcn.em.original) & is.na(tcn.original)),
+        discordant_lcn = (lcn.em.original != lcn.original | (is.na(lcn.em.original) | is.na(lcn.original))) & !(is.na(lcn.em.original) & is.na(lcn.original))
+    )][(discordant_tcn == TRUE | discordant_lcn == TRUE) & tcn < 10]
     discordant_stats = discordant_segs[, list(
         n_discordant_tcn = sum(discordant_tcn & !discordant_lcn),
         length_discordant_tcn = sum(length[discordant_tcn & !discordant_lcn]),
@@ -144,10 +145,10 @@ check_fit = function(facets_output,
         n_discordant_both = sum(discordant_tcn & discordant_lcn),
         length_discordant_both = sum(length[discordant_tcn & discordant_lcn])
     )]
-    evaluable_length = segs[chrom <= 22 & tcn.em < 10][, list(
-        tcn = sum(length[!(is.na(tcn.em) & is.na(tcn.original))]),
-        lcn = sum(length[!(is.na(lcn.em) & is.na(lcn.original))]),
-        both = sum(length[!(is.na(tcn.em) & is.na(tcn.original)) & !(is.na(lcn.em) & is.na(lcn.original))])
+    evaluable_length = segs[chrom <= 22 & tcn < 10][, list(
+        tcn = sum(length[!(is.na(tcn.em.original) & is.na(tcn.original))]),
+        lcn = sum(length[!(is.na(lcn.em.original) & is.na(lcn.original))]),
+        both = sum(length[!(is.na(tcn.em.original) & is.na(tcn.original)) & !(is.na(lcn.em.original) & is.na(lcn.original))])
     )]
     
     # Check concordance between log odds-ratio and integer copy-number with regards to balance

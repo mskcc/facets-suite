@@ -48,12 +48,12 @@ List with one or more values from function.
 }
 \description{
 Calculate the following 
-\itemize{
- \item{Fraction of genome altered:} {Fraction of genome altered and genome doubling flag.}
- \item{Fraction LOH:} {Fraction of genome with LOH and flag for hypoploidy.}
- \item{LST score:} {Large-scale state transitions, see source URL.}
- \item{NtAI:} {Telomeric allelic imbalance, see source URL.}
- \item{HRD-LOH:} {HRD-LOH score, see source URL.}
+\describe{
+ \item{\strong{Fraction of genome altered:}}{Fraction of genome altered and genome doubling flag.}
+ \item{\strong{Fraction LOH:}}{Fraction of genome with LOH and flag for hypoploidy.}
+ \item{\strong{LST score:}}{Large-scale state transitions, see source URL.}
+ \item{\strong{NtAI:}}{Telomeric allelic imbalance, see source URL.}
+ \item{\strong{HRD-LOH:}}{HRD-LOH score, see source URL.}
 }
 }
 \examples{

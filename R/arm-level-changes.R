@@ -57,7 +57,6 @@ arm_level_changes = function(segs,
                length = end - start)
     
     # Find distinct copy-number states 
-    copy_number_states = mutate(copy_number_states, map_string = paste(wgd, mcn, lcn, sep = ':'))
     altered_arms = group_by(segs, arm, tcn, lcn) %>% 
         summarize(cn_length = sum(length)) %>% 
         group_by(arm) %>% 

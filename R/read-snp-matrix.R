@@ -10,8 +10,7 @@
 #'
 #' @return A SNP count matrix, with the following columns:
 #' \itemize{
-#'       \item{\code{Chromosome}:} {SNPs used for copy-number segmentation, \code{het==1} for heterozygous loci.}
-#'       \item{\code{Position}:} {Inferred copy-number segmentation.}
+#'       \item{\code{Chromosome} and \code{Position}:} {Chromosomal position of SNP.}
 #'       \item{\code{NOR.DP}:} {Total read depth in normal sample.}
 #'       \item{\code{TUM.DP}:} {Total read depth in tumor sample.}
 #'       \item{\code{NOR.RD}:} {Reference allele read depth in normal sample.}
