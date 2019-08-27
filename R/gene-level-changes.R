@@ -84,6 +84,7 @@ gene_level_changes = function(facets_output,
     genes_all[, cn_state := mapvalues(paste(wgd, tcn-lcn, lcn, sep = ':'),
                                       copy_number_states$map_string, copy_number_states$call,
                                       warn_missing = FALSE)]
+    genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
     
     # Test on cnlr against baseline
     cn0_diplogr = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-diplogr))]

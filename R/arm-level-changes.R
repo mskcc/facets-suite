@@ -7,9 +7,17 @@
 #' @param genome Genome build.
 #' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
 #'
-#' @return List with one or more values from function.
+#' @return List of items, containing:
+#' @return \code{data.frame} for all genes mapping onto a segment in the output segmentation, with the columns:
+#' \itemize{
+#'     \item{\code{genome_doubled}:} {Boolean indicating whether sample genome is doubled.}
+#'     \item{\code{fraction_cna}:} {Fraction of genome altered.}
+#'     \item{\code{weighted_fraction_cna}:} {A weighted version of \code{fraction_cna} where only altered chromosomes are counted and weighted according to their length relative to total genome.}
+#'     \item{\code{aneuploidy_scores}:} {Count of the number of altered arms, see source URL.}
+#'     \item{\code{full_output}:} {Full per-arm copy-number status.}
+#' }
 #'
-#' @importFrom dplyr left_join filter summarize select %>% mutate_at case_when group_by rowwise
+#' @importFrom dplyr left_join filter summarize select %>% mutate_at case_when group_by rowwise arrange
 #' @importFrom purrr map_dfr map_lgl map_chr discard
 #' @importFrom tidyr gather separate_rows
 #' @importFrom plyr mapvalues
@@ -57,30 +65,39 @@ arm_level_changes = function(segs,
                length = end - start)
     
     # Find distinct copy-number states 
-    altered_arms = group_by(segs, arm, tcn, lcn) %>% 
+    # Requires that >=80% exist at given copy-number state
+    acro_arms = c('13p', '14p', '15p', '21p', '22p') # acrocentric chromsomes
+    chrom_arms = setdiff(paste0(rep(unique(test_facets_output$segs$chrom), each = 2), c('p', 'q')), acro_arms)
+    
+    segs = group_by(segs, arm, tcn, lcn) %>% 
         summarize(cn_length = sum(length)) %>% 
         group_by(arm) %>% 
         mutate(arm_length = sum(cn_length),
                majority = cn_length >= 0.8 * arm_length,
+               frac_of_arm = signif(cn_length/arm_length, 2),
                cn_state = mapvalues(paste(wgd, tcn-lcn, lcn, sep = ':'),
                                     copy_number_states$map_string, copy_number_states$call,
                                     warn_missing = FALSE)) %>% 
-        filter(majority == TRUE,
-               cn_state != 'DIPLOID',
-               !arm %in% c('13p', '14p', '15p', '21p', '22p')) # acrocentric chromsomes
-
+        ungroup() %>% 
+        filter(majority == TRUE, arm %in% chrom_arms) %>% 
+        select(-majority) %>% 
+        mutate(arm = factor(arm, chrom_arms, ordered = T)) %>% 
+        arrange(arm)
+    
+    altered_arms = filter(segs, cn_state != 'DIPLOID')
+    
     # Weighted fraction copy-number altered
     frac_altered_w = select(sample_chrom_info, chr, p = plength, q = qlength) %>%
         gather(arm, length, -chr) %>%
-        filter(!paste0(chr, arm) %in% c('13p', '14p', '15p', '21p', '22p')) %>%
+        filter(paste0(chr, arm) %in% chrom_arms) %>%
         summarize(sum(length[paste0(chr, arm) %in% altered_arms$arm]) / sum(length)) %>%
         as.numeric()
     
     list(
         genome_doubled = fcna_output$genome_doubled,
-        fcna = fcna_output$fraction_cna,
-        weighted_fcna = frac_altered_w,
+        fraction_cna = fcna_output$fraction_cna,
+        weighted_fraction_cna = frac_altered_w,
         aneuploidy_score = length(altered_arms),
-        altered_arms = paste(paste0(altered_arms$arm, ':', altered_arms$cn_state), collapse = ',')
+        full_output = segs
     )
 }

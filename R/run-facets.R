@@ -46,7 +46,7 @@ run_facets = function(read_counts,
     # Check input 
     missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts)) 
     if (length(missing_cols) > 0) {
-        stop(paste('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
+        stop(paste0('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
     }
     
     set.seed(seed)

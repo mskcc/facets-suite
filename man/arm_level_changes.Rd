@@ -20,7 +20,16 @@ arm_level_changes(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
 \item{algorithm}{Choice between FACETS \code{em} and \code{cncf} algorithm.}
 }
 \value{
-List with one or more values from function.
+List of items, containing:
+
+\code{data.frame} for all genes mapping onto a segment in the output segmentation, with the columns:
+\itemize{
+    \item{\code{genome_doubled}:} {Boolean indicating whether sample genome is doubled.}
+    \item{\code{fraction_cna}:} {Fraction of genome altered.}
+    \item{\code{weighted_fraction_cna}:} {A weighted version of \code{fraction_cna} where only altered chromosomes are counted and weighted according to their length relative to total genome.}
+    \item{\code{aneuploidy_scores}:} {Count of the number of altered arms, see source URL.}
+    \item{\code{full_output}:} {Full per-arm copy-number status.}
+}
 }
 \description{
 Get the altered chromosome arms in sample. Does not include the acrocentric p arms of chromosomes 12, 14, 15, 31, and 22.

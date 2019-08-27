@@ -22,7 +22,7 @@
 #'
 #' @return List with one or more values from function.
 #'
-#' @importFrom dplyr left_join summarize filter mutate group_by pull %>% select matches
+#' @importFrom dplyr left_join summarize filter mutate group_by pull %>% select matches ends_with
 #' @importFrom purrr map_dfr
 #' @importFrom diptest dip.test
 #' 
@@ -341,7 +341,7 @@ parse_segs = function(segs, algorithm = c('em', 'cncf')) {
            length = end - start,
            lcn = ifelse(tcn <= 1, 0, lcn),  # correct mcn, lcn for cases of tcn = 1 // sometimes FACETS set lcn = NA when tcn = 1, when it clearly has to be 0
            mcn = tcn - lcn) %>% 
-        select(-matches('.em$'))
+        select(-ends_with('\\.em'))
 }
 
 get_sample_genome = function(segs, genome) {

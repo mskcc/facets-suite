@@ -4,10 +4,10 @@
 \alias{format_igv_seg}
 \title{Format `.seg` file}
 \usage{
-format_igv_seg(facets_data, sample_id, normalize = TRUE)
+format_igv_seg(facets_output, sample_id, normalize = TRUE)
 }
 \arguments{
-\item{facets_data}{Facets output, from `run_facets`.}
+\item{facets_output}{Facets output, from `run_facets`.}
 
 \item{sample_id}{Sample name.}
 

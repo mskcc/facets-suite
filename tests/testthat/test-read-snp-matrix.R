@@ -1,4 +1,6 @@
 
+# This test does not work on Travis-CI for some reason
+
 # test_that('read function works', {
 #     
 #     test_snp_matrix = read_snp_matrix(system.file('data-raw/countsMerged_mini.gz', package = 'facetsSuite'))

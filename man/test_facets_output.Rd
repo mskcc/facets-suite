@@ -5,7 +5,7 @@
 \alias{test_facets_output}
 \title{Test FACETS output
 #' @format Output from \code{run-facets}.}
-\format{An object of class \code{list} of length 10.}
+\format{An object of class \code{list} of length 9.}
 \source{
 \url{portal.gdc.cancer.gov}
 }

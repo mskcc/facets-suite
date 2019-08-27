@@ -36,6 +36,7 @@
 #'    }
 #'
 #' @importFrom dplyr distinct
+#' @importFrom purrr map_if
 #' @import data.table
 
 #' @export
@@ -223,10 +224,9 @@ check_fit = function(facets_output,
         homdel_muts = maf[tcn == 0]
         output$n_homdel_muts = nrow(homdel_muts)
         output$median_vaf_homdel_muts = median(homdel_muts$t_var_freq)
-
-        output
-    } else {
-        output
     }
+    
+    # Return rounded values for fractions
+    map_if(output, is.double, .f = function(x) signif(x, 2))
 }
 

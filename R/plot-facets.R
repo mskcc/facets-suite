@@ -422,12 +422,17 @@ get_gene_position = function(genes,
     genome = get(genome)
     cum_chrom_lengths = cumsum(as.numeric(genome$size))
     
-    filter(gene_loci, gene %in% genes) %>%
-        mutate(chrom = as.numeric(chrom),
-               mid = start + (end-start) / 2,
-               start = start + cum_chrom_lengths[chrom-1],
-               end = end + cum_chrom_lengths[chrom-1],
-               mid = mid + cum_chrom_lengths[chrom-1]) 
+    if(!all(genes %in% gene_loci$gene)) {
+        missing_genes = setdiff(genes, gene_loci$gene)
+        stop(paste('Gene(s)', paste(missing_genes, collapse = ', '), 'are not in gene annotation.'), call. = FALSE)
+    } else {
+        filter(gene_loci, gene %in% genes) %>%
+            mutate(chrom = as.numeric(chrom),
+                   mid = start + (end-start) / 2,
+                   start = start + cum_chrom_lengths[chrom-1],
+                   end = end + cum_chrom_lengths[chrom-1],
+                   mid = mid + cum_chrom_lengths[chrom-1]) 
+    }
 }
 
 # Proproptionally subset SPNs per chromosome to a given fraction

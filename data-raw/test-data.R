@@ -1,8 +1,11 @@
 
 # Generate test data ----------------------------------------------------------------------------------------------
-library(dplyr)
-library(facetsSuite)
-library(usethis)
+
+suppressPackageStartupMessages({
+    library(dplyr)
+    library(facetsSuite)
+    library(usethis)
+})
 
 # test_read_counts
 # Output from snp-pileup, downsampled to reduce file size

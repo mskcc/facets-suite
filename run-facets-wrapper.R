@@ -50,6 +50,12 @@ parser$add_argument('-S', '--seed', required = FALSE,
 args = parser$parse_args()
 
 # Helper functions ------------------------------------------------------------------------------------------------
+
+# Write out
+write = function(input, output) {
+    write.table(input, file = output, quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
+}
+
 # Print run details
 print_run_details = function(outfile,
                              cval,
@@ -80,7 +86,7 @@ print_run_details = function(outfile,
     if (length(params) > 0) {
         run_details = data.frame(run_details,
                                  'genome_doubled' = params$genome_doubled,
-                                 'fraction_cna' = signif(as.numeric(params$fcna), 2),
+                                 'fraction_cna' = signif(as.numeric(params$fraction_cna), 2),
                                  'hypoploid' = params$hypoploid,
                                  'fraction_loh' = signif(as.numeric(params$fraction_loh), 2),
                                  'lst' = params$lst,
@@ -88,7 +94,7 @@ print_run_details = function(outfile,
                                  'hrd_loh' = params$hrd_loh)
     }
     
-    write.table(run_details, file = outfile, quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
+    write(run_details, outfile)
 }
 
 # Default set of output plots
@@ -124,18 +130,18 @@ print_plots = function(outfile,
 # Print segmentation
 print_segments = function(outfile,
                           facets_output) {
-    write.table(facets_output$segs, file = outfile, sep = '\t', quote = F, col.names = T, row.names = F)
+    write(facets_output$segs, outfile)
 }
 
 # Print IGV-style .seg file
 print_igv = function(outfile,
                      facets_output) {
     
-    ii = format_igv_seg(facets_data = facets_output,
+    ii = format_igv_seg(facets_output = facets_output,
                         sample_id = sample_id,
                         normalize = T)
     
-    write.table(ii, file = outfile, sep = '\t', quote = F, col.names = T, row.names = F)
+    write(ii, outfile)
 }
 
 # Define facets iteration
@@ -213,17 +219,29 @@ if (!is.null(args$purity_cval)) {
     metadata = NULL
     if (args$everything) {
         metadata = c(
-            map_dfr(list(purity_output, hisens_output), function(x) arm_level_changes(x$segs, x$ploidy, args$genome)),
+            map_dfr(list(purity_output, hisens_output), function(x) { arm_level_changes(x$segs, x$ploidy, args$genome)[-5] }),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_lst(x$segs, x$ploidy, args$genome)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_ntai(x$segs, x$ploidy, args$genome)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_hrdloh(x$segs, x$ploidy)),
             map_dfr(list(purity_output, hisens_output), function(x) calculate_loh(x$segs, x$snps, args$genome))
-            )
+        )
         
         qc = map_dfr(list(purity_output, hisens_output), function(x) check_fit(x, genome = args$genome)) %>% 
-            add_column(cval = c(args$purity_cval, args$cval), .before = 1)
-    
-        write.table(qc, file = paste0(name, '.qc.txt'), quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
+            add_column(sample = sample_id,
+                       cval = c(args$purity_cval, args$cval), .before = 1)
+        # Write QC
+        write(qc, paste0(name, '.qc.txt'))
+        
+        # Write gene level // use hisensitivity run
+        gene_level = gene_level_changes(hisens_output, args$genome) %>% 
+            add_column(sample = sample_id, .before = 1)
+        write(gene_level, paste0(name, '.gene_level.txt'))
+        
+        # Write arm level // use purity run
+        arm_level = arm_level_changes(purity_output$segs, purity_output$ploidy, args$genome) %>% 
+            pluck('full_output') %>% 
+            add_column(sample = sample_id, .before = 1)
+        write(arm_level, paste0(name, '.arm_level.txt'))
     }
     
     print_run_details(outfile = paste0(name, '.txt'),
@@ -235,6 +253,7 @@ if (!is.null(args$purity_cval)) {
                       flags = map(list(purity_output$flags, hisens_output$flags), function(x) paste0(x, collapse = '; ')),
                       metadata)
     
+    # Write RDS
     saveRDS(purity_output, paste0(name, '_purity.rds'))
     saveRDS(hisens_output, paste0(name, '_hisens.rds'))
     
@@ -259,11 +278,22 @@ if (!is.null(args$purity_cval)) {
             calculate_loh(output$segs, output$snps, args$genome)
         )
         
+        # Write QC
         qc = check_fit(output, genome = args$genome)
-        qc = c(cval = args$cval, qc)
-        write.table(qc, file = paste0(name, '.qc.txt'), quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
+        qc = c(sample = sample_id, cval = args$cval, qc)
+        write(qc, paste0(name, '.qc.txt'))
+        
+        # Write gene level
+        gene_level = gene_level_changes(output, args$genome) %>% 
+            add_column(sample = sample_id, .before = 1)
+        write(gene_level, paste0(name, '.gene_level.txt'))
+        
+        # Write arm level
+        arm_level = add_column(metadata$full_output, sample = sample_id, .before = 1)
+        write(arm_level, paste0(name, '.arm_level.txt'))
     }
     
+    # Write run details/metadata
     print_run_details(outfile = paste0(name, '.txt'),
                       cval = args$cval,
                       min_nhet = args$min_nhet,
@@ -273,5 +303,6 @@ if (!is.null(args$purity_cval)) {
                       flags = paste0(output$flags, collapse = '; '),
                       metadata)
     
+    # Write RDS
     saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
 }
