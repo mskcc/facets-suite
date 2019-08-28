@@ -24,7 +24,9 @@
 #' @importFrom plyr mapvalues
 #' 
 #' @examples
+#' \dontrun{
 #' gene_level_changes(test_facets_output, 'hg38', 'em')
+#' }
 
 #' @export
 gene_level_changes = function(facets_output,
