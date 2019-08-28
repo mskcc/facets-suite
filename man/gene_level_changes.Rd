@@ -33,5 +33,7 @@ This maps protein-coding genes onto copy-number segmentation from FACETS output 
 Additionally, the copy-number log-ratio of the SNPs falling insided the gene boundaries are used to perform a Z-test against the dipLogR baseline.
 }
 \examples{
+\dontrun{
 gene_level_changes(test_facets_output, 'hg38', 'em')
+}
 }

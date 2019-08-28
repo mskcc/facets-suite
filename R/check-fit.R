@@ -156,8 +156,8 @@ check_fit = function(facets_output,
     # Count segments where logOR shows balanced but tcn/lcn is imbalanced and vice-versa.
     clonal_segs = auto_segs[clonal == TRUE & !is.na(lcn)]
     clonal_segs_disc_icn = clonal_segs[, `:=` (
-        icn_bal_mafr_high = lcn == mcn && mafR > 0.05,
-        icn_imbal_mafr_low = lcn != mcn && mafR < 0.05
+        icn_bal_mafr_high = lcn == mcn & mafR > 0.05,
+        icn_imbal_mafr_low = lcn != mcn & mafR < 0.05
     )][icn_bal_mafr_high == TRUE | icn_imbal_mafr_low == TRUE]
     
     n_icn_cnlor_discordant = nrow(clonal_segs_disc_icn)
