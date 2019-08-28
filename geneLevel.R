@@ -378,7 +378,7 @@ if(!interactive()){
     parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list cncf files to be processed, to be concatenated into one R data.table.')
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
-    parser$add_argument('-m', '--method', type='character', default='reg', help="If scna, creates a portal-friendly scna output file [default reg]")
+    parser$add_argument('-cnamtx', '--cnaMatrix', action='store_true', help="If cnamtx, creates a portal-friendly scna output file")
     # parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
     parser$add_argument('--min_cf_cutoff', type='double', default=0.6, help="The cell fraction cutoff such that genes in segments with cell fraction less than this will be treated as diploid")
     parser$add_argument('--max_seg_length', type='double', default=10000000, help="Genes in segments longer than this will be treated as diploid")
@@ -387,7 +387,7 @@ if(!interactive()){
     filenames = args$filenames
 
     outfile = args$outfile
-    method = args$method
+    cna_matrix = args$cnaMatrix
     review_candidates = args$review_output_file
     min_cf_cutoff = args$min_cf_cutoff
     maxseg = args$max_seg_length
@@ -426,7 +426,7 @@ if(!interactive()){
     # This list is meant to be looked at manually to be sure that a true homdel is not suppressed (this will be improved in the next version)
     # fwrite(gene_level_calls$homdeltsg_review, paste0(gsub("[.]tsv|[.]txt","",outfile),"_TSG_ManualReview.txt"),row.names=FALSE, quote=FALSE, sep="\t")
 
-    if(tolower(method) == 'scna'){
+    if(cna_matrix){
         scna_outfile = gsub(".txt", ".scna.txt", outfile)
         ascna_outfile = gsub(".txt", ".ascna.txt", outfile)
         portal_output = convert_gene_level_calls_to_matrix_portal(gene_level_calls)
