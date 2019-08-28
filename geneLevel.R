@@ -378,7 +378,7 @@ if(!interactive()){
     parser$add_argument('-f', '--filenames', type='character', nargs='+', help='list cncf files to be processed, to be concatenated into one R data.table.')
     parser$add_argument('-o', '--outfile', type='character', help='Output filename.')
     parser$add_argument('-t', '--targetFile', type='character', default='IMPACT468', help="IMPACT341/410/468, or a Picard interval list file of gene target coordinates [default IMPACT468]")
-    parser$add_argument('-cnamtx', '--cnaMatrix', action='store_true', help="If cnamtx, creates a portal-friendly scna output file")
+    parser$add_argument('-m', '--cnaMatrix', action='store_true', default=FALSE, help="If true, creates a portal-friendly scna matrix file")
     # parser$add_argument('-r', '--review_output_file', type='character', default='ccs_homdeltsg_review_candidates.txt', help="Output text file of canddiates for manual review")
     parser$add_argument('--min_cf_cutoff', type='double', default=0.6, help="The cell fraction cutoff such that genes in segments with cell fraction less than this will be treated as diploid")
     parser$add_argument('--max_seg_length', type='double', default=10000000, help="Genes in segments longer than this will be treated as diploid")
