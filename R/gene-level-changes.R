@@ -67,7 +67,7 @@ gene_level_changes = function(facets_output,
     setDT(snps)[, `:=` (start = maploc, end = maploc)][, maploc := NULL]
     setkeyv(snps, key_cols)
     
-    genes_snps = foverlaps(snps, genes, type = 'within', nomatch = NULL, by.x = key_cols, by.y = key_cols)
+    genes_snps = foverlaps(snps, genes, type = 'within', nomatch = 0, by.x = key_cols, by.y = key_cols)
     genes_snps = genes_snps[, list(
         # mean_cnlr = mean(cnlr),
         # sd_cnlr = sd(cnlr),
