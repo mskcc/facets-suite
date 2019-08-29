@@ -4,7 +4,7 @@
 'test_read_counts'
 
 #' Test FACETS output
-#' #' @format Output from \code{run-facets}.
+#' @format Output from \code{run-facets}.
 #' @source \url{portal.gdc.cancer.gov}
 'test_facets_output'
 

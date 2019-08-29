@@ -58,7 +58,7 @@ gene_level_changes = function(facets_output,
     segs = as.data.table(parse_segs(segs, algorithm))
     setkeyv(segs, key_cols)
     
-    genes_segs = foverlaps(segs, genes, nomatch = NULL, by.x = key_cols, by.y = key_cols) # i.start/i.end is the start/end interval of the segment
+    genes_segs = foverlaps(segs, genes, nomatch = 0, by.x = key_cols, by.y = key_cols) # i.start/i.end is the start/end interval of the segment
     
     # Count genes per segment
     genes_segs[, `:=` (genes_on_seg = .N), by = seg]
