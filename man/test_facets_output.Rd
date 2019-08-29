@@ -3,9 +3,8 @@
 \docType{data}
 \name{test_facets_output}
 \alias{test_facets_output}
-\title{Test FACETS output
-#' @format Output from \code{run-facets}.}
-\format{An object of class \code{list} of length 9.}
+\title{Test FACETS output}
+\format{Output from \code{run-facets}.}
 \source{
 \url{portal.gdc.cancer.gov}
 }
@@ -14,6 +13,5 @@ test_facets_output
 }
 \description{
 Test FACETS output
-#' @format Output from \code{run-facets}.
 }
 \keyword{datasets}
