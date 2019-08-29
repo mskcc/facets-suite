@@ -12,33 +12,34 @@ if (length(args) == 0) {
 
 parser = ArgumentParser(description = 'Generate SNP read counts from matched tumor-normal BAM files.')
 
-parser$add_argument('-v', '--verbose', action="store_true", default = TRUE,
+parser$add_argument('-v', '--verbose', action = "store_true", default = TRUE,
                     help = 'Print run info')
-parser$add_argument('-vcf', '--vcf-file', required = T,
+parser$add_argument('-sp', '--snp-pileup-path', required = FALSE,
+                    help = 'Path to snp-pileup executable [default "$HOME/git/facets/inst/extcode/snp-pileup"]')
+parser$add_argument('-vcf', '--vcf-file', required = TRUE,
                     help = 'Path to VCF file containing SNP positions')
-parser$add_argument('-n', '--normal-bam', required = T,
+parser$add_argument('-n', '--normal-bam', required = TRUE,
                     help = 'Path to normal sample BAM file')
-parser$add_argument('-t', '--tumor-bam', required = T,
+parser$add_argument('-t', '--tumor-bam', required = TRUE,
                     help = 'Path to tumor sample BAM file')
-parser$add_argument('-nn', '--normal-name', required = F,
+parser$add_argument('-nn', '--normal-name', required = FALSE,
                     help = 'Name of normal sample')
-parser$add_argument('-tn', '--tumor-name', required = F,
+parser$add_argument('-tn', '--tumor-name', required = FALSE,
                     help = 'Name of tumor sample')
-parser$add_argument('-o', '--output-file', required = F,
+parser$add_argument('-o', '--output-file', required = FALSE,
                     help = 'Name of output file [default countsMerged_tumor_normal.gz]')
-parser$add_argument('-p', '--pseudo-snps', required = F, default = 50,
+parser$add_argument('-p', '--pseudo-snps', required = FALSE, default = 50,
                     help = 'Do pileup at every p:th position [default %(default)s]')
-parser$add_argument('-d', '--max-depth', required = F, default = 4000,
+parser$add_argument('-d', '--max-depth', required = FALSE, default = 4000,
                     help = 'Maximum read depth [default %(default)s]')
 
 args = parser$parse_args()
 
 # Prepare output --------------------------------------------------------------------------------------------------
-snp_pileup_path = '$HOME/git/facets/inst/extcode/snp-pileup'
-
-normal_name = args$normal_name %||% gsub('.bam$', '', basename(args$normal_bam))
-tumor_name  = args$tumor_name  %||% gsub('.bam$', '', basename(args$tumor_bam))
-output_file = args$output_file %||% paste0(tumor_name, '_', normal_name, '.snp_pileup.gz')
+snp_pileup_path = args$snp_pileup_path  %||% '$HOME/git/facets/inst/extcode/snp-pileup'
+normal_name     = args$normal_name      %||% gsub('.bam$', '', basename(args$normal_bam))
+tumor_name      = args$tumor_name       %||% gsub('.bam$', '', basename(args$tumor_bam))
+output_file     = args$output_file      %||% paste0(tumor_name, '_', normal_name, '.snp_pileup.gz')
 
 if (file.exists(args$output_file)) {
     stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
