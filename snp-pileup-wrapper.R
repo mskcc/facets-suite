@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
+    library(rlang)
     library(argparse)
 })
 
