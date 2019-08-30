@@ -55,11 +55,11 @@ calculate_fraction_cna = function(segs,
     wgd = is_genome_doubled(segs, sample_chrom_info, treshold = 0.5)
     
     # Calculate fraction of genome altered
-    interrogated_genome = sum(sample_chrom_info$size)
+    interrogated_genome = sum(as.numeric(sample_chrom_info$size))
     if (!wgd) {
-        diploid_length = sum(segs$length[which(segs$tcn == 2 & segs$lcn == 1)])
+        diploid_length = sum(as.numeric(segs$length[which(segs$tcn == 2 & segs$lcn == 1)]))
     } else if (wgd) {
-        diploid_length = sum(segs$length[which(segs$tcn == 4 & segs$lcn == 2)])
+        diploid_length = sum(as.numeric(segs$length[which(segs$tcn == 4 & segs$lcn == 2)]))
     }
     frac_altered = (interrogated_genome - diploid_length) / interrogated_genome
     
@@ -369,10 +369,10 @@ get_sample_genome = function(segs, genome) {
 is_genome_doubled = function(segs, chrom_info, treshold = 0.5) {
     
     # Calculated length of autosomal
-    autosomal_genome = sum(chrom_info$size[chrom_info$chr %in% 1:22])
+    autosomal_genome = sum(as.numeric(chrom_info$size[chrom_info$chr %in% 1:22]))
     
     # Check for whole-genome duplication // PMID 30013179
-    frac_elevated_mcn = sum(segs$length[which(segs$mcn >= 2 & segs$chrom %in% 1:22)]) / autosomal_genome
+    frac_elevated_mcn = sum(as.numeric(segs$length[which(segs$mcn >= 2 & segs$chrom %in% 1:22)])) / autosomal_genome
     wgd = frac_elevated_mcn > treshold
     
     wgd
