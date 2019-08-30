@@ -17,22 +17,23 @@ Depends:
 Imports:
     facets (>= 0.5.2),
     pctGCdata (>= 0.3.0),
-    data.table,
-    dplyr,
-    plyr,
-    ggplot2,
-    purrr,
-    diptest,
-    tidyr,
-    egg,
-    scales,
-    rlang,
-    argparse (>= 1.1.1)
+    data.table (>= 1.11.8),
+    dplyr (>= 0.8.3),
+    plyr (>= 1.8.4),
+    ggplot2 (>= 3.2.1),
+    purrr (>= 0.3.2),
+    diptest (>= 0.75.7),
+    tidyr (>= 0.8.3),
+    egg (>= 0.4.2),
+    scales (>= 1.0.0),
+    rlang (>= 0.4.0),
+    argparse (>= 1.1.1),
+    tibble (>= 2.1.3)
 Remotes:
-    mskcc/facets,
-    veseshan/pctGCdata
+    mskcc/facets (>= 0.5.14),
+    veseshan/pctGCdata (>= 0.3.0)
 NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp
 Suggests: 
-    covr,
+    covr (>= 3.2.0),
     testthat (>= 2.1.0)

@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
     library(Cairo)
     library(egg)
     library(purrr)
+    library(tibble)
 })
 
 args = commandArgs(TRUE)
