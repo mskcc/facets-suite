@@ -333,8 +333,8 @@ get_gene_level_calls <- function(cncf_files,
                 FACETS_CALL.em == "HOMDEL" & !(seg.len < max_seg_length & count <= 10) ~ 'FAIL',
                 TRUE ~ 'PASS'),
             # Flag for review certain homdels
-            review = ifelse(ccs_filter == TRUE & FACETS_CALL.em == "HOMDEL" &
-                                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000, 'rescue', '')
+            review = ifelse(ccs_filter == 'FAIL' & FACETS_CALL.em == "HOMDEL" &
+                                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000, 'rescue', NA_character_)
             )
 
     # homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
