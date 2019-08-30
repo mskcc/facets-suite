@@ -26,6 +26,19 @@ The R functions in this package are documented and their description and usage i
 ?facetsSuite::function_name
 ```
 
+Central to most functionality in the package is the output from the `run_facets`, which runs the FACETS algorithm based on provided tumor-normal SNP pileup (i.e. genotyping). The output is a list object with the following named objects:
+- `snps`: SNPs used for copy-number segmentation, where `het==1` indicates heterozygous loci.
+- `segs`: Inferred copy-number segmentation.
+– `purity`: Inferred sample purity, i.e. fraction of tumor cells of the total cellular population.
+- `ploidy`: Inferred sample ploidy.
+- `diplogr`: Inferred dipLogR, the sample-specific baseline corresponding to the diploid state.
+- `alballogr`: Alternative dipLogR value(s) at which a balanced solution was found.
+- `flags`: Warning flags from the naïve segmentation algorithm.
+- `em_flags`: Warning flags from the expectation-maximization segmentation algorithm.
+- `loglik`: Log-likelihood value of the fitted model.
+
+Note that FACETS performs segmentation with two algorithms, the "naïve" base method and an expectation-maximization algorithm. The latter (columns suffixed `.em`) is used as a default for most of the functions in this package.
+
 ### Wrapper scripts
 
 Most use of this package can be done from the command line using three wrapper scripts:
