@@ -17,7 +17,7 @@ Depends:
 Imports:
     facets (>= 0.5.2),
     pctGCdata (>= 0.3.0),
-    data.table,
+    data.table (>= 1.11.8),
     dplyr,
     plyr,
     ggplot2,
@@ -27,7 +27,8 @@ Imports:
     egg,
     scales,
     rlang,
-    argparse (>= 1.1.1)
+    argparse (>= 1.1.1),
+    tibble
 Remotes:
     mskcc/facets,
     veseshan/pctGCdata
