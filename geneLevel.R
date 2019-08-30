@@ -329,12 +329,12 @@ get_gene_level_calls <- function(cncf_files,
             # CCS filter flag amplifications and homdels at given thresholds
             ccs_filter = case_when(
                 FACETS_CALL.em %in% c("AMP","AMP (LOH)","AMP (BALANCED)") &
-                    seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut )) ~ TRUE,
-                FACETS_CALL.em == "HOMDEL" & seg.len < max_seg_length & count <= 10 ~ TRUE,
-                TRUE ~ FALSE),
+                    !(seg.len < max_seg_length & (tcn.em > 8 | count <= 10 | ( !is.na(purity) & cf.em > CFcut ))) ~ 'FAIL',
+                FACETS_CALL.em == "HOMDEL" & !(seg.len < max_seg_length & count <= 10) ~ 'FAIL',
+                TRUE ~ 'PASS'),
             # Flag for review certain homdels
-            review = ccs_filter == TRUE & FACETS_CALL.em == "HOMDEL" &
-                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000
+            review = ifelse(ccs_filter == TRUE & FACETS_CALL.em == "HOMDEL" &
+                                Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol) & seg.len < 25000000, 'rescue', '')
             )
 
     # homdeltsg_review = filter(genelevelcalls0, FACETS_CALL.em == "ccs_filter", FACETS_CALL.ori == "HOMDEL", Hugo_Symbol %in% unique(oncokb_tsg$hugoSymbol), seg.len < 25000000)
@@ -435,3 +435,4 @@ if(!interactive()){
         write.text(ascna_output, ascna_outfile)
     }
 }
+
