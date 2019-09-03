@@ -103,7 +103,16 @@ gene_level_changes = function(facets_output,
                              -2^(-(mean_cnlr - mean(cn0_snps$cnlr))),
                              2^(mean_cnlr - mean(cn0_snps$cnlr)))
     ), by = seq_len(nrow(genes_all))]
-
+    
+    # Add filter flags
+    max_gene_count = 10
+    max_seg_length = 1e7
+    min_ccf = 0.6 * purity
+    genes_all[, filter := 'PASS']
+    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (tcn > 8 | genes_on_seg > max_gene_count) , filter := add_tag(filter, 'unfocal_amp')]
+    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (!is.na(purity) & cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
+    genes_all[cn_state == 'HOMDEL' & length > max_seg_length & genes_on_seg > max_gene_count, filter := add_tag(filter, 'unfocal_del')]
+    
     # Clean up data frame
     genes_all = genes_all[, setnames(.SD,
                                      c('seg.x', 'start', 'end', 'i.start', 'i.end', 'length', 'snps', 'het_snps', 'cnlr.median'),
@@ -113,7 +122,7 @@ gene_level_changes = function(facets_output,
     data.frame(genes_all)
 }
 
-# Help function ---------------------------------------------------------------------------------------------------
+# Help functions --------------------------------------------------------------------------------------------------
 
 two_sample_z = function(a, b) {
     if (length(a) < 5 | length(b) < 5) {
@@ -126,3 +135,11 @@ two_sample_z = function(a, b) {
         pnorm(z, lower.tail = TRUE)
     }
 }
+
+add_tag = function(filter, tag) {
+    ifelse(filter == 'PASS',
+           tag,
+           paste(filter, tag, sep = ';'))
+}
+
+

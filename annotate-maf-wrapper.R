@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
     library(argparse)
+    library(rlang)
     library(data.table)
     library(parallel)
     library(facetsSuite)
@@ -23,7 +24,7 @@ parser$add_argument('-f', '--facets-output', required = FALSE,
 parser$add_argument('-a', '--facets-algorithm', required = FALSE,
                     default = 'em', help = 'Which FACETS algorithm to use [default %(default)s]')
 parser$add_argument('-o', '--output', required = FALSE,
-                    help = 'Output directory [default input.ccf.maf')
+                    help = 'Output file [default input.ccf.maf')
 parser$add_argument('-p', '--parallel', required = FALSE,
                     default = FALSE,  help = 'Parallelize [default %(default)s]')
 args = parser$parse_args()
@@ -60,7 +61,7 @@ if (!is.null(args$sample_mapping)) {
         message(paste(sample_map_unique_samples, 'samples in sample map not in input MAF.'))
     }
     
-    message(paste('Annotating', length(common_samples), 'samples.'))
+    message(paste('Annotating', length(common_samples), 'sample(s).'))
     
 } else if (!is.null(args$facets_output)) {
     if (length(unique(maf$Tumor_Sample_Barcode)) != 1) {
@@ -88,7 +89,7 @@ if (args$parallel == TRUE) {
 output_maf = rbindlist(output_maf)
 
 # Add back samples that were missing in sample map
-if (any(maf$Tumor_Sample_Barcode %nin% sample_map$sample)) {
+if (any(!maf$Tumor_Sample_Barcode %in% sample_map$sample)) {
     output_maf = rbindlist(output_maf,
                            maf[!which(maf$Tumor_Sample_Barcode %in% sample_map$sample), ],
                            use.names = TRUE, fill = TRUE)
