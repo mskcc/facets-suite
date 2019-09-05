@@ -21,12 +21,8 @@ parser$add_argument('-n', '--normal-bam', required = TRUE,
                     help = 'Path to normal sample BAM file')
 parser$add_argument('-t', '--tumor-bam', required = TRUE,
                     help = 'Path to tumor sample BAM file')
-parser$add_argument('-nn', '--normal-name', required = FALSE,
-                    help = 'Name of normal sample')
-parser$add_argument('-tn', '--tumor-name', required = FALSE,
-                    help = 'Name of tumor sample')
-parser$add_argument('-o', '--output-file', required = FALSE,
-                    help = 'Name of output file [default tumor__normal.snp_pileup.gz]')
+parser$add_argument('-o', '--output-file', required = TRUE,
+                    help = 'Name of output file')
 parser$add_argument('-p', '--pseudo-snps', required = FALSE, default = 50,
                     help = 'Do pileup at every p:th position [default %(default)s]')
 parser$add_argument('-d', '--max-depth', required = FALSE, default = 4000,
@@ -37,20 +33,8 @@ args = parser$parse_args()
 # Prepare output --------------------------------------------------------------------------------------------------
 snp_pileup_path = args$snp_pileup_path
 
-normal_name = ifelse(is.null(args$output),
-                     gsub('.bam$', '', basename(args$normal_bam)),
-                     normal_name)
-
-tumor_name = ifelse(is.null(args$output),
-                    gsub('.bam$', '', basename(args$tumor_bam)),
-                    tumor_name)
-
-output_file = ifelse(is.null(args$output),
-                     paste0(tumor_name, '__', normal_name, '.snp_pileup.gz'),
-                     output_file)
-
-if (file.exists(output_file)) {
-    stop(paste(output_file, 'already exists. Remove before running.'), call. = F)
+if (file.exists(args$output_file)) {
+    stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
 }
 
 default_args = c('--count-orphans --gzip')
