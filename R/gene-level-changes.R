@@ -15,9 +15,7 @@
 #'     \item{\code{gene_het_snps}:} {Median copy-number log-ratio for segment.}
 #'     \item{\code{spans_segs}:} {Boolean indicating whether the gene boundaries map onto different segments.}
 #'     \item{\code{cn_state}:} {Label for coyp-number configuration.}
-#'     \item{\code{mean_cnlr}:} {Mean copy-number log-ratio for SNPs in gene.}
-#'     \item{\code{pval}:} {P-value from Z-test, as described above.}
-#'     \item{\code{fold_change}:} {Fold change corresponding to the comparison against the dipLogR baseline.}
+#'     \item{\code{tsg}:} {Boolean indicating whether gene is a tumor suppressor.}
 #' }
 #' 
 #' @import data.table
@@ -71,7 +69,7 @@ gene_level_changes = function(facets_output,
     genes_snps = genes_snps[, list(
         # mean_cnlr = mean(cnlr),
         # sd_cnlr = sd(cnlr),
-        cnlr = list(cnlr),
+        # cnlr = list(cnlr),
         snps = .N,
         het_snps = sum(het == 1),
         seg = seg[which.max(start-end)], # this selects the segment which represents the larger region
@@ -89,20 +87,20 @@ gene_level_changes = function(facets_output,
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
     
     # Test on cnlr against baseline
-    cn0_diplogr = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-diplogr))]
-    cn0_segs = segs[cnlr.median.clust == cn0_diplogr]
-    cn0_snps = snps[segclust %in% cn0_segs$segclust]
-    cn0_snps = cn0_snps[between(cnlr, quantile(cn0_snps$cnlr, .25), quantile(cn0_snps$cnlr, .75))] # remove noise
+    # cn0_diplogr = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-diplogr))]
+    # cn0_segs = segs[cnlr.median.clust == cn0_diplogr]
+    # cn0_snps = snps[segclust %in% cn0_segs$segclust]
+    # cn0_snps = cn0_snps[between(cnlr, quantile(cn0_snps$cnlr, .25), quantile(cn0_snps$cnlr, .75))] # remove noise
     
     # Perform Z test, calculate fold change
-    genes_all[, mean_cnlr := mean(unlist(cnlr)), by = seq_len(nrow(genes_all))][, `:=` (
-        pval = ifelse(mean_cnlr > mean(cn0_snps$cnlr),
-                      two_sample_z(cn0_snps$cnlr, unlist(cnlr)),
-                      two_sample_z(unlist(cnlr), cn0_snps$cnlr)),
-        fold_change = ifelse(mean_cnlr - mean(cn0_snps$cnlr) < 0,
-                             -2^(-(mean_cnlr - mean(cn0_snps$cnlr))),
-                             2^(mean_cnlr - mean(cn0_snps$cnlr)))
-    ), by = seq_len(nrow(genes_all))]
+    # genes_all[, mean_cnlr := mean(unlist(cnlr)), by = seq_len(nrow(genes_all))][, `:=` (
+    #     pval = ifelse(mean_cnlr > mean(cn0_snps$cnlr),
+    #                   two_sample_z(cn0_snps$cnlr, unlist(cnlr)),
+    #                   two_sample_z(unlist(cnlr), cn0_snps$cnlr)),
+    #     fold_change = ifelse(mean_cnlr - mean(cn0_snps$cnlr) < 0,
+    #                          -2^(-(mean_cnlr - mean(cn0_snps$cnlr))),
+    #                          2^(mean_cnlr - mean(cn0_snps$cnlr)))
+    # ), by = seq_len(nrow(genes_all))]
     
     # Add filter flags
     max_gene_count = 10
@@ -112,29 +110,30 @@ gene_level_changes = function(facets_output,
     genes_all[cn_state %like% '^AMP' & length > max_seg_length & (tcn > 8 | genes_on_seg > max_gene_count) , filter := add_tag(filter, 'unfocal_amp')]
     genes_all[cn_state %like% '^AMP' & length > max_seg_length & (!is.na(purity) & cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
     genes_all[cn_state == 'HOMDEL' & length > max_seg_length & genes_on_seg > max_gene_count, filter := add_tag(filter, 'unfocal_del')]
+    genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length, filter := 'RESCUE']
     
     # Clean up data frame
     genes_all = genes_all[, setnames(.SD,
                                      c('seg.x', 'start', 'end', 'i.start', 'i.end', 'length', 'snps', 'het_snps', 'cnlr.median'),
                                      c('seg', 'gene_start', 'gene_end', 'seg_start', 'seg_end', 'seg_length', 'gene_snps', 'gene_het_snps', 'median_cnlr_seg'))]
-    genes_all[, `:=` (num.mark = NULL, nhet = NULL, mafR = NULL, mafR.clust = NULL, seg.y = NULL, cnlr = NULL, cnlr.median.clust = NULL)]
+    genes_all[, `:=` (num.mark = NULL, nhet = NULL, mafR = NULL, mafR.clust = NULL, seg.y = NULL, cnlr.median.clust = NULL)]
     
     data.frame(genes_all)
 }
 
 # Help functions --------------------------------------------------------------------------------------------------
 
-two_sample_z = function(a, b) {
-    if (length(a) < 5 | length(b) < 5) {
-        NA_real_
-    } else {
-        se_a = sd(a)/sqrt(length(a))
-        se_b = sd(b)/sqrt(length(b))
-        se = sqrt(se_a^2 + se_b^2)
-        z = (mean(a)-mean(b))/se
-        pnorm(z, lower.tail = TRUE)
-    }
-}
+# two_sample_z = function(a, b) {
+#     if (length(a) < 5 | length(b) < 5) {
+#         NA_real_
+#     } else {
+#         se_a = sd(a)/sqrt(length(a))
+#         se_b = sd(b)/sqrt(length(b))
+#         se = sqrt(se_a^2 + se_b^2)
+#         z = (mean(a)-mean(b))/se
+#         pnorm(z, lower.tail = TRUE)
+#     }
+# }
 
 add_tag = function(filter, tag) {
     ifelse(filter == 'PASS',
