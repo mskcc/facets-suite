@@ -1,9 +1,7 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
     library(argparse)
-    library(rlang)
     library(data.table)
-    library(parallel)
     library(facetsSuite)
 })
 
@@ -24,12 +22,14 @@ parser$add_argument('-f', '--facets-output', required = FALSE,
 parser$add_argument('-a', '--facets-algorithm', required = FALSE,
                     default = 'em', help = 'Which FACETS algorithm to use [default %(default)s]')
 parser$add_argument('-o', '--output', required = FALSE,
-                    help = 'Output file [default input.ccf.maf')
+                    help = 'Output file [default input.ccf.maf]')
 parser$add_argument('-p', '--parallel', required = FALSE,
                     default = FALSE,  help = 'Parallelize [default %(default)s]')
 args = parser$parse_args()
 
-output = args$output %||% paste0(gsub('\\.[a-z]+$', '', args$maf_file), '.ccf.maf')
+output = ifelse(is.null(args$output),
+                paste0(gsub('\\.[a-z]+$', '', args$maf_file), '.ccf.maf'),
+                args$output)
 
 if (is.null(args$sample_mapping) & is.null(args$facets_output)) {
     stop('Provide either a sample mapping or single-sample Facets output file.', call. = F)
@@ -82,6 +82,7 @@ annotate_sample = function(sample_id) {
 }
 
 if (args$parallel == TRUE) {
+    library(parallel)
     output_maf = mclapply(common_samples, annotate_sample, mc.cores = detectCores())
 } else {
     output_maf = lapply(common_samples, annotate_sample)

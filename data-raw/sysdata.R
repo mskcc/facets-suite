@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
     library(readr)
     library(purrr)
     library(usethis)
+    library(jsonlite)
 })
 
 # Genome builds ---------------------------------------------------------------------------------------------------
@@ -136,6 +137,13 @@ hg38 = tibble::tribble(
 )
 
 # Gene positions --------------------------------------------------------------------------------------------------
+tumor_suppressors = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn = FALSE)) %>% 
+    filter(tsg == TRUE) %>% 
+    select(hugoSymbol) %>% 
+    mutate(hugoSymbol = mapvalues(hugoSymbol,
+                                  c('FAM175A', 'FAM58A', 'MRE11A', 'PARK2', 'FAM46C'), # these are not the official symbols
+                                  c('ABRAXAS1', 'CCNQ', 'MRE11', 'PRKN', 'TENT5C'))) # these are
+
 genes_hg19 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/gencode.v29lift37.basic.annotation.gtf.gz',
                    header = F, skip = 'chr1',
                    col.names = c('chrom', 'source', 'type', 'start', 'end', 'na_1', 'strand', 'na_2', 'info')) %>%
@@ -145,7 +153,8 @@ genes_hg19 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/rele
     group_by(gene, chrom) %>%
     summarize(start = min(start),
               end = max(end)) %>%
-    ungroup()
+    ungroup() %>% 
+    mutate(tsg = gene %in% tumor_suppressors$hugoSymbol)
 
 genes_hg38 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.basic.annotation.gtf.gz',
                    header = F, skip = 'chr1',
@@ -156,7 +165,8 @@ genes_hg38 = fread('ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/rele
     group_by(gene, chrom) %>%
     summarize(start = min(start),
               end = max(end)) %>%
-    ungroup()
+    ungroup() %>% 
+    mutate(tsg = gene %in% tumor_suppressors$hugoSymbol)
 
 # use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, internal = T, overwrite = T)
 

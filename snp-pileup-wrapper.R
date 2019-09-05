@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
-    library(rlang)
     library(argparse)
 })
 
@@ -37,9 +36,18 @@ args = parser$parse_args()
 
 # Prepare output --------------------------------------------------------------------------------------------------
 snp_pileup_path = args$snp_pileup_path
-normal_name     = args$normal_name      %||% gsub('.bam$', '', basename(args$normal_bam))
-tumor_name      = args$tumor_name       %||% gsub('.bam$', '', basename(args$tumor_bam))
-output_file     = args$output_file      %||% paste0(tumor_name, '__', normal_name, '.snp_pileup.gz')
+
+normal_name = ifelse(is.null(args$output),
+                     gsub('.bam$', '', basename(args$normal_bam)),
+                     normal_name)
+
+tumor_name = ifelse(is.null(args$output),
+                    gsub('.bam$', '', basename(args$tumor_bam)),
+                    tumor_name)
+
+output_file = ifelse(is.null(args$output),
+                     paste0(tumor_name, '__', normal_name, '.snp_pileup.gz'),
+                     output_file)
 
 if (file.exists(output_file)) {
     stop(paste(output_file, 'already exists. Remove before running.'), call. = F)
