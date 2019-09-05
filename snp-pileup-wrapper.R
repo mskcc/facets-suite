@@ -31,7 +31,6 @@ parser$add_argument('-d', '--max-depth', required = FALSE, default = 4000,
 args = parser$parse_args()
 
 # Prepare output --------------------------------------------------------------------------------------------------
-snp_pileup_path = args$snp_pileup_path
 
 if (file.exists(args$output_file)) {
     stop(paste(args$output_file, 'already exists. Remove before running.'), call. = F)
@@ -40,12 +39,12 @@ if (file.exists(args$output_file)) {
 default_args = c('--count-orphans --gzip')
 
 pileup_cmd = paste(
-    snp_pileup_path,
+    args$snp_pileup_path,
     default_args,
     '-P', args$pseudo_snps,
     '-d', args$max_depth,
     args$vcf_file,
-    output_file,
+    args$output_file,
     args$normal_bam,
     args$tumor_bam
     )

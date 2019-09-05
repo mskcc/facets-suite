@@ -1,12 +1,10 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
-    library(rlang)
     library(facets)
     library(facetsSuite)
     library(argparse)
     library(dplyr)
     library(ggplot2)
-    library(Cairo)
     library(egg)
     library(purrr)
     library(tibble)
@@ -110,7 +108,7 @@ print_plots = function(outfile,
                         ' | ploidy=', round(facets_output$ploidy, 2),
                         ' | dipLogR=', round(facets_output$diplogr, 2))
     
-    CairoPNG(file = outfile, width = 850, height = 999, units = 'px')
+    png(file = outfile, width = 850, height = 999, units = 'px', type = 'cairo-png', res = 96)
     suppressWarnings(
         egg::ggarrange(
             plots = list(
@@ -180,7 +178,9 @@ facets_iteration = function(name_prefix, ...) {
 # Run -------------------------------------------------------------------------------------------------------------
 
 # Name files and create output directory
-sample_id = args$sample_id %||% gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file))
+sample_id = ifelse(is.na(args$sample_id),
+                   gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file)),
+                   args$sample_id)
 directory = gsub('^\\/', '', paste0(gsub('[\\/]$', '', args$directory), '/', sample_id))
 
 if (dir.exists(directory)) {
