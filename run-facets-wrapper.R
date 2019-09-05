@@ -184,16 +184,15 @@ sample_id = ifelse(is.na(args$sample_id),
 directory = gsub('^\\/', '', paste0(gsub('[\\/]$', '', args$directory), '/', sample_id))
 
 if (dir.exists(directory)) {
-    stop('Output directory already exists, specify a different one.')
+    stop('Output directory already exists, specify a different one.',  call. = F)
 } else {
     system(paste('mkdir -p', directory))
 }
 
-message(paste('Reading', args$counts_file))
-message(paste('Writing to', directory))
-
 # Read SNP counts file
+message(paste('Reading', args$counts_file))
 read_counts = read_snp_matrix(args$counts_file)
+message(paste('Writing to', directory))
 
 # Determine if running two-pass
 if (!is.null(args$purity_cval)) {

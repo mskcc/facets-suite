@@ -23,9 +23,7 @@ gene_level_changes(facets_output, genome = c("hg19", "hg38"),
     \item{\code{gene_het_snps}:} {Median copy-number log-ratio for segment.}
     \item{\code{spans_segs}:} {Boolean indicating whether the gene boundaries map onto different segments.}
     \item{\code{cn_state}:} {Label for coyp-number configuration.}
-    \item{\code{mean_cnlr}:} {Mean copy-number log-ratio for SNPs in gene.}
-    \item{\code{pval}:} {P-value from Z-test, as described above.}
-    \item{\code{fold_change}:} {Fold change corresponding to the comparison against the dipLogR baseline.}
+    \item{\code{tsg}:} {Boolean indicating whether gene is a tumor suppressor.}
 }
 }
 \description{
