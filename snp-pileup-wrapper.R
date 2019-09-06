@@ -13,8 +13,8 @@ parser = ArgumentParser(description = 'Generate SNP read counts from matched tum
 
 parser$add_argument('-v', '--verbose', action = "store_true", default = TRUE,
                     help = 'Print run info')
-parser$add_argument('-sp', '--snp-pileup-path', required = TRUE,
-                    help = 'Path to snp-pileup executable')
+parser$add_argument('-sp', '--snp-pileup-path', required = FALSE,
+                    help = 'Path to snp-pileup executable [default environment variable $SNP_PILEUP]')
 parser$add_argument('-vcf', '--vcf-file', required = TRUE,
                     help = 'Path to VCF file containing SNP positions')
 parser$add_argument('-n', '--normal-bam', required = TRUE,
@@ -32,6 +32,17 @@ args = parser$parse_args()
 
 # Prepare output --------------------------------------------------------------------------------------------------
 
+snp_pileup_env = snpSys.getenv('SNP_PILEUP')
+
+if (is.null(args$snp_pileup_path)) {
+    if (snp_pileup_env == '') {
+        stop(paste('No snp-pileup path provided or in user environment.'), call. = F)
+    } else {
+        snp_pileup_path = snp_pileup_env
+    }
+}
+
+
 output_file = paste0(args$output_prefix, '.snp_pileup.gz')
 
 if (file.exists(output_file)) {
@@ -41,7 +52,7 @@ if (file.exists(output_file)) {
 default_args = c('--count-orphans --gzip')
 
 pileup_cmd = paste(
-    args$snp_pileup_path,
+    snp_pileup_path,
     default_args,
     '-P', args$pseudo_snps,
     '-d', args$max_depth,

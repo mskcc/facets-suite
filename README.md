@@ -50,7 +50,8 @@ Most use of this package can be done from the command line using three wrapper s
         --snp-pileup-path <path to snp-pileup executable> \
         --vcf-file <path to SNP VCF> \
         --normal-bam normal.bam \
-        --tumor-bam tumor.bam
+        --tumor-bam tumor.bam \
+        --output-prefix <prefix for output file, preferrably tumorSample__normalSample>
     ```
     The input VCF file should contain polymorphic SNPs, so that FACETS can infer changes in allelic configuration at genomic loci from changes in allele ratios. [dbSNP](https://www.ncbi.nlm.nih.gov/snp/) is a good source for this. By default, `snp-pileup` also estimates the read depth in the input BAM files every 50th base.
 
@@ -85,3 +86,36 @@ Most use of this package can be done from the command line using three wrapper s
 
 
 All three wrappers use [argparse](https://github.com/trevorld/r-argparse) for argument handling and can thus be run with `--help` to see the all input arguments.
+
+### Run wrappers from container
+
+#### Docker
+
+In order to run the containerized versions of the wrapper scripts, first pull the [docker image](https://cloud.docker.com/u/philipjonsson/repository/docker/philipjonsson/facets-suite):
+```shell
+docker pull philipjonsson/facets-suite:dev
+```
+
+Then run either of the scripts as such:
+```shell {1}
+docker run -it -v $PWD:/work philipjonsson/facets-suite:dev run-facets-wrapper.R \
+    --counts-file work/SampleA.snp_pileup.gz \
+    --sample-id SampleA \
+    --directory work
+```
+Note the binding (`-v`) of the current directory on the host to the directory named `work` inside the container. This is required for the input file, in the current directory, to be accessible inside the container. This, in its turn requires the output to be written to `work` inside the container so that it is available on the host once the script has executed.
+
+#### Singularity
+
+Again, pull the docker image, but using singularity this time, giving it a shorter name:
+```shell
+singularity pull --name facets-suite-dev.img docker://philipjonsson/facets-suite:dev
+```
+
+Then run either of the scripts as such:
+```shell
+singularity run facets-suite-dev.img run-facets-wrapper.R \
+    --counts-file
+```
+
+Note that singularity always mounts the directory from which it is being executed.
