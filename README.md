@@ -15,11 +15,11 @@ devtools::install_github("mskcc/facets-suite", ref = "Rpackagev2")
 
 Also follow the [instructions for installing FACETS](https://github.com/mskcc/facets).
 
-_Note: For the wrapper script `snp-pileup-wrapper.R` you need to specify the variable `snp_pileup_path` in the script to point to the installation path of snp-pileup._
+_Note: For the wrapper script `snp-pileup-wrapper.R` you need to specify the variable `snp_pileup_path` in the script to point to the installation path of snp-pileup _**or**_ set the environment variable SNP_PILEUP. Alternatively, the [docker](README.md#run-wrappers-from-container) image contains the executable._
 
-## Usage
+# Usage
 
-### R functions
+## R functions
 
 The R functions in this package are documented and their description and usage is available in R by doing:
 ```r
@@ -39,7 +39,7 @@ Central to most functionality in the package is the output from the `run_facets`
 
 Note that FACETS performs segmentation with two algorithms, the "naïve" base method and an expectation-maximization algorithm. The latter (columns suffixed `.em`) is used as a default for most of the functions in this package.
 
-### Wrapper scripts
+## Wrapper scripts
 
 Most use of this package can be done from the command line using three wrapper scripts:
 - `snp-pileup-wrapper.R`:\
@@ -84,38 +84,40 @@ Most use of this package can be done from the command line using three wrapper s
     ...         ...
     ```
 
-
 All three wrappers use [argparse](https://github.com/trevorld/r-argparse) for argument handling and can thus be run with `--help` to see the all input arguments.
 
-### Run wrappers from container
-
-#### Docker
+## Run wrappers from container
 
 In order to run the containerized versions of the wrapper scripts, first pull the [docker image](https://cloud.docker.com/u/philipjonsson/repository/docker/philipjonsson/facets-suite):
 ```shell
+## Docker
 docker pull philipjonsson/facets-suite:dev
-```
 
-Then run either of the scripts as such:
-```shell {1}
-docker run -it -v $PWD:/work philipjonsson/facets-suite:dev run-facets-wrapper.R \
-    --counts-file work/SampleA.snp_pileup.gz \
-    --sample-id SampleA \
-    --directory work
-```
-Note the binding (`-v`) of the current directory on the host to the directory named `work` inside the container. This is required for the input file, in the current directory, to be accessible inside the container. This, in its turn requires the output to be written to `work` inside the container so that it is available on the host once the script has executed.
-
-#### Singularity
-
-Again, pull the docker image, but using singularity this time, giving it a shorter name:
-```shell
+## Singularity
 singularity pull --name facets-suite-dev.img docker://philipjonsson/facets-suite:dev
 ```
 
 Then run either of the scripts as such:
 ```shell
-singularity run facets-suite-dev.img run-facets-wrapper.R \
-    --counts-file
-```
+## Docker
+docker run -it -v $PWD:/work philipjonsson/facets-suite:dev run-facets-wrapper.R \
+    --counts-file work/SampleA.snp_pileup.gz \
+    --sample-id SampleA \
+    --directory work
 
-Note that singularity always mounts the directory from which it is being executed.
+## Singularity
+singularity run facets-suite-dev.img run-facets-wrapper.R \
+    --counts-file SampleA.snp_pileup.gz \
+    --sample-id SampleA
+```
+For **Docker**, note the binding (`-v`) of the current directory on the host to the directory named `work` inside the container. This is required for the input file, in the current directory, to be accessible inside the container. This, in its turn requires the output to be written to `work` inside the container so that it is available on the host once the script has executed. Singularity always mounts the directory from which it is being executed.
+
+The image contains the `snp-pileup` executable used by `snp-pileup-wrapper.R`, so it can be run without specifying its path. Example for **Singularity**:
+```shell
+singularity run -B <path to BAMs> -B <path to VCF> facets-suite-dev.img snp-pileup-wrapper.R \
+    --vcf-file <path to VCF>/dbsnp.vcf \
+    --normal-bam <path to BAMs>/NormalA.bam \
+    --tumor-bam <path to BAMs>/TumorA.bam \
+    --output-prefix TumorA__NormalA
+```
+_Note: The binding of full paths to any files outside of the run directory is necessary._

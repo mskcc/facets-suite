@@ -39,7 +39,3 @@ RUN wget -O facets-suite-${FACETSSUITE_VERSION}.zip https://github.com/mskcc/fac
 # Install package
 RUN cd facets-suite-${FACETSSUITE_VERSION} \
     && Rscript -e "devtools::install()"
-
-# # Set snp-pileup alias, no need to point to snp-pileup executable
-# RUN echo "snp-pileup-wrapper.R --snp-pileup snp-pileup" > /usr/bin/snp-pileup-wrapper.R \
-#     && 
