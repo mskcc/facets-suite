@@ -32,7 +32,7 @@ args = parser$parse_args()
 
 # Prepare output --------------------------------------------------------------------------------------------------
 
-snp_pileup_env = snpSys.getenv('SNP_PILEUP')
+snp_pileup_env = Sys.getenv('SNP_PILEUP')
 
 if (is.null(args$snp_pileup_path)) {
     if (snp_pileup_env == '') {
