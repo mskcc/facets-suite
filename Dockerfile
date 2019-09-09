@@ -39,3 +39,6 @@ RUN wget -O facets-suite-${FACETSSUITE_VERSION}.zip https://github.com/mskcc/fac
 # Install package
 RUN cd facets-suite-${FACETSSUITE_VERSION} \
     && Rscript -e "devtools::install()"
+
+# Always run Rscript as vanilla
+RUN export Rscript="Rscript --vanilla"
