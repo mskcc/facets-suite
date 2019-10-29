@@ -3,7 +3,7 @@
 [![Travis build status](https://travis-ci.org/taylor-lab/facets-suite.svg?branch=master)](https://travis-ci.org/taylor-lab/facets-suite)
 [![Coverage status](https://codecov.io/gh/taylor-lab/facets-suite/branch/master/graph/badge.svg)](https://codecov.io/github/taylor-lab/facets-suite?branch=master)
 
-**[See the release notes for information on the new facet-suite version.](https://github.com/taylor-lab/facets-suite/releases/tag/2.0.0-beta)**
+**See the [release notes](https://github.com/taylor-lab/facets-suite/releases/tag/2.0.0-beta) for information on the new facet-suite version. Backwards compatibility is currently limited, as documented [here](https://github.com/taylor-lab/facets-suite/wiki/5.-Backwards-compatibility).**
 
 facetsSuite is an R package with functions to run [FACETS](https://github.com/mskcc/facets)—an allele-specific copy-number caller for paired tumor-normal DNA-sequencing data from genome-wide and targeted assays. facetSuite both wraps the code to execute the FACETS algorithm itself as well as performs _post-hoc_ analyses on the resulting data. This package was developed by members of the [Taylor lab](https://www.mskcc.org/research-areas/labs/barry-taylor) and the Computational Sciences group within the [Center for Molecular Oncology at Memorial Sloan Kettering Cancer Center](https://www.mskcc.org/research-programs/molecular-oncology).
 
