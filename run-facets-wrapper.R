@@ -148,7 +148,7 @@ print_igv = function(outfile,
                         sample_id = sample_id,
                         normalize = T)
     
-    write.table(ii, outfile, quote = F, row.names=F, sep='\t')
+    write(ii, outfile)
 }
 
 # Define facets iteration
@@ -192,7 +192,7 @@ sample_id = ifelse(is.na(args$sample_id),
 directory = args$directory
 
 if (dir.exists(directory)) {
-    stop('Output directory already exists, specify a different one.',  call. = F)
+    #stop('Output directory already exists, specify a different one.',  call. = F)
 } else {
     system(paste('mkdir -p', directory))
 }

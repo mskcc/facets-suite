@@ -85,6 +85,7 @@ run_facets = function(read_counts,
 }
 
 ## load facets output from .Rds file or legacy run of .Rdata file
+#' @export load_facets_output
 load_facets_output <- function(rds_rdata_file) {
     if (grepl('rds$', rds_rdata_file, ignore.case = T)) {
         readRDS(rds_rdata_file)
@@ -105,6 +106,7 @@ load_facets_output <- function(rds_rdata_file) {
     }
 }
 
+#' @export create_legacy_output
 create_legacy_output <- function(facets_output, directory, sample_id, counts_file, sel_run_type, run_details) {
     
     sample_id = ifelse(sel_run_type == '', sample_id, paste0(sample_id, '_', sel_run_type))
@@ -130,7 +132,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
             nX=23,
             chromlevels = c(1:22, "X"),
             dipLogR = facets_output$diplogr,
-            alballogr = facets_output$alBalLogR,
+            alBalLogR = facets_output$alBalLogR,
             IGV = NULL
         )
     fit = 
