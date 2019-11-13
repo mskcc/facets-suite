@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
-    library(facets)
     library(facetsSuite)
     library(argparse)
     library(dplyr)
@@ -24,8 +23,8 @@ parser$add_argument('-f', '--counts-file', required = TRUE,
                     help = 'Merged, gzipped tumor-normal output from snp-pileup')
 parser$add_argument('-s', '--sample-id', required = FALSE,
                     help = 'Sample ID, preferrable Tumor_Normal to keep track of the normal used')
-parser$add_argument('-D', '--directory', required = FALSE,
-                    help = 'Output directory [default current directory]')
+parser$add_argument('-D', '--directory', required = TRUE,
+                    help = 'Output directory to which all output files are written to')
 parser$add_argument('-e', '--everything', dest = 'everything', action = 'store_true',
                     default = FALSE, help = 'Run full suite [default %(default)s]')
 parser$add_argument('-g', '--genome', required = FALSE,
@@ -47,6 +46,11 @@ parser$add_argument('-d', '--diplogr', required = FALSE,
                     default = NULL, help = 'Manual diplogr')
 parser$add_argument('-S', '--seed', required = FALSE,
                     default = 100, help = 'Manual seed value [default %(default)s]')
+parser$add_argument('-l', '--legacy-output', required = FALSE,
+                    default = FALSE, help = 'create legacy output files (.RData and .cncf.txt) [default %(default)s]')
+parser$add_argument('-fl', '--facets-lib-path', required = FALSE,
+                    default = '', help = 'path to the facets library. if none provided, uses version available to `library(facets)`')
+
 args = parser$parse_args()
 
 # Helper functions ------------------------------------------------------------------------------------------------
@@ -58,6 +62,7 @@ write = function(input, output) {
 
 # Print run details
 print_run_details = function(outfile,
+                             run_type,
                              cval,
                              min_nhet,
                              purity,
@@ -65,11 +70,11 @@ print_run_details = function(outfile,
                              diplogr,
                              flags = NULL,
                              ...) {
-    
     params = c(...)
     
     run_details = data.frame(
         'sample' = sample_id,
+        'run_type' = run_type,
         'purity' = signif(purity, 2),
         'ploidy' = signif(ploidy, 2),
         'diplogr' = signif(diplogr, 2),
@@ -95,6 +100,8 @@ print_run_details = function(outfile,
     }
     
     write(run_details, outfile)
+    
+    run_details
 }
 
 # Default set of output plots
@@ -141,7 +148,7 @@ print_igv = function(outfile,
                         sample_id = sample_id,
                         normalize = T)
     
-    write(ii, outfile)
+    write.table(ii, outfile, quote = F, row.names=F, sep='\t')
 }
 
 # Define facets iteration
@@ -159,7 +166,8 @@ facets_iteration = function(name_prefix, ...) {
                         snp_nbhd = params$snp_nbhd,
                         min_nhet = params$min_nhet,
                         genome = params$genome,
-                        seed = params$seed)
+                        seed = params$seedm,
+                        facets_lib_path = params$facets_lib_path)
     
     # No need to print the segmentation
     # print_segments(outfile = paste0(name_prefix, '.cncf.txt'), 
@@ -181,7 +189,7 @@ facets_iteration = function(name_prefix, ...) {
 sample_id = ifelse(is.na(args$sample_id),
                    gsub('(.dat.gz$|.gz$)', '', basename(args$counts_file)),
                    args$sample_id)
-directory = gsub('^\\/', '', paste0(gsub('[\\/]$', '', args$directory), '/', sample_id))
+directory = args$directory
 
 if (dir.exists(directory)) {
     stop('Output directory already exists, specify a different one.',  call. = F)
@@ -198,7 +206,7 @@ message(paste('Writing to', directory))
 if (!is.null(args$purity_cval)) {
     name = paste0(directory, '/', sample_id)
     
-    purity_output = facets_iteration(name_prefix = paste0(name, '_purity'), 
+    purity_output = facets_iteration(name_prefix = paste0(name, '_purity'),
                                      sample_id = sample_id,
                                      diplogr = args$diplogr,
                                      cval = args$purity_cval,
@@ -206,8 +214,9 @@ if (!is.null(args$purity_cval)) {
                                      snp_nbhd = args$snp_window_size,
                                      min_nhet = args$purity_min_nhet,
                                      genome = args$genome,
-                                     seed = args$seed)
-    
+                                     seed = args$seed,
+                                     facets_lib_path = args$facets_lib_path)
+
     hisens_output = facets_iteration(name_prefix = paste0(name, '_hisens'),
                                      sample_id = sample_id,
                                      diplogr = purity_output$diplogr,
@@ -216,7 +225,9 @@ if (!is.null(args$purity_cval)) {
                                      snp_nbhd = args$snp_window_size,
                                      min_nhet = args$purity_min_nhet,
                                      genome = args$genome,
-                                     seed = args$seed)
+                                     seed = args$seed,
+                                     facets_lib_path = args$facets_lib_path)
+    
     metadata = NULL
     if (args$everything) {
         metadata = c(
@@ -245,30 +256,39 @@ if (!is.null(args$purity_cval)) {
         write(arm_level, paste0(name, '.arm_level.txt'))
     }
     
-    print_run_details(outfile = paste0(name, '.txt'),
-                      cval = c(args$purity_cval, args$cval),
-                      min_nhet = c(args$purity_min_nhet, args$min_nhet),
-                      purity = c(purity_output$purity, hisens_output$purity),
-                      ploidy = c(purity_output$ploidy, hisens_output$ploidy),
-                      diplogr = c(purity_output$diplogr, hisens_output$ploidy),
-                      flags = map(list(purity_output$flags, hisens_output$flags), function(x) paste0(x, collapse = '; ')),
-                      metadata)
+    run_details = print_run_details(outfile = ifelse(args$legacy_output, '/dev/null', paste0(name, '.txt')),
+                                    run_type = c('purity', 'hisens'),
+                                    cval = c(args$purity_cval, args$cval),
+                                    min_nhet = c(args$purity_min_nhet, args$min_nhet),
+                                    purity = c(purity_output$purity, hisens_output$purity),
+                                    ploidy = c(purity_output$ploidy, hisens_output$ploidy),
+                                    diplogr = c(purity_output$diplogr, hisens_output$diplogr),
+                                    flags = unlist(map(list(purity_output$flags, hisens_output$flags), 
+                                                       function(x) paste0(x, collapse = '; '))),
+                                    metadata)
     
-    # Write RDS
-    saveRDS(purity_output, paste0(name, '_purity.rds'))
-    saveRDS(hisens_output, paste0(name, '_hisens.rds'))
+    if (args$legacy_output) {
+        create_legacy_output(hisens_output, directory, sample_id, args$counts_file, 'hisens', run_details)
+        create_legacy_output(purity_output, directory, sample_id, args$counts_file, 'purity', run_details)
+    } else {
+        # Write RDS
+        saveRDS(purity_output, paste0(name, '_purity.rds'))
+        saveRDS(hisens_output, paste0(name, '_hisens.rds'))
+    }
     
 } else {
     name = paste0(directory, '/', sample_id)
-    
-    output = facets_iteration(name_prefix = name, 
+
+    output = facets_iteration(name_prefix = name,
                               sample_id = sample_id,
                               cval = args$cval,
                               ndepth = args$normal_depth,
                               snp_nbhd = args$snp_window_size,
                               min_nhet = args$min_nhet,
                               genome = args$genome,
-                              seed = args$seed)
+                              seed = args$seed,
+                              facets_lib_path = args$facets_lib_path)
+    
     metadata = NULL
     if (args$everything) {
         metadata = c(
@@ -295,15 +315,21 @@ if (!is.null(args$purity_cval)) {
     }
     
     # Write run details/metadata
-    print_run_details(outfile = paste0(name, '.txt'),
-                      cval = args$cval,
-                      min_nhet = args$min_nhet,
-                      purity = output$purity,
-                      ploidy = output$ploidy,
-                      diplogr = output$ploidy,
-                      flags = paste0(output$flags, collapse = '; '),
-                      metadata)
+    run_details =
+        print_run_details(outfile = ifelse(args$legacy_output, '/dev/null', paste0(name, '.txt')),
+                          run_type = '',
+                          cval = args$cval,
+                          min_nhet = args$min_nhet,
+                          purity = output$purity,
+                          ploidy = output$ploidy,
+                          diplogr = output$ploidy,
+                          flags = paste0(output$flags, collapse = '; '),
+                          metadata)
     
     # Write RDS
-    saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
+    if (args$legacy_output) {
+        create_legacy_output(output, directory, sample_id, args$counts_file, '', run_details)
+    } else {
+        saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
+    }
 }
