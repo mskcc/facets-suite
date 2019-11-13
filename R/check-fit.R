@@ -9,8 +9,8 @@
 #'
 #' @return A list object with the following items:
 #' \itemize{
-#'       \item{\code{diplogr_flag}:} {Boolean indicating extreme dipLogR value.}
-#'       \item{\code{n_alternative_diplogr}:} {Number of alternative dipLogR values.}
+#'       \item{\code{dipLogR_flag}:} {Boolean indicating extreme dipLogR value.}
+#'       \item{\code{n_alternative_dipLogR}:} {Number of alternative dipLogR values.}
 #'       \item{\code{n_dip_bal_segs}, \code{frac_dip_bal_segs}:} {Number of balanced segments at dipLogR and the fraction of genome they represent.}
 #'       \item{\code{n_dip_imbal_segs}, \code{frac_dip_imbal_segs}:} {Number of imbalanced segments at dipLogR and the fraction of genome they represent.}
 #'       \item{\code{n_amp}:} {Number of segments at total copy number >= 10.}
@@ -51,7 +51,7 @@ check_fit = function(facets_output,
     # Set variables
     segs = as.data.table(facets_output$segs)
     snps = facets_output$snps
-    diplogr = facets_output$diplogr
+    dipLogR = facets_output$dipLogR
     alballogr = as.numeric(facets_output$alballogr[, 1])
     purity = facets_output$purity
     mafr_thresh = facets_output$mafr_thresh
@@ -74,15 +74,15 @@ check_fit = function(facets_output,
     auto_segs = segs[chrom < 23]
     
     # Check for extrema dipLogR values
-    diplogr_flag = abs(facets_output$diplogr) > 1
+    dipLogR_flag = abs(facets_output$dipLogR) > 1
     
     # Check for alternative dipLogR values
-    n_alt_diplogr = length(setdiff(alballogr, diplogr))
+    n_alt_dipLogR = length(setdiff(alballogr, dipLogR))
     
     # Check for balance/imbalance of copy-number at segments at dipLogR
     # cnlr.median.clust == dipLogR for purity runs, for others, find the closest one
     cnlr_clusts = unique(segs$cnlr.median.clust)
-    cnlr_clust_value = cnlr_clusts[which.min(abs(cnlr_clusts - diplogr))]
+    cnlr_clust_value = cnlr_clusts[which.min(abs(cnlr_clusts - dipLogR))]
     
     dip_bal_segs = auto_segs[cnlr.median.clust == cnlr_clust_value & mcn == lcn, ]
     n_dip_bal_segs = nrow(dip_bal_segs)
@@ -167,8 +167,8 @@ check_fit = function(facets_output,
     # n: denotes number
     # frac: denotes fraction of assesses genome
     output = list(
-        diplogr_flag = diplogr_flag,
-        n_alternative_diplogr = n_alt_diplogr,
+        dipLogR_flag = dipLogR_flag,
+        n_alternative_dipLogR = n_alt_dipLogR,
         n_dip_bal_segs = n_dip_bal_segs,
         frac_dip_bal_segs = frac_dip_bal_segs,
         n_dip_imbal_segs = n_dip_imbal_segs,

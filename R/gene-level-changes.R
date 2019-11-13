@@ -37,7 +37,7 @@ gene_level_changes = function(facets_output,
     # Set variables
     segs = facets_output$segs
     snps = as.data.table(facets_output$snps)
-    diplogr = facets_output$diplogr
+    dipLogR = facets_output$dipLogR
     purity = facets_output$purity
     
     # Get WGD status
@@ -87,8 +87,8 @@ gene_level_changes = function(facets_output,
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
     
     # Test on cnlr against baseline
-    # cn0_diplogr = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-diplogr))]
-    # cn0_segs = segs[cnlr.median.clust == cn0_diplogr]
+    # cn0_dipLogR = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-dipLogR))]
+    # cn0_segs = segs[cnlr.median.clust == cn0_dipLogR]
     # cn0_snps = snps[segclust %in% cn0_segs$segclust]
     # cn0_snps = cn0_snps[between(cnlr, quantile(cn0_snps$cnlr, .25), quantile(cn0_snps$cnlr, .75))] # remove noise
     

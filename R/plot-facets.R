@@ -13,7 +13,7 @@
 #' @param plotX If \code{TRUE}, includes chromosome X.
 #' @param genome Genome build.
 #' @param highlight_gene Highlight gene(s), provide gene symbol or mapped positions (internally).
-#' @param adjust_diplogr Normalize by sample dipLogR.
+#' @param adjust_dipLogR Normalize by sample dipLogR.
 #' @param method When available, choose between plotting solution from \code{em} or \code{cncf} algorithm.
 #' @param subset_snps Subset the SNP profile to reduce weight of plotting, supply a factor by which to reduce or \code{TRUE} for default.
 #' @param plot_chroms Chromosomes to plot when using \code{closeup_plot}.
@@ -37,7 +37,7 @@ cnlr_plot = function(facets_data,
                      plotX = FALSE,
                      genome = c('hg19', 'hg18', 'hg38'),
                      highlight_gene = NULL,
-                     adjust_diplogr = TRUE,
+                     adjust_dipLogR = TRUE,
                      subset_snps = NULL,
                      return_object = FALSE) {
     
@@ -45,7 +45,7 @@ cnlr_plot = function(facets_data,
     
     snps = facets_data$snps
     segs = facets_data$segs
-    diplogr = facets_data$diplogr
+    dipLogR = facets_data$dipLogR
     if (!plotX) {
         snps = subset(snps, chrom < 23)
         segs = subset(segs, chrom < 23)
@@ -68,11 +68,11 @@ cnlr_plot = function(facets_data,
     if (ymin > -3) ymin = -3
     if (ymax < 3) ymax = 3
     
-    if (adjust_diplogr) {
-        snps$cnlr = snps$cnlr - diplogr
-        my_starts$cnlr_median = my_starts$cnlr_median - diplogr
-        my_ends$cnlr_median = my_ends$cnlr_median - diplogr
-        diplogr = Inf
+    if (adjust_dipLogR) {
+        snps$cnlr = snps$cnlr - dipLogR
+        my_starts$cnlr_median = my_starts$cnlr_median - dipLogR
+        my_ends$cnlr_median = my_ends$cnlr_median - dipLogR
+        dipLogR = Inf
     }
     
     if (!is.null(subset_snps)) {
@@ -138,7 +138,7 @@ valor_plot = function(facets_data,
     
     snps = facets_data$snps
     segs = facets_data$segs
-    diplogr = facets_data$diplogr
+    dipLogR = facets_data$dipLogR
     if (!plotX) {
         snps = subset(snps, chrom < 23)
         segs = subset(segs, chrom < 23)
