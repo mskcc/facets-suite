@@ -233,15 +233,21 @@ facets_iteration <- function(COUNTS_FILE, TAG, DIRECTORY, CVAL, DIPLOGR, NDEPTH,
 
     if (RLIB_VERSION >= '0.5.2') {
 
-
       rcmat = readSnpMatrix2(COUNTS_FILE, err.thresh = 10, del.thresh = 10)
 
-      dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = 25,
-        gbuild = GENOME, hetscale = TRUE, unmatched = unmatched, ndepthmax = 1000)
-
-      out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
-      fit = emcncf(out)
-
+      numcounts = 3
+      for (i in 1:numcounts){
+          print(paste0("attempt ",i))
+          tryCatch({
+              dat = preProcSample(rcmat, ndepth = NDEPTH, het.thresh = 0.25, snp.nbhd = SNP_NBHD, cval = 25,
+                gbuild = GENOME, hetscale = TRUE, unmatched = unmatched, ndepthmax = 1000)
+              out = procSample(dat, cval = CVAL, min.nhet = MIN_NHET, dipLogR = DIPLOGR)
+              fit = emcncf(out)
+              break
+          },
+              error=function(e){str(e)}
+          )
+      }
       fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
 
       write_output(out, fit, DIRECTORY, TAG, TUMOR_ID )
