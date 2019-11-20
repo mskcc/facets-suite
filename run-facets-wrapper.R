@@ -42,8 +42,8 @@ parser$add_argument('-n', '--snp-window-size', required = FALSE,
                     default = 250, help = 'Window size for heterozygous SNPs [default %(default)s]')
 parser$add_argument('-nd', '--normal-depth', required = FALSE,
                     default = 35, help = 'Min. depth in normal to keep SNPs [default %(default)s]')
-parser$add_argument('-d', '--diplogr', required = FALSE,
-                    default = NULL, help = 'Manual diplogr')
+parser$add_argument('-d', '--dipLogR', required = FALSE,
+                    default = NULL, help = 'Manual dipLogR')
 parser$add_argument('-S', '--seed', required = FALSE,
                     default = 100, help = 'Manual seed value [default %(default)s]')
 parser$add_argument('-l', '--legacy-output', required = FALSE,
@@ -67,7 +67,7 @@ print_run_details = function(outfile,
                              min_nhet,
                              purity,
                              ploidy,
-                             diplogr,
+                             dipLogR,
                              flags = NULL,
                              ...) {
     params = c(...)
@@ -77,7 +77,7 @@ print_run_details = function(outfile,
         'run_type' = run_type,
         'purity' = signif(purity, 2),
         'ploidy' = signif(ploidy, 2),
-        'diplogr' = signif(diplogr, 2),
+        'dipLogR' = signif(dipLogR, 2),
         'facets_version' = as.character(packageVersion('facets')),
         'cval' = cval,
         'snp_nbhd' = args$snp_window_size,
@@ -113,7 +113,7 @@ print_plots = function(outfile,
                         ' | cval=', cval,
                         ' | purity=', round(facets_output$purity, 2),
                         ' | ploidy=', round(facets_output$ploidy, 2),
-                        ' | dipLogR=', round(facets_output$diplogr, 2))
+                        ' | dipLogR=', round(facets_output$dipLogR, 2))
     
     png(file = outfile, width = 850, height = 999, units = 'px', type = 'cairo-png', res = 96)
     suppressWarnings(
@@ -161,7 +161,7 @@ facets_iteration = function(name_prefix, ...) {
     
     output = run_facets(read_counts = read_counts,
                         cval = params$cval,
-                        diplogr = params$diplogr,
+                        dipLogR = params$dipLogR,
                         ndepth = params$ndepth,
                         snp_nbhd = params$snp_nbhd,
                         min_nhet = params$min_nhet,
@@ -208,7 +208,7 @@ if (!is.null(args$purity_cval)) {
     
     purity_output = facets_iteration(name_prefix = paste0(name, '_purity'),
                                      sample_id = sample_id,
-                                     diplogr = args$diplogr,
+                                     dipLogR = args$dipLogR,
                                      cval = args$purity_cval,
                                      ndepth = args$normal_depth,
                                      snp_nbhd = args$snp_window_size,
@@ -219,7 +219,7 @@ if (!is.null(args$purity_cval)) {
 
     hisens_output = facets_iteration(name_prefix = paste0(name, '_hisens'),
                                      sample_id = sample_id,
-                                     diplogr = purity_output$diplogr,
+                                     dipLogR = purity_output$dipLogR,
                                      cval = args$cval,
                                      ndepth = args$normal_depth,
                                      snp_nbhd = args$snp_window_size,
@@ -262,7 +262,7 @@ if (!is.null(args$purity_cval)) {
                                     min_nhet = c(args$purity_min_nhet, args$min_nhet),
                                     purity = c(purity_output$purity, hisens_output$purity),
                                     ploidy = c(purity_output$ploidy, hisens_output$ploidy),
-                                    diplogr = c(purity_output$diplogr, hisens_output$diplogr),
+                                    dipLogR = c(purity_output$dipLogR, hisens_output$dipLogR),
                                     flags = unlist(map(list(purity_output$flags, hisens_output$flags), 
                                                        function(x) paste0(x, collapse = '; '))),
                                     metadata)
@@ -322,7 +322,7 @@ if (!is.null(args$purity_cval)) {
                           min_nhet = args$min_nhet,
                           purity = output$purity,
                           ploidy = output$ploidy,
-                          diplogr = output$ploidy,
+                          dipLogR = output$ploidy,
                           flags = paste0(output$flags, collapse = '; '),
                           metadata)
     

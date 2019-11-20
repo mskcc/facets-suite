@@ -95,9 +95,13 @@ check_fit = function(facets_output,
     # Number of high-level amplifications and homozygous deletions
     # Clonal homdels, how much of the genome do they represent
     n_amps = nrow(segs[tcn >= 10])
-    n_homdels = nrow(segs[tcn == 0])
+    homdels = auto_segs[tcn == 0]
+    n_homdels = nrow(homdels)
+    
     clonal_homdels = auto_segs[tcn == 0 & clonal == TRUE]
     n_homdels_clonal = nrow(clonal_homdels)
+    
+    frac_homdels = sum(homdels$length)/sum(auto_segs$length)
     frac_homdels_clonal = sum(clonal_homdels$length)/sum(auto_segs$length)
     
     # Count number of unique copy-number states and total number of segments
@@ -175,6 +179,7 @@ check_fit = function(facets_output,
         frac_dip_imbal_segs = frac_dip_imbal_segs,
         n_amps = n_amps,
         n_homdels = n_homdels,
+        frac_homdels = frac_homdels,
         n_homdels_clonal = n_homdels_clonal,
         frac_homdels_clonal = frac_homdels_clonal,
         n_cn_states = n_cn_states,
