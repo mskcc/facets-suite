@@ -49,6 +49,7 @@ run_facets = function(read_counts,
     } else {
         library(facets) 
     }
+    print(paste0('loaded facets version: ', packageVersion('facets')))
     
     # Check input 
     missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts)) 

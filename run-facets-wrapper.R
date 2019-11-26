@@ -166,7 +166,7 @@ facets_iteration = function(name_prefix, ...) {
                         snp_nbhd = params$snp_nbhd,
                         min_nhet = params$min_nhet,
                         genome = params$genome,
-                        seed = params$seedm,
+                        seed = params$seed,
                         facets_lib_path = params$facets_lib_path)
     
     # No need to print the segmentation
@@ -223,7 +223,7 @@ if (!is.null(args$purity_cval)) {
                                      cval = args$cval,
                                      ndepth = args$normal_depth,
                                      snp_nbhd = args$snp_window_size,
-                                     min_nhet = args$purity_min_nhet,
+                                     min_nhet = args$min_nhet,
                                      genome = args$genome,
                                      seed = args$seed,
                                      facets_lib_path = args$facets_lib_path)
