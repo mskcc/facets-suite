@@ -31,22 +31,22 @@ parser$add_argument('-g', '--genome', required = FALSE,
                     choices = c('hg18', 'hg19', 'hg38'),
                     default = 'hg19', help = 'Reference genome [default %(default)s]')
 parser$add_argument('-c', '--cval', required = FALSE, type = 'integer',
-                    default = 100, help = 'Segmentation parameter (cval) [default %(default)s]')
+                    default = 50, help = 'Segmentation parameter (cval) [default %(default)s]')
 parser$add_argument('-pc', '--purity-cval', required = FALSE, type = 'integer',
-                    default = NULL, help = 'If two pass, purity segmentation parameter (cval)')
-parser$add_argument('-m', '--min-nhet', required = FALSE,
+                    default = 100, help = 'If two pass, purity segmentation parameter (cval)')
+parser$add_argument('-m', '--min-nhet', required = FALSE, type = 'integer',
                     default = 15, help = 'Min. number of heterozygous SNPs required for clustering [default %(default)s]')
-parser$add_argument('-pm', '--purity-min-nhet', required = FALSE,
+parser$add_argument('-pm', '--purity-min-nhet', required = FALSE, type = 'integer',
                     default = 15, help = 'If two pass, purity min. number of heterozygous SNPs (cval) [default %(default)s]')
-parser$add_argument('-n', '--snp-window-size', required = FALSE,
+parser$add_argument('-n', '--snp-window-size', required = FALSE, type = 'integer', 
                     default = 250, help = 'Window size for heterozygous SNPs [default %(default)s]')
-parser$add_argument('-nd', '--normal-depth', required = FALSE,
+parser$add_argument('-nd', '--normal-depth', required = FALSE, type = 'integer',
                     default = 35, help = 'Min. depth in normal to keep SNPs [default %(default)s]')
-parser$add_argument('-d', '--dipLogR', required = FALSE,
+parser$add_argument('-d', '--dipLogR', required = FALSE, type = 'double',
                     default = NULL, help = 'Manual dipLogR')
-parser$add_argument('-S', '--seed', required = FALSE,
+parser$add_argument('-S', '--seed', required = FALSE, type = 'integer',
                     default = 100, help = 'Manual seed value [default %(default)s]')
-parser$add_argument('-l', '--legacy-output', required = FALSE,
+parser$add_argument('-l', '--legacy-output', required = FALSE, type = 'logical',
                     default = FALSE, help = 'create legacy output files (.RData and .cncf.txt) [default %(default)s]')
 parser$add_argument('-fl', '--facets-lib-path', required = FALSE,
                     default = '', help = 'path to the facets library. if none provided, uses version available to `library(facets)`')
@@ -205,9 +205,7 @@ message(paste('Writing to', directory))
 # Determine if running two-pass
 if (!is.null(args$purity_cval)) {
     name = paste0(directory, '/', sample_id)
-    
     purity_output = facets_iteration(name_prefix = paste0(name, '_purity'),
-                                     sample_id = sample_id,
                                      dipLogR = args$dipLogR,
                                      cval = args$purity_cval,
                                      ndepth = args$normal_depth,
@@ -218,7 +216,6 @@ if (!is.null(args$purity_cval)) {
                                      facets_lib_path = args$facets_lib_path)
 
     hisens_output = facets_iteration(name_prefix = paste0(name, '_hisens'),
-                                     sample_id = sample_id,
                                      dipLogR = purity_output$dipLogR,
                                      cval = args$cval,
                                      ndepth = args$normal_depth,
@@ -280,7 +277,7 @@ if (!is.null(args$purity_cval)) {
     name = paste0(directory, '/', sample_id)
 
     output = facets_iteration(name_prefix = name,
-                              sample_id = sample_id,
+                              dipLogR = args$dipLogR,
                               cval = args$cval,
                               ndepth = args$normal_depth,
                               snp_nbhd = args$snp_window_size,
