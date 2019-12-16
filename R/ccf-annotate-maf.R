@@ -66,6 +66,39 @@ ccf_annotate_maf = function(maf,
     as.data.frame(maf)
 }
 
+#' Estimate CCFs of somatic mutations from cncf.txt file. 
+#'
+#' Based on FACETS data, infer cancer-cell fraction (CCF) for somatic mutations in a sample.
+#'
+#' @param maf Input MAF file.
+#' @param cncf_txt_file .cncf.txt file created with legacy output of facets-suite.
+#' @param purity Sample purity estimate.
+#' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
+#' 
+#' @importFrom data.table setDT foverlaps :=
+#' @importFrom stats dbinom
+#'
+#' @return MAF file annotated with clonality estimates for each mutation, where the following column prefixes are used:
+#' \itemize{
+#'   \item{\code{ccf_Mcopies*}:} {Inferred CCF if mutation is on the major allele.}
+#'   \item{\code{ccf_1copy*}:} {Inferred CCF if mutation exists in one copy.}
+#'   \item{\code{ccf_expected_copies*}:} {Inferred CCF if mutation exists in number of copies expected from observed VAF and local ploidy.}
+#' }
+#' 
+#' @export
+ccf_annotate_maf_with_cncf <- function(maf, 
+                                    cncf_txt_file,
+                                    purity,
+                                    algorithm = c('em', 'cncf')) {
+    segs <-
+        fread(cncf_txt_file) %>%
+        select(chrom, seg, num.mark, nhet, cnlr.median,
+               mafR, segclust, cnlr.median.clust, mafR.clust, 
+               start = loc.start, end = loc.end, cf.em, tcn.em, lcn.em, cf, tcn, lcn)
+    
+    ccf_annotate_maf(maf, segs, purity, algorithm)    
+}
+
 # Estimate most likely CCF given observed VAF, purity and local ploidy
 # Based on PMID 25877892
 estimate_ccf = function(purity,
