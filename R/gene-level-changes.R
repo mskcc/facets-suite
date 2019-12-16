@@ -39,6 +39,7 @@ gene_level_changes = function(facets_output,
     snps = as.data.table(facets_output$snps)
     dipLogR = facets_output$dipLogR
     purity = facets_output$purity
+    ploidy = facets_output$ploidy
     
     # Get WGD status
     fcna_output = calculate_fraction_cna(segs, ploidy, genome, algorithm)
