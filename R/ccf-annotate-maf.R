@@ -86,7 +86,7 @@ ccf_annotate_maf = function(maf,
 #' }
 #' 
 #' @export
-ccf_annotate_maf_with_cncf <- function(maf, 
+ccf_annotate_maf_legacy <- function(maf, 
                                     cncf_txt_file,
                                     purity,
                                     algorithm = c('em', 'cncf')) {
