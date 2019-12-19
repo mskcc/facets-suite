@@ -32,6 +32,7 @@ ccf_annotate_maf = function(maf,
     # Find segments overlapping mutation loci
     data.table::setDT(maf, key = c('Chromosome', 'Start_Position', 'End_Position'))
     original_cols = names(maf)
+    maf <- maf[, Chromosome:=as.character(Chromosome)]
     
     segs$chrom[segs$chrom == 23] = 'X'
     if (algorithm == 'em') {
