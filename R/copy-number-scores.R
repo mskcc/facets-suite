@@ -164,7 +164,7 @@ calculate_ntai = function(segs,
                 telomeric_loh_mean_size = NA,
                 ninterstitial_loh = NA, # interstitial LOH
                 interstitial_loh_mean_size = NA,
-                ncentromeric_loh = NA) # chromosomal LOH
+                ncentromeric_loh = NA # chromosomal LOH
             ) 
         )
     }
