@@ -39,7 +39,7 @@ ccf_annotate_maf = function(maf,
         segs$tcn = segs$tcn.em
         segs$lcn = segs$lcn.em
     }
-    segs = segs[, c('chrom', 'start', 'end', 'tcn', 'lcn')]
+    segs = segs[, c('chrom', 'start', 'end', 'tcn', 'lcn', 'cf')]
     data.table::setDT(segs, key = c('chrom', 'start', 'end'))
     
     maf = data.table::foverlaps(maf, segs,
