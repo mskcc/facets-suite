@@ -38,6 +38,7 @@ ccf_annotate_maf = function(maf,
     if (algorithm == 'em') {
         segs$tcn = segs$tcn.em
         segs$lcn = segs$lcn.em
+        segs$cf = segs$cf.em
     }
     segs = segs[, c('chrom', 'start', 'end', 'tcn', 'lcn', 'cf')]
     data.table::setDT(segs, key = c('chrom', 'start', 'end'))
@@ -46,7 +47,7 @@ ccf_annotate_maf = function(maf,
                                 by.x = c('Chromosome', 'Start_Position', 'End_Position'),
                                 by.y = c('chrom', 'start', 'end'),
                                 type = 'within', mult = 'first', nomatch = NA)
-    maf = maf[, c(original_cols, 'tcn', 'lcn'), with = FALSE]
+    maf = maf[, c(original_cols, 'tcn', 'lcn', 'cf'), with = FALSE]
     
     # Calculate CCFs
     maf[, `:=` (
