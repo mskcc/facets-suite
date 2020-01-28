@@ -13,8 +13,8 @@
 #' @export
 format_igv_seg = function(facets_output, sample_id, normalize = TRUE) {
     
-    if (!all(c('snps', 'segs', 'diplogr') %in% names(facets_output))) {
-        stop(paste0('Input is missing segs, snps or diplogr ojbect.'), call. = FALSE)
+    if (!all(c('snps', 'segs', 'dipLogR') %in% names(facets_output))) {
+        stop(paste0('Input is missing segs, snps or dipLogR ojbect.'), call. = FALSE)
     }
     
     seg = group_by(facets_output$snps, chrom, seg) %>% 
@@ -26,6 +26,6 @@ format_igv_seg = function(facets_output, sample_id, normalize = TRUE) {
         mutate(ID = sample_id) %>% 
         select(ID, chrom, loc.start, loc.end, num.mark, seg.mean)
     
-    if (normalize) { seg = mutate(seg, seg.mean = seg.mean - facets_output$diplogr) }
+    if (normalize) { seg = mutate(seg, seg.mean = seg.mean - facets_output$dipLogR) }
     data.frame(seg)
 }

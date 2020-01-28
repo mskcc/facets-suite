@@ -152,6 +152,23 @@ calculate_ntai = function(segs,
         chrom_seg
     })
     
+    if (nrow(segs) == 0) {
+        return(
+            list(
+                ntelomeric_ai = NA, # telomeric AI
+                telomeric_ai_mean_size = NA,
+                ninterstitial_ai = NA, # interstitial AI
+                interstitial_ai_mean_size = NA,
+                ncentromeric_ai = NA, # chromosomal AI
+                ntelomeric_loh = NA, # telomeric LOH
+                telomeric_loh_mean_size = NA,
+                ninterstitial_loh = NA, # interstitial LOH
+                interstitial_loh_mean_size = NA,
+                ncentromeric_loh = NA # chromosomal LOH
+            ) 
+        )
+    }
+    
     # Add a column to call AI
     # Codes for telomeric/interstitial/whole chromosome:
     # 0 = no AI

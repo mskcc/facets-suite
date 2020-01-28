@@ -15,8 +15,6 @@ Encoding: UTF-8
 Depends:
     R (>= 2.10)
 Imports:
-    facets (>= 0.5.2),
-    pctGCdata (>= 0.3.0),
     data.table (>= 1.11.8),
     dplyr (>= 0.8.3),
     plyr (>= 1.8.4),
@@ -28,9 +26,6 @@ Imports:
     scales (>= 1.0.0),
     argparse (>= 1.1.1),
     tibble (>= 2.1.3)
-Remotes:
-    mskcc/facets,
-    veseshan/pctGCdata
 NeedsCompilation: no
 Packaged: 2019-02-07 16:38:38 UTC; jonssonp
 Suggests: 
