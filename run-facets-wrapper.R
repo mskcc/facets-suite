@@ -48,7 +48,7 @@ parser$add_argument('-S', '--seed', required = FALSE, type = 'integer',
                     default = 100, help = 'Manual seed value [default %(default)s]')
 parser$add_argument('-l', '--legacy-output', required = FALSE, type = 'logical',
                     default = FALSE, help = 'create legacy output files (.RData and .cncf.txt) [default %(default)s]')
-parser$add_argument('-fl', '--facets-lib-path', required = FALSE,
+parser$add_argument('-fl', '--facets-lib-path', required = TRUE,
                     default = '', help = 'path to the facets library. if none provided, uses version available to `library(facets)`')
 
 args = parser$parse_args()
