@@ -12,7 +12,7 @@ facetsSuite is an R package with functions to run [FACETS](https://github.com/ms
 You can install facetsSuite in R from this repository with:
 
 ``` r
-devtools::install_github("mskcc/facets-suite", ref = "Rpackagev2")
+devtools::install_github("taylor-lab/facets-suite", ref = "Rpackagev2")
 ```
 
 Also follow the [instructions for installing FACETS](https://github.com/mskcc/facets).
