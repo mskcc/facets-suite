@@ -173,6 +173,7 @@ check_fit = function(facets_output,
     output = list(
         dipLogR_flag = dipLogR_flag,
         n_alternative_dipLogR = n_alt_dipLogR,
+        wgd = wgd,
         n_dip_bal_segs = n_dip_bal_segs,
         frac_dip_bal_segs = frac_dip_bal_segs,
         n_dip_imbal_segs = n_dip_imbal_segs,

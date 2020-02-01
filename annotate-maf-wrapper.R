@@ -16,9 +16,9 @@ parser = ArgumentParser(description = 'Annotate MAF with local copy number and C
 parser$add_argument('-m', '--maf-file', required = TRUE,
                     help = 'Mutations in MAF format')
 parser$add_argument('-s', '--sample-mapping', required = FALSE,
-                    help = 'Tab-separated file with header where first column contains sample ID and second column path to .rds output files from facetsSuite')
+                    help = 'Tab-separated file with header where first column contains sample ID and second column path to .rds or .Rdata (from legacy) output files from facetsSuite')
 parser$add_argument('-f', '--facets-output', required = FALSE,
-                    help = 'A single facetsSuite .rds output file')
+                    help = 'A single facetsSuite .rds or .Rdata output file')
 parser$add_argument('-a', '--facets-algorithm', required = FALSE,
                     default = 'em', help = 'Which FACETS algorithm to use [default %(default)s]')
 parser$add_argument('-o', '--output', required = FALSE,
@@ -77,7 +77,7 @@ if (!is.null(args$sample_mapping)) {
 
 annotate_sample = function(sample_id) {
     sample_maf = maf[maf$Tumor_Sample_Barcode == sample_id,]
-    sample_facets = readRDS(sample_map$file[which(sample_map$sample == sample_id)])
+    sample_facets = load_facets_output(sample_map$file[which(sample_map$sample == sample_id)])
     ccf_annotate_maf(sample_maf, sample_facets$segs, sample_facets$purity)
 }
 
