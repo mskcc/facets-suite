@@ -61,10 +61,10 @@ ccf_annotate_maf = function(maf,
     maf[, c('ccf_Mcopies', 'ccf_Mcopies_lower', 'ccf_Mcopies_upper', 'ccf_Mcopies_prob95', 'ccf_Mcopies_prob90') :=
             estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     maf[, c('ccf_1copy', 'ccf_1copy_lower', 'ccf_1copy_upper', 'ccf_1copy_prob95', 'ccf_1copy_prob90') :=
-            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, 1, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     maf[, c('ccf_expected_copies', 'ccf_expected_copies_lower', 'ccf_expected_copies_upper',
             'ccf_expected_copies_prob95', 'ccf_expected_copies_prob90') :=
-            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, expected_alt_copies, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     as.data.frame(maf)
 }
 

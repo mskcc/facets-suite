@@ -1,7 +1,7 @@
 Package: facetsSuite
 Type: Package
 Title: Functions to run and parse output from FACETS
-Version: 2.0.0
+Version: 2.0.2
 Authors@R: person(given = "Philip",
              family = "Jonsson",
              role = c("aut", "cre"),
