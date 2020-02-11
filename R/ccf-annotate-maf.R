@@ -32,20 +32,22 @@ ccf_annotate_maf = function(maf,
     # Find segments overlapping mutation loci
     data.table::setDT(maf, key = c('Chromosome', 'Start_Position', 'End_Position'))
     original_cols = names(maf)
+    maf <- maf[, Chromosome:=as.character(Chromosome)]
     
     segs$chrom[segs$chrom == 23] = 'X'
     if (algorithm == 'em') {
         segs$tcn = segs$tcn.em
         segs$lcn = segs$lcn.em
+        segs$cf = segs$cf.em
     }
-    segs = segs[, c('chrom', 'start', 'end', 'tcn', 'lcn')]
+    segs = segs[, c('chrom', 'start', 'end', 'tcn', 'lcn', 'cf')]
     data.table::setDT(segs, key = c('chrom', 'start', 'end'))
     
     maf = data.table::foverlaps(maf, segs,
                                 by.x = c('Chromosome', 'Start_Position', 'End_Position'),
                                 by.y = c('chrom', 'start', 'end'),
                                 type = 'within', mult = 'first', nomatch = NA)
-    maf = maf[, c(original_cols, 'tcn', 'lcn'), with = FALSE]
+    maf = maf[, c(original_cols, 'tcn', 'lcn', 'cf'), with = FALSE]
     
     # Calculate CCFs
     maf[, `:=` (
@@ -59,11 +61,44 @@ ccf_annotate_maf = function(maf,
     maf[, c('ccf_Mcopies', 'ccf_Mcopies_lower', 'ccf_Mcopies_upper', 'ccf_Mcopies_prob95', 'ccf_Mcopies_prob90') :=
             estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     maf[, c('ccf_1copy', 'ccf_1copy_lower', 'ccf_1copy_upper', 'ccf_1copy_prob95', 'ccf_1copy_prob90') :=
-            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, 1, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     maf[, c('ccf_expected_copies', 'ccf_expected_copies_lower', 'ccf_expected_copies_upper',
             'ccf_expected_copies_prob95', 'ccf_expected_copies_prob90') :=
-            estimate_ccf(purity, tcn, tcn - lcn, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+            estimate_ccf(purity, tcn, expected_alt_copies, t_alt_count, t_depth), by = seq_len(nrow(maf))]
     as.data.frame(maf)
+}
+
+#' Estimate CCFs of somatic mutations from cncf.txt file. 
+#'
+#' Based on FACETS data, infer cancer-cell fraction (CCF) for somatic mutations in a sample.
+#'
+#' @param maf Input MAF file.
+#' @param cncf_txt_file .cncf.txt file created with legacy output of facets-suite.
+#' @param purity Sample purity estimate.
+#' @param algorithm Choice between FACETS \code{em} and \code{cncf} algorithm.
+#' 
+#' @importFrom data.table setDT foverlaps :=
+#' @importFrom stats dbinom
+#'
+#' @return MAF file annotated with clonality estimates for each mutation, where the following column prefixes are used:
+#' \itemize{
+#'   \item{\code{ccf_Mcopies*}:} {Inferred CCF if mutation is on the major allele.}
+#'   \item{\code{ccf_1copy*}:} {Inferred CCF if mutation exists in one copy.}
+#'   \item{\code{ccf_expected_copies*}:} {Inferred CCF if mutation exists in number of copies expected from observed VAF and local ploidy.}
+#' }
+#' 
+#' @export
+ccf_annotate_maf_legacy <- function(maf, 
+                                    cncf_txt_file,
+                                    purity,
+                                    algorithm = c('em', 'cncf')) {
+    segs <-
+        fread(cncf_txt_file) %>%
+        select(chrom, seg, num.mark, nhet, cnlr.median,
+               mafR, segclust, cnlr.median.clust, mafR.clust, 
+               start = loc.start, end = loc.end, cf.em, tcn.em, lcn.em, cf, tcn, lcn)
+    
+    ccf_annotate_maf(maf, segs, purity, algorithm)    
 }
 
 # Estimate most likely CCF given observed VAF, purity and local ploidy
