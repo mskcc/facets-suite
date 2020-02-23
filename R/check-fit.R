@@ -54,7 +54,7 @@ check_fit = function(facets_output,
     dipLogR = facets_output$dipLogR
     alballogr = as.numeric(facets_output$alballogr[, 1])
     purity = facets_output$purity
-    mafr_thresh = facets_output$mafr_thresh
+    
     fcna_output = calculate_fraction_cna(segs, facets_output$ploidy, genome, algorithm)
     wgd = fcna_output$genome_doubled
     
@@ -66,9 +66,9 @@ check_fit = function(facets_output,
     setkey(segs, chrom, start, end)
     snps = as.data.table(snps)
     setkey(snps, chrom, maploc)
-
+    
     # Label clonal segments
-    segs[, clonal := cf >= purity - .1]
+    segs[, clonal := cf >= (purity * 0.8)]
     
     # Subset on autosomes
     auto_segs = segs[chrom < 23]
@@ -92,6 +92,34 @@ check_fit = function(facets_output,
     n_dip_imbal_segs = nrow(dip_imbal_segs)
     frac_dip_imbal_segs = sum(dip_imbal_segs$length)/sum(auto_segs$length)
     
+    #############################
+    ### Other metrics
+    #############################
+    ## fraction genome unaltered (2-1) -- too high --> low purity?
+    segs_unaltered = auto_segs[tcn == 2 & lcn == 1, ]    
+    n_segs_unaltered = nrow(segs_unaltered)    
+    frac_genome_unaltered = sum(segs_unaltered$length)/sum(auto_segs$length)
+    
+    segs_below_dipLogR = auto_segs[cnlr.median.clust < dipLogR]    # part of ploidy filter
+    n_segs_below_dipLogR = nrow(segs_below_dipLogR)    # part of ploidy filter
+    frac_below_dipLogR = sum(segs_below_dipLogR$length)/sum(auto_segs$length)
+    
+    segs_balanced_odd_tcn = auto_segs[mafR <= 0.025 & (tcn %% 2) != 0 & clonal ==T & tcn < 8,]
+    n_segs_balanced_odd_tcn = nrow(segs_balanced_odd_tcn)
+    frac_balanced_odd_tcn = sum(segs_balanced_odd_tcn$length)/sum(auto_segs$length)
+    
+    segs_imbalanced_diploid_cn = auto_segs[clonal==T & mafR > 0.1 & !is.na(lcn) & lcn != 0  & (as.double(tcn) / lcn) == 2, ]
+    n_segs_imbalanced_diploid_cn = nrow(segs_imbalanced_diploid_cn)
+    frac_imbalanced_diploid_cn = sum(segs_imbalanced_diploid_cn$length)/sum(auto_segs$length)
+    
+    segs_lcn_greater_mcn = auto_segs[clonal==T & lcn < mcn,]
+    n_segs_lcn_greater_mcn = nrow(segs_lcn_greater_mcn)
+    frac_lcn_greater_mcn = sum(segs_lcn_greater_mcn$length)/sum(auto_segs$length)
+    
+    mafr_median_all = median(auto_segs$mafR, na.rm = T)
+    mafr_median_clonal = median(auto_segs[clonal==T, ]$mafR, na.rm = T)
+    mafr_n_gt_1 = nrow(auto_segs[mafR > 1, ])
+    
     # Number of high-level amplifications and homozygous deletions
     # Clonal homdels, how much of the genome do they represent
     n_amps = nrow(segs[tcn >= 10])
@@ -110,28 +138,32 @@ check_fit = function(facets_output,
     n_cnlr_clusters = length(unique(segs$cnlr.median.clust))
     
     # Number of segments with lcn==NA
-    n_lcn_na = nrow(segs[is.na(lcn)])
+    n_lcn_na = nrow(auto_segs[is.na(lcn)])
+    frac_lcn_na = sum(auto_segs[is.na(lcn)]$length)/sum(auto_segs$length)
     
     # Number of segments with LOH
     loh_segs = auto_segs[lcn == 0,]
     n_loh = nrow(loh_segs)
     frac_loh = sum(loh_segs$length)/sum(auto_segs$length)
     
-    # Check fraction of subclonal events
-    subclonal_segs = segs[clonal == F, ]
+    # Check fraction of subclonal events within autosomal chromosomes
+    subclonal_segs = auto_segs[clonal == F, ]
     n_segs_subclonal = nrow(subclonal_segs)
-    frac_segs_subclonal = sum(subclonal_segs$length)/sum(segs$length)
-
+    frac_segs_subclonal = sum(subclonal_segs$length)/sum(auto_segs$length)
+    
     # Compile SNP statistics
     n_snps = nrow(snps)
     het_snps = snps[het == 1]
     n_het_snps = nrow(het_snps)
     frac_het_snps = n_het_snps/n_snps
-    n_het_snps_hom_in_tumor_1pct = nrow(het_snps[ vafT < 0.01 | vafT > 0.99, ])
-    n_het_snps_hom_in_tumor_5pct = nrow(het_snps[ vafT < 0.05 | vafT > 0.95, ])
+    
+    n_snps_with_300x_in_tumor = nrow(snps[rCountT > 300, ])
+    n_het_snps_with_300x_in_tumor = nrow(het_snps[rCountT > 300, ])
+    n_het_snps_hom_in_tumor_1pct = nrow(het_snps[  (vafT < 0.01 | vafT > 0.99), ])
+    n_het_snps_hom_in_tumor_5pct = nrow(het_snps[ (rCountN > 35 & rCountT > 35) & (vafT < 0.05 | vafT > 0.95), ])
     frac_het_snps_hom_in_tumor_1pct = n_het_snps_hom_in_tumor_1pct/n_het_snps
     frac_het_snps_hom_in_tumor_5pct = n_het_snps_hom_in_tumor_5pct/n_het_snps
-
+    
     # Check the mean/standard deviation of the cnlr
     snps[, cnlr_residual := cnlr - median(cnlr), by = seg]
     mean_cnlr_residual = mean(snps$cnlr_residual)
@@ -191,9 +223,19 @@ check_fit = function(facets_output,
         frac_loh = frac_loh,
         n_segs_subclonal = n_segs_subclonal,
         frac_segs_subclonal = frac_segs_subclonal,
+        n_segs_below_dipLogR = n_segs_below_dipLogR,
+        frac_below_dipLogR = frac_below_dipLogR,
+        n_segs_balanced_odd_tcn = n_segs_balanced_odd_tcn,
+        frac_balanced_odd_tcn = frac_balanced_odd_tcn,
+        n_segs_imbalanced_diploid_cn = n_segs_imbalanced_diploid_cn,
+        frac_imbalanced_diploid_cn = frac_imbalanced_diploid_cn,
+        n_segs_lcn_greater_mcn = n_segs_lcn_greater_mcn,
+        frac_lcn_greater_mcn = frac_lcn_greater_mcn,
         n_snps = n_snps,
         n_het_snps = n_het_snps,
         frac_het_snps = frac_het_snps,
+        n_snps_with_300x_in_tumor = n_snps_with_300x_in_tumor,
+        n_het_snps_with_300x_in_tumor = n_het_snps_with_300x_in_tumor,
         n_het_snps_hom_in_tumor_1pct = n_het_snps_hom_in_tumor_1pct,
         n_het_snps_hom_in_tumor_5pct = n_het_snps_hom_in_tumor_5pct,
         frac_het_snps_hom_in_tumor_1pct = frac_het_snps_hom_in_tumor_1pct,
@@ -207,8 +249,13 @@ check_fit = function(facets_output,
         n_segs_discordant_both = discordant_stats$n_discordant_both,
         frac_discordant_both = discordant_stats$length_discordant_both/evaluable_length$both,
         n_segs_icn_cnlor_discordant = n_icn_cnlor_discordant,
-        frac_icn_cnlor_discordant = frac_icn_cnlor_discordant
+        frac_icn_cnlor_discordant = frac_icn_cnlor_discordant,
+        mafr_median_all = mafr_median_all,
+        mafr_median_clonal = mafr_median_clonal,
+        mafr_n_gt_1 = mafr_n_gt_1
     )
+    
+    
     
     # If input MAF is provided add some stats based on this
     if (!is.null(maf)) {
@@ -217,12 +264,12 @@ check_fit = function(facets_output,
         maf[, `:=` (
             Chromosome = ifelse(Chromosome == 'X', 23, Chromosome),
             t_var_freq = t_alt_count/(t_alt_count+t_ref_count)
-            )][, Chromosome := as.integer(Chromosome)]
+        )][, Chromosome := as.integer(Chromosome)]
         setkey(maf, Chromosome, Start_Position, End_Position)
         maf = foverlaps(maf, segs, mult = 'first', nomatch = NA,
                         by.x = c('Chromosome', 'Start_Position', 'End_Position'),
                         by.y = c('chrom', 'start', 'end'))
-    
+        
         # Median mutation VAF at clonal 2:1 segments
         output$dip_median_vaf = maf[clonal == TRUE & mcn == 1 & lcn == 1][, median(t_var_freq)]
         
