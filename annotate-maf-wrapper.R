@@ -16,7 +16,7 @@ parser = ArgumentParser(description = 'Annotate MAF with local copy number and C
 parser$add_argument('-m', '--maf-file', required = TRUE,
                     help = 'Mutations in MAF format')
 parser$add_argument('-s', '--sample-mapping', required = FALSE,
-                    help = 'Tab-separated file with header where first column contains sample ID and second column path to .rds or .Rdata (from legacy) output files from facetsSuite')
+                    help = 'Tab-separated file with header where first column contains sample ID and second column path to: .rds or .Rdata or .cncf.txt (the latter two from legacy) output files from facetsSuite')
 parser$add_argument('-f', '--facets-output', required = FALSE,
                     help = 'A single facetsSuite .rds or .Rdata output file')
 parser$add_argument('-a', '--facets-algorithm', required = FALSE,
@@ -74,11 +74,24 @@ if (!is.null(args$sample_mapping)) {
 }
 
 # Annotate --------------------------------------------------------------------------------------------------------
-
 annotate_sample = function(sample_id) {
     sample_maf = maf[maf$Tumor_Sample_Barcode == sample_id,]
-    sample_facets = load_facets_output(sample_map$file[which(sample_map$sample == sample_id)])
-    ccf_annotate_maf(sample_maf, sample_facets$segs, sample_facets$purity)
+    facets_seg_file = sample_map$file[which(sample_map$sample == sample_id)]
+    if ( grepl(".cncf(.edited)?.txt", facets_seg_file)) {
+        ### get purity by loading facets .Rdata/.Rds file
+        rdata_files = list.files(dirname(facets_seg_file), pattern = 'purity.(rdata$|rds)$', ignore.case=T, full.names = T)
+        if (length(rdata_files) > 0) {
+            sample_purity = load_facets_output(rdata_files[1])$purity
+        } else {
+            # if purity rdata file is not found, just load any purity
+            rdata_files = list.files(dirname(facets_seg_file), pattern = 'rdata$|rds$', ignore.case=T, full.names = T)
+            sample_purity = load_facets_output(rdata_files[1])$purity
+        }
+        ccf_annotate_maf_legacy(sample_maf, facets_seg_file, sample_purity)
+    } else {
+        sample_facets = load_facets_output(facets_seg_file)
+        ccf_annotate_maf(sample_maf, sample_facets$segs, sample_facets$purity)
+    }
 }
 
 if (args$parallel == TRUE) {
