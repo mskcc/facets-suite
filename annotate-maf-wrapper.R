@@ -78,8 +78,11 @@ annotate_sample = function(sample_id) {
     sample_maf = maf[maf$Tumor_Sample_Barcode == sample_id,]
     facets_seg_file = sample_map$file[which(sample_map$sample == sample_id)]
     if ( grepl(".cncf(.edited)?.txt", facets_seg_file)) {
+        beginning <- gsub(".cncf(.edited)?.txt","",facets_seg_file)
+        beginning <- strsplit(beginning,"/")[[1]]
+        beginning <- beginning[length(beginning)]
         ### get purity by loading facets .Rdata/.Rds file
-        rdata_files = list.files(dirname(facets_seg_file), pattern = 'purity.(rdata$|rds)$', ignore.case=T, full.names = T)
+        rdata_files = list.files(dirname(facets_seg_file), pattern = paste0(beginning,'.(Rdata$|rds)$'), ignore.case=T, full.names = T)
         if (length(rdata_files) > 0) {
             sample_purity = load_facets_output(rdata_files[1])$purity
         } else {
