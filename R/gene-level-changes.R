@@ -27,7 +27,7 @@
 #' }
 
 #' @export
-gene_level_changes = function(facets_output,
+gene_level_changes_new = function(facets_output,
                               genome = c('hg19', 'hg38'),
                               algorithm = c('em', 'cncf')) {
     
@@ -108,8 +108,9 @@ gene_level_changes = function(facets_output,
     max_seg_length = 1e7
     min_ccf = 0.6 * purity
     genes_all[, filter := 'PASS']
-    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (tcn > 8 | genes_on_seg > max_gene_count) , filter := add_tag(filter, 'unfocal_amp')]
-    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (!is.na(purity) & cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
+    genes_all[cn_state %like% '^AMP' & (length > max_seg_length | (tcn < 8 & genes_on_seg > max_gene_count)) , filter := add_tag(filter, 'unfocal_amp')]
+    genes_all[cn_state %like% '^AMP' & (is.na(purity) | cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
+    
     genes_all[cn_state == 'HOMDEL' & length > max_seg_length & genes_on_seg > max_gene_count, filter := add_tag(filter, 'unfocal_del')]
     genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length, filter := 'RESCUE']
     
