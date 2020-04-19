@@ -27,7 +27,7 @@
 #' }
 
 #' @export
-gene_level_changes_new = function(facets_output,
+gene_level_changes = function(facets_output,
                               genome = c('hg19', 'hg38'),
                               algorithm = c('em', 'cncf')) {
     
