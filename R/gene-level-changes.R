@@ -107,12 +107,18 @@ gene_level_changes = function(facets_output,
     max_gene_count = 10
     max_seg_length = 1e7
     min_ccf = 0.6 * purity
+
     genes_all[, filter := 'PASS']
-    genes_all[cn_state %like% '^AMP' & (length > max_seg_length | (tcn < 8 & genes_on_seg > max_gene_count)) , filter := add_tag(filter, 'unfocal_amp')]
-    genes_all[cn_state %like% '^AMP' & (is.na(purity) | cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
-    
-    genes_all[cn_state == 'HOMDEL' & length > max_seg_length & genes_on_seg > max_gene_count, filter := add_tag(filter, 'unfocal_del')]
-    genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length, filter := 'RESCUE']
+    genes_all[(cn_state %like% '^AMP|HOMDEL') & (length > max_seg_length) ,
+              filter := ifelse(filter == 'PASS', 'suppress_segment_too_large', filter)]
+
+    genes_all[cn_state %like% '^AMP' & !(tcn > 8 | (!is.na(purity) & cf > min_ccf) | genes_on_seg <= max_gene_count) ,
+              filter := ifelse(filter == 'PASS', 'suppress_likely_unfocal_large_gain', filter)]
+
+    genes_all[cn_state %like% 'HOMDEL' & genes_on_seg > max_gene_count ,
+              filter := ifelse(filter == 'PASS', 'suppress_large_homdel', filter)]
+
+    genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length & filter != 'PASS', filter := 'RESCUE']
     
     # Clean up data frame
     genes_all = genes_all[, setnames(.SD,
@@ -137,10 +143,10 @@ gene_level_changes = function(facets_output,
 #     }
 # }
 
-add_tag = function(filter, tag) {
-    ifelse(filter == 'PASS',
-           tag,
-           paste(filter, tag, sep = ';'))
-}
+# add_tag = function(filter, tag) {
+#     ifelse(filter == 'PASS',
+#            tag,
+#            paste(filter, tag, sep = ';'))
+# }
 
 
