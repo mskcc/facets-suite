@@ -175,10 +175,10 @@ check_fit = function(facets_output,
         discordant_lcn = (lcn.em.original != lcn.original | (is.na(lcn.em.original) | is.na(lcn.original))) & !(is.na(lcn.em.original) & is.na(lcn.original))
     )][(discordant_tcn == TRUE | discordant_lcn == TRUE) & tcn < 10]
     discordant_stats = discordant_segs[, list(
-        n_discordant_tcn = sum(discordant_tcn & !discordant_lcn),
-        length_discordant_tcn = sum(length[discordant_tcn & !discordant_lcn]),
-        n_discordant_lcn = sum(length[!discordant_tcn & discordant_lcn]),
-        length_discordant_lcn = sum(length[!discordant_tcn & discordant_lcn]),
+        n_discordant_tcn = sum(discordant_tcn),
+        length_discordant_tcn = sum(length[discordant_tcn ]),
+        n_discordant_lcn = sum(length[discordant_lcn]),
+        length_discordant_lcn = sum(length[discordant_lcn]),
         n_discordant_both = sum(discordant_tcn & discordant_lcn),
         length_discordant_both = sum(length[discordant_tcn & discordant_lcn])
     )]
