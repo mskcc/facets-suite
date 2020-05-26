@@ -65,6 +65,12 @@ ccf_annotate_maf = function(maf,
     maf[, c('ccf_expected_copies', 'ccf_expected_copies_lower', 'ccf_expected_copies_upper',
             'ccf_expected_copies_prob95', 'ccf_expected_copies_prob90') :=
             estimate_ccf(purity, tcn, expected_alt_copies, t_alt_count, t_depth), by = seq_len(nrow(maf))]
+    maf[, clonality :=  ifelse(is.na(cf) | cf < (0.6 * purity), 
+                               'INDETERMINATE',
+                               ifelse((ccf_expected_copies > 0.8 | (ccf_expected_copies > 0.7 & ccf_expected_copies_upper > 0.9)), 
+                                      'CLONAL', 
+                                      'SUBCLONAL'))]
+    
     as.data.frame(maf)
 }
 
