@@ -40,6 +40,8 @@ if (is.null(args$snp_pileup_path)) {
     } else {
         snp_pileup_path = snp_pileup_env
     }
+} else {
+    snp_pileup_path = args$snp_pileup_path
 }
 
 
