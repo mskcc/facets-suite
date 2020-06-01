@@ -82,10 +82,14 @@ gene_level_changes = function(facets_output,
     genes_all = merge(genes_segs, genes_snps, by.x = 'gene', by.y = 'gene')[seg.x == seg.y]
         
     # Map to copy-number states
-    genes_all[, cn_state := mapvalues(paste(wgd, tcn-lcn, lcn, sep = ':'),
+    genes_all[, cn_state := mapvalues(paste(wgd, tcn, tcn-lcn, lcn, sep = ':'),
                                       copy_number_states$map_string, copy_number_states$call,
                                       warn_missing = FALSE)]
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
+    genes_all[, cn_state := ifelse(cn_state == 'INDETERMINATE' & tcn > 9, 'AMP', cn_state)]
+    
+    # handle cases where lcn=NA
+    ## Error: lcn > mcn;
     
     # Test on cnlr against baseline
     # cn0_dipLogR = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-dipLogR))]

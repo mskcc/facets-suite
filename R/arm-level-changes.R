@@ -75,7 +75,7 @@ arm_level_changes = function(segs,
         mutate(arm_length = sum(cn_length),
                majority = cn_length >= 0.8 * arm_length,
                frac_of_arm = signif(cn_length/arm_length, 2),
-               cn_state = mapvalues(paste(wgd, tcn-lcn, lcn, sep = ':'),
+               cn_state = mapvalues(paste(wgd, tcn, tcn-lcn, lcn, sep = ':'),
                                     copy_number_states$map_string, copy_number_states$call,
                                     warn_missing = FALSE)) %>% 
         ungroup() %>% 
