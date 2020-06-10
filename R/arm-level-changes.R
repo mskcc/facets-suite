@@ -97,7 +97,7 @@ arm_level_changes = function(segs,
         genome_doubled = fcna_output$genome_doubled,
         fraction_cna = fcna_output$fraction_cna,
         weighted_fraction_cna = frac_altered_w,
-        aneuploidy_score = length(altered_arms),
+        aneuploidy_score = nrow(altered_arms),
         full_output = segs
     )
 }
