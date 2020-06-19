@@ -36,3 +36,10 @@ ADD . /facets-suite
 RUN cd /facets-suite && \
     Rscript -e "devtools::install()"
 ENV PATH=/facets-suite:$PATH
+
+# install Facets
+RUN wget https://github.com/mskcc/facets/archive/v0.5.14.zip -O facets_v0.5.14.zip && \
+    unzip facets_v0.5.14.zip && \
+    rm -f facets_v0.5.14.zip && \
+    cd facets-0.5.14 && \
+    Rscript -e "devtools::install()"
