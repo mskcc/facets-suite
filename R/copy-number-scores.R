@@ -59,7 +59,7 @@ calculate_fraction_cna = function(segs,
     if (!wgd) {
         diploid_length = sum(as.numeric(segs$length[which(segs$tcn == 2 & segs$lcn == 1)]))
     } else if (wgd) {
-        diploid_length = sum(as.numeric(segs$length[which(segs$tcn == 4 & segs$lcn == 2)]))
+        diploid_length = sum(as.numeric(segs$length[which((segs$tcn == 2 & segs$lcn == 1) | (segs$tcn == 4 & segs$lcn == 2)]))
     }
     frac_altered = (interrogated_genome - diploid_length) / interrogated_genome
     

@@ -57,6 +57,7 @@ check_fit = function(facets_output,
     
     fcna_output = calculate_fraction_cna(segs, facets_output$ploidy, genome, algorithm)
     wgd = fcna_output$genome_doubled
+    fga = fcna_output$fraction_cna
     
     segs[, `:=` (tcn.original = tcn, lcn.original = lcn, cf.original = cf,
                  tcn.em.original = tcn.em, lcn.em.original = lcn.em, cf.em.original = cf.em)] # these are retained since the parse_segs function consolidates cncf/em solutions
@@ -206,6 +207,7 @@ check_fit = function(facets_output,
         dipLogR_flag = dipLogR_flag,
         n_alternative_dipLogR = n_alt_dipLogR,
         wgd = wgd,
+        fga = fga,
         n_dip_bal_segs = n_dip_bal_segs,
         frac_dip_bal_segs = frac_dip_bal_segs,
         n_dip_imbal_segs = n_dip_imbal_segs,
