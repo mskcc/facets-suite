@@ -101,7 +101,7 @@ output_maf = rbindlist(output_maf)
 
 # Add back samples that were missing in sample map
 if (any(!maf$Tumor_Sample_Barcode %in% sample_map$sample)) {
-    output_maf = rbindlist(output_maf,
+    output_maf = rbind(output_maf,
                            maf[!which(maf$Tumor_Sample_Barcode %in% sample_map$sample), ],
                            use.names = TRUE, fill = TRUE)
 }
