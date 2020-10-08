@@ -29,7 +29,7 @@
 #' library(pctGCdata)
 #' run_facets(test_read_counts, cval = 500, genome = 'hg38')
 #' }
-#' 
+#'
 #' @import facets
 #' @import pctGCdata
 
@@ -43,20 +43,20 @@ run_facets = function(read_counts,
                       genome = c('hg18', 'hg19', 'hg38', 'mm9', 'mm10'),
                       seed = 100,
                       facets_lib_path = '') {
-    
+
     if ( facets_lib_path != '' ) {
         library(facets, lib.loc = facets_lib_path)
     } else {
-        library(facets) 
+        library(facets)
     }
     print(paste0('loaded facets version: ', packageVersion('facets')))
-    
-    # Check input 
-    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts)) 
+
+    # Check input
+    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts))
     if (length(missing_cols) > 0) {
         stop(paste0('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
     }
-    
+
     set.seed(seed)
     genome = match.arg(genome)
 
@@ -65,12 +65,12 @@ run_facets = function(read_counts,
                                 gbuild = genome, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
     out = facets::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
     fit = facets::emcncf(out)
-    
+
     # Fix bad NAs
     fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
     fit$cncf$lcn[fit$cncf$tcn == 1] = 0
     fit$cncf$lcn.em[fit$cncf$tcn.em == 1] = 0
-    
+
     # Generate output
     list(
         snps = out$jointseg,
@@ -109,26 +109,26 @@ load_facets_output <- function(rds_rdata_file) {
 
 #' @export create_legacy_output
 create_legacy_output <- function(facets_output, directory, sample_id, counts_file, sel_run_type, run_details) {
-    
-    sample_id = ifelse(sel_run_type == '', sample_id, paste0(sample_id, '_', sel_run_type))
-    output_prefix = paste0(directory, '/', sample_id)
-    
+
+    #sample_id = ifelse(sel_run_type == '', sample_id, paste0(sample_id, '_', sel_run_type))
+    output_prefix = paste0(directory, '/', ifelse(sel_run_type == '', sample_id, paste0(sample_id, '_', sel_run_type)))
+
     ### create cncf.txt
     facets_output$segs %>%
         mutate(ID=sample_id,
                loc.start = start,
                loc.end = end) %>%
-        select(ID, chrom, loc.start, loc.end, seg, num.mark, nhet, cnlr.median, mafR, 
-               segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn, 
+        select(ID, chrom, loc.start, loc.end, seg, num.mark, nhet, cnlr.median, mafR,
+               segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn,
                cf.em, tcn.em, lcn.em) %>%
         write.table(file=paste0(output_prefix, '.cncf.txt'), quote=F, row.names=F, sep='\t')
-    
+
     ### create .Rdata
     out =
         list(
             jointseg = facets_output$snps,
-            out = facets_output$segs %>% 
-                select(chrom, seg, num.mark, nhet, cnlr.median, mafR, 
+            out = facets_output$segs %>%
+                select(chrom, seg, num.mark, nhet, cnlr.median, mafR,
                        segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn),
             nX=23,
             chromlevels = c(1:22, "X"),
@@ -136,7 +136,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
             alBalLogR = facets_output$alBalLogR,
             IGV = NULL
         )
-    fit = 
+    fit =
         list(
             loglik = facets_output$loglik,
             purity = facets_output$purity,
@@ -147,11 +147,11 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
             emflags = facets_output$em_flags
         )
     save(out, fit, file=paste0(output_prefix, ".Rdata"), compress=T)
-    
+
     ### create .CNCF.png
     system(paste0('mv ', output_prefix, '.png ', output_prefix, '.CNCF.png'))
-    
-    #### create .out file 
+
+    #### create .out file
     purity_cval = cval = NA
     if(nrow(run_details) == 2) {
         cval        = (run_details %>% filter(run_type == 'hisens'))$cval[1]
@@ -160,7 +160,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
         cval   = run_details$cval[1]
         purity = run_details$purity[1]
     }
-    
+
     run = run_details %>% filter(run_type == sel_run_type) %>% head(n=1)
 
     out_txt = "# INPUT PARAMETERS GIVEN\n"
@@ -176,7 +176,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
     out_txt = paste0(out_txt, '# min.nhet = ', run$min_nhet,'\n')
     out_txt = paste0(out_txt, '# genome = hg19\n')
     out_txt = paste0(out_txt, '# tumor_id = \n')
-    
+
     out_txt = paste0(out_txt, '\n# LOADED MODULE INFO\n')
     out_txt = paste0(out_txt, '# Facets version = ', as.character(packageVersion('facets')) , '\n\n')
     out_txt = paste0(out_txt, '\n# FACETS OUTPUT\n')
@@ -186,7 +186,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
     out_txt = paste0(out_txt, '# dipt = -1\n')
     out_txt = paste0(out_txt, '# loglik = \n')
     out_txt = paste0(out_txt, '# output flags\n')
-    out_txt = paste0(out_txt, '# ', run$flags,'\n\n')   
-  
+    out_txt = paste0(out_txt, '# ', run$flags,'\n\n')
+
     cat(out_txt, file=paste0(directory, '/', sample_id, '.out'))
 }
