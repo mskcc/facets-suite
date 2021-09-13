@@ -256,7 +256,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
 
     #try default facets2n plotting, continue if no facets2n lib
     tryCatch({
-      outfile = paste0(output_prefix, "_legacy.tiff")
+      outfile = paste0(output_prefix, "_legacy.png")
       plot_title = paste0(basename(output_prefix),
                           ' | cval=', cval,
                           ' | purity_cval=', purity_cval,
@@ -264,7 +264,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
                           ' | ploidy=', round(fit$ploidy, 2),
                           ' | dipLogR=', round(fit$dipLogR, 2))
       message(plot_title)
-      tiff(file = outfile, width = 6.5, height = 8, res = 300,units = 'in')
+      png(file = outfile, width = 9.75, height = 12, res = 330,units = 'in')
       facets2n::plotSample(x = out, emfit = fit, plot.type = "both", sname = plot_title)
       dev.off()
     },

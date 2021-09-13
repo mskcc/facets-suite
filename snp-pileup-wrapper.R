@@ -13,6 +13,7 @@ parser = ArgumentParser(description = 'Generate SNP read counts from matched tum
 
 parser$add_argument('-v', '--verbose', action = "store_true", default = TRUE,
                     help = 'Print run info')
+parser$add_argument('-co', '--count-orphans', help= "count anamolous read pairs", required = FALSE)
 parser$add_argument('-sp', '--snp-pileup-path', required = FALSE,
                     help = 'Path to snp-pileup executable [default environment variable $SNP_PILEUP]')
 parser$add_argument('-vcf', '--vcf-file', required = TRUE,
@@ -53,7 +54,7 @@ output_file = paste0(args$output_prefix, '.snp_pileup.gz')
 if (file.exists(output_file)) {
     stop(paste(output_file, 'already exists. Remove before running.'), call. = F)
 }
-default_args = c('--count-orphans --gzip')
+default_args = c('--gzip')
 
 #enforce minmum read count of 10 for all normals analyzed
 if (args$unmatched_normal_BAMS!=FALSE){
@@ -76,6 +77,7 @@ pileup_cmd = paste(
     '-d', args$max_depth,
     '-q', args$min_map_quality,
     '-Q', args$min_base_quality,
+    args$count_orphans,
     min_read_counts,
     args$vcf_file,
     output_file,

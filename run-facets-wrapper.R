@@ -259,10 +259,9 @@ if(args$facets2n_lib_path != ''){
     if(!is.null(args$donor_counts_file)){
         message(paste('Reading donor counts matrix', args$donor_counts_file))
         donor_counts = read_snp_matrix_facets2n(args$donor_counts_file, donorCounts=TRUE)
+    }else{
+        donor_counts = NULL
     }
-    else{
-       donor_counts = NULL
-    }   
 }else{
     read_counts = read_snp_matrix(args$counts_file)
 }
@@ -337,6 +336,24 @@ if (!is.null(args$purity_cval)) {
             pluck('full_output') %>%
             add_column(sample = sample_id, .before = 1)
         write(arm_level, paste0(name, '.arm_level.txt'))
+        
+        arm_level_dmp.full = arm_level_changes_dmp(segs=purity_output$segs, 
+                                                   ploidy=purity_output$ploidy, 
+                                                   genome=args$genome, 
+                                                   algorithm = 'em',
+                                                   diplogr = purity_output$dipLogR) %>%
+            pluck('full_output') %>%
+            add_column(sample = sample_id, .before = 1)
+        write(arm_level_dmp.full, paste0(name, '.arm_level_dmp.txt'))
+        
+        arm_level_dmp.filt = arm_level_changes_dmp(segs=purity_output$segs,
+                                                   ploidy=purity_output$ploidy, 
+                                                   genome=args$genome,
+                                                   algorithm = 'em',
+                                                   diplogr = purity_output$dipLogR) %>%
+            pluck('filtered_output') %>%
+            add_column(sample = sample_id, .before = 1)
+        write(arm_level_dmp.filt, paste0(name, '.arm_level_dmp_filtered.txt'))
     }
 
     run_details = print_run_details(outfile = ifelse(args$legacy_output, '/dev/null', paste0(name, '.txt')),
@@ -380,6 +397,7 @@ if (!is.null(args$purity_cval)) {
     if (args$everything) {
         metadata = c(
             arm_level_changes(output$segs, output$ploidy, args$genome),
+            arm_level_changes_dmp(output$segs, output$ploidy, args$genome,args$dipLogR),
             calculate_lst(output$segs, output$ploidy, args$genome),
             calculate_ntai(output$segs, output$ploidy, args$genome),
             calculate_hrdloh(output$segs, output$ploidy),
