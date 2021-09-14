@@ -140,7 +140,7 @@ hg38 = tibble::tribble(
 tumor_suppressors = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn = FALSE)) %>% 
     filter(tsg == TRUE) %>% 
     select(hugoSymbol) %>% 
-    mutate(hugoSymbol = mapvalues(hugoSymbol,
+    mutate(hugoSymbol = plyr::mapvalues(hugoSymbol,
                                   c('FAM175A', 'FAM58A', 'MRE11A', 'PARK2', 'FAM46C'), # these are not the official symbols
                                   c('ABRAXAS1', 'CCNQ', 'MRE11', 'PRKN', 'TENT5C'))) # these are
 
@@ -221,4 +221,4 @@ copy_number_states = tibble::tribble(
     TRUE,    6,    3,           2,                 'AMP'
 ) %>% mutate(map_string := paste(wgd, mcn, lcn, sep = ':'))
 
-use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, copy_number_states, internal = T, overwrite = T)
+use_data(hg18, hg19, hg38, genes_hg19, genes_hg38, copy_number_states, tumor_suppressors, internal = T, overwrite = T)
