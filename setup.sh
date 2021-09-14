@@ -114,7 +114,7 @@ RSCRIPT=$(echo $(which python) | sed "s/python/Rscript/")
 
 printi "Installing R packages using devtools..."
 
-$RSCRIPT -e 'devtools::install_github("rptashkin/facets2n", ref= "master", force=T); devtools::install_github("taylor-lab/facets-suite", ref = "feature/facets2N");'
+$RSCRIPT -e 'devtools::install_github("veseshan/pctGCdata"); devtools::install_github("mskcc/facets", build_vignettes = TRUE); devtools::install_github("rptashkin/facets2n", ref= "master", force=T); devtools::install_github("rptashkin/facets-suite", ref = "feature/facets2N", force=T);'
 
 EXITCODE=$?
 [[ $EXITCODE == 0 ]] || {
