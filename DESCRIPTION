@@ -1,7 +1,7 @@
 Package: facetsSuite
 Type: Package
 Title: Functions to run and parse output from FACETS
-Version: 2.0.10
+Version: 2.0.11
 Authors@R: person(given = "Philip",
              family = "Jonsson",
              role = c("aut", "cre"),
@@ -29,7 +29,7 @@ Imports:
     facets (>= 0.5.6), 
     facets2n (>= 0.2.8)
 NeedsCompilation: no
-Packaged: 2021-07-20 15:48:37 EST; rptashkin
+Packaged: 2021-09-14 11:57:32 EST; rptashkin
 Suggests: 
     covr (>= 3.2.0),
     testthat (>= 2.1.0)

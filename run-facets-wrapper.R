@@ -80,19 +80,6 @@ parser$add_argument('-tf', '--targetFile', required = FALSE, default=NULL,
 
 args = parser$parse_args()
 
-# Helper functions ------------------------------------------------------------------------------------------------
-
-# TODO: temp block, remove after building
-source_local <- function(fname){
-    argv <- commandArgs(trailingOnly = FALSE)
-    base_dir <- dirname(substring(argv[grep("--file=", argv)], 8))
-    source(paste(base_dir, fname, sep="/"))
-}
-source_local("R/generate-json-output.R")
-source_local("R/gene-level-changes.R")
-#source_local("R/gene-level-changes.R")
-
-
 # Write out
 write = function(input, output) {
     write.table(input, file = output, quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
@@ -399,47 +386,11 @@ if (!is.null(args$purity_cval)) {
         # Write RDS
         saveRDS(purity_output, paste0(name, '_purity.rds'))
         saveRDS(hisens_output, paste0(name, '_hisens.rds'))
-
-        # Generate optional json output
-        if (args$json_output) {
-            # params to be included in json
-            json_params = list(cval = args$cval,
-                        purity_cval = args$purity_cval,
-                        ndepth = args$normal_depth,
-                        snp_nbhd = args$snp_window_size,
-                        min_nhet = args$min_nhet,
-                        purity_min_nhet = args$purity_min_nhet,
-                        genome = args$genome,
-                        seed = args$seed,
-                        MandUnormal = args$MandUnormal,
-                        useMatchedX = args$useMatchedX,
-                        unmatched = args$unmatched,
-                        cbs = args$cbs,
-                        het_thresh = args$het_thresh,
-                        sample_id = args$sample_id,
-                        donor_counts = exists("args.donor-counts-file"),
-                        facets_version = if(exists("args.facets2n-lib-path")) {
-                            paste0("facets2n_", as.character(packageVersion('facets2n')))
-                         } else {
-                             paste0("facets_", as.character(packageVersion('facets')))
-                         },
-                        facetsSuite_version = as.character(packageVersion('facetsSuite')),
-                        outdir = directory 
-                          
-            ) 
-
-            generate_json(hisens_output = hisens_output,
-                        purity_output = purity_output,
-                        gene_level = gene_level,
-                        arm_level = arm_level,
-                        parameters = json_params)
-            
-        }
     }
+
     if(args$cbs){
         write.table(hisens_output$segsCBS,file = paste(name,"seg_file_with_pval.txt",sep='_'),sep='\t',row.names=F,col.names=T,quote=F)
     }
-
 
 } else {
     name = paste0(directory, '/', sample_id)
@@ -499,10 +450,10 @@ if (!is.null(args$purity_cval)) {
     } else {
         saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
     }
+}
 
-    # Generate optional json output
-
-    if (args$json_output) {        
+# Generate optional json output
+if (args$json_output) {        
         # params to be included in json
         json_params = list(cval = args$cval,
                     purity_cval = args$purity_cval,
@@ -534,5 +485,4 @@ if (!is.null(args$purity_cval)) {
                     arm_level = arm_level,
                     parameters = json_params)
         
-    }
 }

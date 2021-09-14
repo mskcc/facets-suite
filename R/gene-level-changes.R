@@ -142,6 +142,7 @@ gene_level_changes = function(facets_output,
 #     }
 # }
 
+#' @export
 get_gene_from_targetFile = function(targetFile) {
     genes = suppressWarnings(fread(cmd = paste0('grep -v "^@" ', targetFile), 
                             header = F,
@@ -157,6 +158,7 @@ get_gene_from_targetFile = function(targetFile) {
     return(genes)
 }
 
+#' @export
 add_tag = function(filter, tag) {
     ifelse(filter == 'PASS',
            tag,

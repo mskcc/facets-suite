@@ -7,6 +7,7 @@
 gene_level_changes(
   facets_output,
   genome = c("hg19", "hg38"),
+  targetFile = NULL,
   algorithm = c("em", "cncf")
 )
 }
