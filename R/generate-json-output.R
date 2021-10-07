@@ -55,6 +55,10 @@ generate_json = function(hisens_output,
     24,  59373566,   10104553,  13104553,    10104553
 )
     VERTICAL_LINE_X_COORD_LIST = c(0, cumsum(genome$size))
+    vlength = length(VERTICAL_LINE_X_COORD_LIST)
+    #remove endpoint
+    VERTICAL_LINE_X_COORD_LIST = VERTICAL_LINE_X_COORD_LIST[1:(vlength-1)]
+    
 
     # x-axis tick values for chromosomes
     Tick_Values = floor(head(VERTICAL_LINE_X_COORD_LIST, -1) +
@@ -94,9 +98,18 @@ generate_json = function(hisens_output,
     # log ratio plot line data
     Line_Data_CNLR = list()
     Segment_mean = list()
+    #add counter to iterate over segements per chromosome
+    chr.init = ''
+    seg.counter = 1
     for (i in seq(nrow(hisens))) {
+      chr.current = hisens[i,]$chrom
+      if(chr.current ==chr.init){
+        seg.counter = seg.counter+1
+      }else{
+        seg.counter=1
+      }
       Line_Data_CNLR[[i]] = list(
-        "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Copy #", i)),
+        "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Segment #", seg.counter, "_")),
         "data" = list(
           list(
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[hisens[i,]$chrom] + hisens[i,]$start), 
@@ -105,13 +118,14 @@ generate_json = function(hisens_output,
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[hisens[i,]$chrom] + hisens[i,]$end), 
             "y" = unbox(hisens[i,]$cnlr.median))))
       
-      #seg_key = paste0("Chromosome ", as.character(hisens[i,]$chrom), " Copy #", i)
+      #seg_key = paste0("Chromosome ", as.character(hisens[i,]$chrom), " Segment #", i)
       Segment_mean[[i]] = unbox(hisens[i,]$cnlr.median)
-      names(Segment_mean)[i] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Copy #", i)
+      names(Segment_mean)[i] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Segment #", seg.counter)
+      chr.init = chr.current
     }
 
-    # log ratio and log odds ration plot scatter data
-    snps = as.data.table(hisens_output[[1]]$snps)
+    # log ratio and log odds ratio plot scatter data
+    snps = as.data.table(hisens_output$snps)
     CNLR_Scatter_Data = VALOR_Scatter_Data = list()
     for (chrom_var in unique(snps$chrom)) {
       cnlr_data_points = valor_data_points = list()
@@ -139,11 +153,11 @@ generate_json = function(hisens_output,
         cnlr_data_point_counter = cnlr_data_point_counter + 1
       }
       CNLR_Scatter_Data[[chrom_var]] = list(
-        "id" = unbox(paste0("Chromosome ", chrom_var)),
+        "id" = unbox(paste0("Chromosome ", chrom_var, "_")),
         "data" = cnlr_data_points
       )
       VALOR_Scatter_Data[[chrom_var]] = list(
-        "id" = unbox(paste0("Chromosome ", chrom_var)),
+        "id" = unbox(paste0("Chromosome ", chrom_var, "_")),
         "data" = valor_data_points
       )
     }
@@ -152,9 +166,19 @@ generate_json = function(hisens_output,
     # log odds ratio plot line data
     Line_Data_VALOR = Log_DR = list()
     Log_DR_counter = 1
+    
+    chr.init = ''
+    seg.counter = 1
+    
     for (i in seq(nrow(hisens))) {
+      chr.current = hisens[i,]$chrom
+      if(chr.current ==chr.init){
+        seg.counter = seg.counter+1
+      }else{
+        seg.counter=1
+      }
       Line_Data_VALOR[[Log_DR_counter]] = list(
-          "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Copy #", i, "_Min")),
+          "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Segment #", seg.counter, "_Min")),
           "data" = list(
             list(
               "x" = unbox(VERTICAL_LINE_X_COORD_LIST[hisens[i,]$chrom] + hisens[i,]$start), 
@@ -163,7 +187,7 @@ generate_json = function(hisens_output,
               "x" = unbox(VERTICAL_LINE_X_COORD_LIST[hisens[i,]$chrom] + hisens[i,]$end), 
               "y" = unbox(-sqrt(abs(hisens[i,]$mafR))))))
       Line_Data_VALOR[[Log_DR_counter+1]] = list(
-          "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Copy #", i, "_Max")),
+          "id" = unbox(paste0("Chromosome ", hisens[i,]$chrom, ": Segment #", seg.counter, "_Max")),
           "data" = list(
             list(
               "x" = unbox(VERTICAL_LINE_X_COORD_LIST[hisens[i,]$chrom] + hisens[i,]$start), 
@@ -174,17 +198,28 @@ generate_json = function(hisens_output,
 
       Log_DR[[Log_DR_counter]] = unbox(-sqrt(abs(hisens[i,]$mafR)))
       Log_DR[[Log_DR_counter+1]] = unbox(sqrt(abs(hisens[i,]$mafR)))
-      names(Log_DR)[Log_DR_counter] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Copy #", i, "_Min")
-      names(Log_DR)[Log_DR_counter+1] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Copy #", i, "_Max")
+      names(Log_DR)[Log_DR_counter] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Segment #", seg.counter, "_Min")
+      names(Log_DR)[Log_DR_counter+1] = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Segment #", seg.counter, "_Max")
       Log_DR_counter = Log_DR_counter + 2
+      chr.init = chr.current
     }
 
     # integer copy number line data
     CNCF_ICNP = EM_ICNP = list()
     ICNP_counter = 1
+    
+    chr.init = ''
+    seg.counter = 1
+    
     for (i in seq(nrow(segs))) {
+      chr.current = segs[i,]$chrom
+      if(chr.current ==chr.init){
+        seg.counter = seg.counter+1
+      }else{
+        seg.counter=1
+      }
       CNCF_ICNP[[ICNP_counter]] = list(
-        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Copy #", i, "_TCN")),
+        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Segment #", seg.counter, "_TCN")),
         "data" = list(
           list(
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$start), 
@@ -193,7 +228,7 @@ generate_json = function(hisens_output,
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$end), 
             "y" = unbox(segs[i,]$tcn))))
       CNCF_ICNP[[ICNP_counter+1]] = list(
-        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Copy #", i, "_LCN")),
+        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Segment #", seg.counter, "_LCN")),
         "data" = list(
           list(
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$start), 
@@ -202,7 +237,7 @@ generate_json = function(hisens_output,
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$end), 
             "y" = unbox(segs[i,]$lcn))))
       EM_ICNP[[ICNP_counter]] = list(
-        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Copy #", i, "_TCN_EM")),
+        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Segment #", seg.counter, "_TCN")),
         "data" = list(
           list(
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$start), 
@@ -211,7 +246,7 @@ generate_json = function(hisens_output,
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$end), 
             "y" = unbox(segs[i,]$tcn.em))))
       EM_ICNP[[ICNP_counter+1]] = list(
-        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Copy #", i, "_LCN_EM")),
+        "id" = unbox(paste0("Chromosome ", segs[i,]$chrom, ": Segment #", seg.counter, "_LCN")),
         "data" = list(
           list(
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$start), 
@@ -220,11 +255,15 @@ generate_json = function(hisens_output,
             "x" = unbox(VERTICAL_LINE_X_COORD_LIST[segs[i,]$chrom] + segs[i,]$end), 
             "y" = unbox(segs[i,]$lcn.em))))
       ICNP_counter = ICNP_counter + 2
+      chr.init = chr.current
     }
       
     # Gene level data segment of the json
     gene_dict = list()
     gene_dict_counter = 1
+    chr.init = ''
+    seg.counter = 1
+    
     for (i in seq(nrow(hisens))) {
       gene_list = strsplit(hisens[i,]$gene_list, ",")[[1]]
       # a segment has no gene, skip and go to the next
@@ -280,7 +319,7 @@ generate_json = function(hisens_output,
               "x" = gene_end, 
               "y" = gene_cnlr_median)))
         gene_line_data_valor_min = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_valor_counter), "Min")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_valor_counter), "_Min")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -289,7 +328,7 @@ generate_json = function(hisens_output,
               "x" = gene_end, 
               "y" = gene_valor_negative_y)))
         gene_line_data_valor_max = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_valor_counter), "_Max")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_valor_counter), "_Max")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -298,7 +337,7 @@ generate_json = function(hisens_output,
               "x" = gene_end, 
               "y" = gene_valor_positive_y)))
         gene_line_data_CNCF_TCN = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_cnlr_counter), "_TCN")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_TCN")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -307,7 +346,7 @@ generate_json = function(hisens_output,
                 "x" = gene_end, 
                 "y" = gene_tcn))))
         gene_line_data_CNCF_LCN = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_cnlr_counter), "_LCN")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_LCN")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -316,7 +355,7 @@ generate_json = function(hisens_output,
                 "x" = gene_end, 
                 "y" = gene_lcn))))
         gene_line_data_EM_TCN = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_cnlr_counter), "_TCN_EM")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_TCN")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -325,7 +364,7 @@ generate_json = function(hisens_output,
                 "x" = gene_end, 
                 "y" = gene_tcn.em))))
         gene_line_data_EM_LCN = list(
-          "id" = unbox(paste0(g, " Copy #", as.character(gene_cnlr_counter), "_LCN_EM")),
+          "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_LCN")),
           "data" = list(
             list(
               "x" = gene_start, 
@@ -369,13 +408,20 @@ generate_json = function(hisens_output,
         names(gene_data)[gene_counter] = unbox(g)
         gene_counter = gene_counter + 1
       }
+      chr.current = hisens[i,]$chrom
+      if(chr.current ==chr.init){
+        seg.counter = seg.counter+1
+      }else{
+        seg.counter=1
+      }
       # organize data for all genes in a given segment
-      segment_id = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Copy #", gene_dict_counter)
+      segment_id = paste0("Chromosome ", as.character(hisens[i,]$chrom), ": Segment #", seg.counter)
       gene_dict[[gene_dict_counter]] = list(
         "Gene_List" = gene_list,
         "Gene_Data" = gene_data)
       names(gene_dict)[gene_dict_counter] = unbox(segment_id)
       gene_dict_counter = gene_dict_counter + 1
+      chr.init = chr.current
     }
 
     jsonlite::write_json(
