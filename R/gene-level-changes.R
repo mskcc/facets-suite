@@ -147,7 +147,7 @@ get_gene_from_targetFile = function(targetFile) {
     genes = suppressWarnings(fread(cmd = paste0('grep -v "^@" ', targetFile), 
                             header = F,
                             col.names = c("chrom", "start", "end", "strand", "name"))) %>%
-        filter(!grepl("^Tiling_|^FP_|_intron_|_pseudo_|_MSI_|_tiling_|_promoter_", name)) %>%
+        filter(!grepl("^Tiling_|^FP_|_intron_|_pseudo_|_MSI_|_tiling_|_promoter_|_downstream|_intron|_3UTR|-IGH|_Major_", name)) %>%
         mutate(chrom = gsub('chr', '', chrom),
                 gene = gsub(":.*$", "", gsub("_target_.*$", "", name))) %>%
         group_by(gene, chrom) %>%
