@@ -80,7 +80,7 @@ generate_json = function(hisens_output,
     #  are required for foverlaps function
     snps$maploc_end = snps$maploc
 
-    # assing snp to a gene base on genomics coordinates
+    # assign snp to a gene base on genomic coordinates
     setkey(genes, chrom, gene_start, gene_end)
     setkey(snps, chrom, maploc, maploc_end)
     snps_gene_mapping = foverlaps(snps, genes, type="within")
@@ -341,37 +341,37 @@ generate_json = function(hisens_output,
           "data" = list(
             list(
               "x" = gene_start, 
-              "y" = gene_tcn,
+              "y" = gene_tcn),
               list(
                 "x" = gene_end, 
-                "y" = gene_tcn))))
+                "y" = gene_tcn)))
         gene_line_data_CNCF_LCN = list(
           "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_LCN")),
           "data" = list(
             list(
               "x" = gene_start, 
-              "y" = gene_lcn,
+              "y" = gene_lcn),
               list(
                 "x" = gene_end, 
-                "y" = gene_lcn))))
+                "y" = gene_lcn)))
         gene_line_data_EM_TCN = list(
           "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_TCN")),
           "data" = list(
             list(
               "x" = gene_start, 
-              "y" = gene_tcn.em,
+              "y" = gene_tcn.em),
               list(
                 "x" = gene_end, 
-                "y" = gene_tcn.em))))
+                "y" = gene_tcn.em)))
         gene_line_data_EM_LCN = list(
           "id" = unbox(paste0(g, " Segment #", as.character(gene_cnlr_counter), "_LCN")),
           "data" = list(
             list(
               "x" = gene_start, 
-              "y" = gene_lcn.em,
+              "y" = gene_lcn.em),
               list(
                 "x" = gene_end, 
-                "y" = gene_lcn.em))))
+                "y" = gene_lcn.em)))
         
         # organize line and scatter data for the gene, g
         gene_data_current_gene = list(
