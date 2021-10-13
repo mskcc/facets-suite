@@ -7,6 +7,8 @@ suppressPackageStartupMessages({
     library(egg)
     library(purrr)
     library(tibble)
+    library(data.table)
+    library(jsonlite)
 })
 
 args = commandArgs(TRUE)
@@ -70,11 +72,13 @@ parser$add_argument('-x', '--useMatchedX', required = FALSE, action="store_true"
                     default = FALSE, help = 'facets2n option: Force matched normal to be used for ChrX normalization')
 parser$add_argument('-df', '--donor-counts-file', required = FALSE, default=NULL,
                     help = 'Merged, gzipped output from snp-pileup for baseline donor sample(s)')
+parser$add_argument('-j', '--json-output', required = FALSE, action="store_true",
+                    help = 'Generate a json output of select facets results')
+parser$add_argument('-tf', '--targetFile', required = FALSE, default=NULL,
+                    help = 'interval list file of gene target coordinates')
 
 
 args = parser$parse_args()
-
-# Helper functions ------------------------------------------------------------------------------------------------
 
 # Write out
 write = function(input, output) {
@@ -255,10 +259,18 @@ if (dir.exists(directory)) {
 # Read SNP counts file
 message(paste('Reading', args$counts_file))
 if(args$facets2n_lib_path != ''){
-    read_counts = read_snp_matrix_facets2n(args$counts_file,MandUnormal= args$MandUnormal, ReferencePileupFile=args$reference_snp_pileup, ReferenceLoessFile=args$reference_loess_file, useMatchedX=args$useMatchedX, refX=args$refX, unmatched=args$unmatched)
+    read_counts = read_snp_matrix_facets2n(
+        args$counts_file, 
+        MandUnormal = args$MandUnormal, 
+        ReferencePileupFile = args$reference_snp_pileup, 
+        ReferenceLoessFile = args$reference_loess_file, 
+        useMatchedX = args$useMatchedX, 
+        refX = args$refX, 
+        unmatched = args$unmatched)
+
     if(!is.null(args$donor_counts_file)){
         message(paste('Reading donor counts matrix', args$donor_counts_file))
-        donor_counts = read_snp_matrix_facets2n(args$donor_counts_file, donorCounts=TRUE)
+        donor_counts = read_snp_matrix_facets2n(args$donor_counts_file, donorCounts = TRUE)
     }else{
         donor_counts = NULL
     }
@@ -327,7 +339,7 @@ if (!is.null(args$purity_cval)) {
         write(qc, paste0(name, '.qc.txt'))
 
         # Write gene level // use hisensitivity run
-        gene_level = gene_level_changes(hisens_output, args$genome) %>%
+        gene_level = gene_level_changes(hisens_output, args$genome, targetFile = args$targetFile) %>%
             add_column(sample = sample_id, .before = 1)
         write(gene_level, paste0(name, '.gene_level.txt'))
 
@@ -375,6 +387,7 @@ if (!is.null(args$purity_cval)) {
         saveRDS(purity_output, paste0(name, '_purity.rds'))
         saveRDS(hisens_output, paste0(name, '_hisens.rds'))
     }
+
     if(args$cbs){
         write.table(hisens_output$segsCBS,file = paste(name,"seg_file_with_pval.txt",sep='_'),sep='\t',row.names=F,col.names=T,quote=F)
     }
@@ -437,4 +450,39 @@ if (!is.null(args$purity_cval)) {
     } else {
         saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
     }
+}
+
+# Generate optional json output
+if (args$json_output) {        
+        # params to be included in json
+        json_params = list(cval = args$cval,
+                    purity_cval = args$purity_cval,
+                    ndepth = args$normal_depth,
+                    snp_nbhd = args$snp_window_size,
+                    min_nhet = args$min_nhet,
+                    purity_min_nhet = args$purity_min_nhet,
+                    genome = args$genome,
+                    seed = args$seed,
+                    MandUnormal = args$MandUnormal,
+                    useMatchedX = args$useMatchedX,
+                    unmatched = args$unmatched,
+                    cbs = args$cbs,
+                    het_thresh = args$het_thresh,
+                    sample_id = args$sample_id,
+                    donor_counts = exists("args.donor-counts-file"),
+                    facets_version = if(exists("args.facets2n-lib-path")) {
+                        paste0("facets2n_", as.character(packageVersion('facets2n')))
+                        } else {
+                            paste0("facets_", as.character(packageVersion('facets')))
+                        },
+                    facetsSuite_version = as.character(packageVersion('facetsSuite')),
+                    outdir = directory
+        )    
+
+        generate_json(hisens_output = hisens_output,
+                    purity_output = purity_output,
+                    gene_level = gene_level,
+                    arm_level = arm_level,
+                    parameters = json_params)
+        
 }
