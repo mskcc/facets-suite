@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+#!/dmp/resources/prod/tools/system/anaconda2/envs/FACETS-PROD/bin/Rscript
 suppressPackageStartupMessages({
     library(facetsSuite)
     library(argparse)
