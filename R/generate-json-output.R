@@ -268,6 +268,12 @@ generate_json = function(hisens_output,
       gene_list = strsplit(hisens[i,]$gene_list, ",")[[1]]
       # a segment has no gene, skip and go to the next
       if(all(is.na(gene_list))) {
+        chr.current = hisens[i,]$chrom
+        if(chr.current ==chr.init){
+          seg.counter = seg.counter+1
+        }else{
+          seg.counter=1
+        }
         next
       }
       gene_data = list()
