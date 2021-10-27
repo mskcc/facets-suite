@@ -4,7 +4,9 @@
 \name{test_maf}
 \alias{test_maf}
 \title{Test MAF}
-\format{Mutation annotation format (MAF) with standard columns.}
+\format{
+Mutation annotation format (MAF) with standard columns.
+}
 \source{
 \url{portal.gdc.cancer.gov}
 }
