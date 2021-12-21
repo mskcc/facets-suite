@@ -233,7 +233,13 @@ arm_level_changes_dmp = function(segs,
                            copy_number_states$numeric_call,
                            warn_missing = FALSE)
                )
-
+    #fix for AMP with NA lcn
+    segs = segs %>%
+      mutate(
+        cn_state = case_when(tcn>5 & is.na(lcn) ~ "AMP", TRUE ~ cn_state),
+        cn_state_num = case_when(tcn>5 & is.na(lcn) ~ "2", TRUE ~ cn_state_num)
+      )
+    
     #correct X for patient sex
     segs = segs %>%
         mutate(cn_state = case_when(chrom==23 & sex=="Male" & tcn==1 ~ "DIPLOID",
@@ -248,6 +254,7 @@ arm_level_changes_dmp = function(segs,
                lcn = case_when(chrom==23 & sex=="Male" ~ 0, TRUE ~ as.numeric(lcn))
         )
 
+    
     segs.full = segs %>%
         mutate(chrom = gsub('23', 'X', chrom),
                arm = gsub('23', 'X', arm))

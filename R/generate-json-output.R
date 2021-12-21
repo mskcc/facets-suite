@@ -274,6 +274,7 @@ generate_json = function(hisens_output,
         }else{
           seg.counter=1
         }
+        chr.init = chr.current
         next
       }
       gene_data = list()
