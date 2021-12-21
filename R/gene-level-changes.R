@@ -92,6 +92,7 @@ gene_level_changes = function(facets_output,
                                       copy_number_states$map_string, copy_number_states$call,
                                       warn_missing = FALSE)]
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
+    genes_all[, cn_state := ifelse(tcn>5 & is.na(lcn), 'AMP', cn_state)]
     
     # Test on cnlr against baseline
     # cn0_dipLogR = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-dipLogR))]
@@ -147,7 +148,7 @@ get_gene_from_targetFile = function(targetFile) {
     genes = suppressWarnings(fread(cmd = paste0('grep -v "^@" ', targetFile), 
                             header = F,
                             col.names = c("chrom", "start", "end", "strand", "name"))) %>%
-        filter(!grepl("^Tiling_|^FP_|_intron_|_pseudo_|_MSI_|_tiling_|_promoter_|_downstream|_upstream|_intron|_3UTR|_5UTR|_Promoter|_Enhancer|lncRNA_|^IGH|-IGH|_Major_|Tiling2_|snp_|clinvar_|_3pr$|_5pr$", name)) %>%
+        filter(!grepl("^Tiling_|^FP_|_intron_|_Intron|_pseudo_|_MSI_|_tiling_|_promoter_|_downstream|_upstream|_intron|_3UTR|_5UTR|_Promoter|_Enhancer|lncRNA_|^IGH|-IGH|_Major_|Tiling2_|snp_|clinvar_|_3pr$|_5pr$", name)) %>%
         mutate(chrom = gsub('chr', '', chrom),
                 gene = gsub(":.*$", "", gsub("_target_.*$", "", name))) %>%
         group_by(gene, chrom) %>%
