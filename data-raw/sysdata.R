@@ -137,7 +137,7 @@ hg38 = tibble::tribble(
 )
 
 # Gene positions --------------------------------------------------------------------------------------------------
-tumor_suppressors = fromJSON(readLines('http://oncokb.org/api/v1/genes', warn = FALSE)) %>% 
+tumor_suppressors = fromJSON(readLines('https://legacy.oncokb.org/api/v1/genes', warn = FALSE)) %>% 
     filter(tsg == TRUE) %>% 
     select(hugoSymbol) %>% 
     mutate(hugoSymbol = mapvalues(hugoSymbol,
