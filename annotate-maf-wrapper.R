@@ -3,6 +3,7 @@ suppressPackageStartupMessages({
     library(argparse)
     library(data.table)
     library(facetsSuite)
+    library(dplyr)
 })
 
 args = commandArgs(TRUE)
