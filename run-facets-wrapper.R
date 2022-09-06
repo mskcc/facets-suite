@@ -142,11 +142,12 @@ print_segments = function(outfile,
 
 # Print IGV-style .seg file
 print_igv = function(outfile,
-                     facets_output) {
+                     facets_output,
+		     doAdjust) {
     
     ii = format_igv_seg(facets_output = facets_output,
                         sample_id = sample_id,
-                        normalize = T)
+                        normalize = doAdjust)
     
     write(ii, outfile)
 }
@@ -173,8 +174,12 @@ facets_iteration = function(name_prefix, ...) {
     # print_segments(outfile = paste0(name_prefix, '.cncf.txt'), 
     #                facets_output = output)
     
-    print_igv(outfile = paste0(name_prefix, '.seg'),
-              facets_output = output)
+    #We want to print both a dipLogR adjusted version and an unadjusted version.
+    print_igv(outfile = paste0(name_prefix, '_diplogR.adjusted.seg'),
+              facets_output = output, doAdjust=T)
+
+    print_igv(outfile = paste0(name_prefix, '_diplogR.unadjusted.seg'),
+              facets_output = output, doAdjust=F)
     
     print_plots(outfile = paste0(name_prefix, '.png'),
                 facets_output = output,
