@@ -4,9 +4,14 @@
 \alias{plot_segmentation}
 \title{Plot segmentation profile}
 \usage{
-plot_segmentation(segs, plotX = FALSE, sample_order = NULL,
-  cap_log_ratios = TRUE, colors = c("darkblue", "white", "red"),
-  return_object = FALSE)
+plot_segmentation(
+  segs,
+  plotX = FALSE,
+  sample_order = NULL,
+  cap_log_ratios = TRUE,
+  colors = c("darkblue", "white", "red"),
+  return_object = FALSE
+)
 }
 \arguments{
 \item{segs}{FACETS segment output, IGV formatted.}

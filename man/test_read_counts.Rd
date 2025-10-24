@@ -4,7 +4,9 @@
 \name{test_read_counts}
 \alias{test_read_counts}
 \title{Test read counts}
-\format{Output from \code{snp-pileup}.}
+\format{
+Output from \code{snp-pileup}.
+}
 \source{
 \url{portal.gdc.cancer.gov}
 }

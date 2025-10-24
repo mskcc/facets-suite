@@ -4,8 +4,12 @@
 \alias{gene_level_changes}
 \title{Get gene-level changes in copy number from FACETS output.}
 \usage{
-gene_level_changes(facets_output, genome = c("hg19", "hg38"),
-  algorithm = c("em", "cncf"))
+gene_level_changes(
+  facets_output,
+  genome = c("hg19", "hg38"),
+  targetFile = NULL,
+  algorithm = c("em", "cncf")
+)
 }
 \arguments{
 \item{facets_output}{Full FACETS output from \code{run_facets}.}

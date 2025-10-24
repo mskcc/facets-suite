@@ -4,8 +4,12 @@
 \alias{check_fit}
 \title{Sample QC}
 \usage{
-check_fit(facets_output, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"), maf = NULL)
+check_fit(
+  facets_output,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"),
+  maf = NULL
+)
 }
 \arguments{
 \item{facets_output}{Output from \code{run_facets}.}
@@ -19,8 +23,8 @@ check_fit(facets_output, genome = c("hg19", "hg18", "hg38"),
 \value{
 A list object with the following items:
 \itemize{
-      \item{\code{diplogr_flag}:} {Boolean indicating extreme dipLogR value.}
-      \item{\code{n_alternative_diplogr}:} {Number of alternative dipLogR values.}
+      \item{\code{dipLogR_flag}:} {Boolean indicating extreme dipLogR value.}
+      \item{\code{n_alternative_dipLogR}:} {Number of alternative dipLogR values.}
       \item{\code{n_dip_bal_segs}, \code{frac_dip_bal_segs}:} {Number of balanced segments at dipLogR and the fraction of genome they represent.}
       \item{\code{n_dip_imbal_segs}, \code{frac_dip_imbal_segs}:} {Number of imbalanced segments at dipLogR and the fraction of genome they represent.}
       \item{\code{n_amp}:} {Number of segments at total copy number >= 10.}

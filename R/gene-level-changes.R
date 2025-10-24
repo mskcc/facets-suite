@@ -29,6 +29,7 @@
 #' @export
 gene_level_changes = function(facets_output,
                               genome = c('hg19', 'hg38'),
+                              targetFile = NULL,
                               algorithm = c('em', 'cncf')) {
     
     genome = match.arg(genome, c('hg19', 'hg38'), several.ok = FALSE)
@@ -48,7 +49,12 @@ gene_level_changes = function(facets_output,
     
     # Map segments onto genes
     key_cols = c('chrom', 'start', 'end')
-    genes = as.data.table(get(paste0('genes_', genome)))
+    if (!is.null(targetFile)) {
+        genes = data.table(get_gene_from_targetFile(targetFile))
+    }
+    else { 
+        genes = data.table(get(paste0('genes_', genome)))
+    }
     genes[, chrom := ifelse(chrom == 'X', 23, chrom)]
     genes = genes[chrom %in% seq(1, 23)][, chrom := as.integer(chrom)]
     
@@ -82,14 +88,12 @@ gene_level_changes = function(facets_output,
     genes_all = merge(genes_segs, genes_snps, by.x = 'gene', by.y = 'gene')[seg.x == seg.y]
         
     # Map to copy-number states
-    genes_all[, cn_state := mapvalues(paste(wgd, tcn, tcn-lcn, lcn, sep = ':'),
+    genes_all[, cn_state := mapvalues(paste(wgd, tcn-lcn, lcn, sep = ':'),
                                       copy_number_states$map_string, copy_number_states$call,
                                       warn_missing = FALSE)]
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
-    genes_all[, cn_state := ifelse(cn_state == 'INDETERMINATE' & tcn > 9, 'AMP', cn_state)]
-    
-    # handle cases where lcn=NA
-    ## Error: lcn > mcn;
+    genes_all[, cn_state := ifelse(tcn - ploidy > 4, 'AMP', cn_state)]
+    genes_all[, cn_state := ifelse(tcn>5 & is.na(lcn), 'AMP', cn_state)]
     
     # Test on cnlr against baseline
     # cn0_dipLogR = unique(segs$cnlr.median.clust)[which.min(abs(unique(segs$cnlr.median.clust)-dipLogR))]
@@ -111,18 +115,11 @@ gene_level_changes = function(facets_output,
     max_gene_count = 10
     max_seg_length = 1e7
     min_ccf = 0.6 * purity
-
     genes_all[, filter := 'PASS']
-    genes_all[(cn_state %like% '^AMP|HOMDEL') & (length > max_seg_length) ,
-              filter := ifelse(filter == 'PASS', 'suppress_segment_too_large', filter)]
-
-    genes_all[cn_state %like% '^AMP' & !(tcn > 8 | (!is.na(purity) & cf > min_ccf) | genes_on_seg <= max_gene_count) ,
-              filter := ifelse(filter == 'PASS', 'suppress_likely_unfocal_large_gain', filter)]
-
-    genes_all[cn_state %like% 'HOMDEL' & genes_on_seg > max_gene_count ,
-              filter := ifelse(filter == 'PASS', 'suppress_large_homdel', filter)]
-
-    genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length & filter != 'PASS', filter := 'RESCUE']
+    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (tcn > 8 | genes_on_seg > max_gene_count) , filter := add_tag(filter, 'unfocal_amp')]
+    genes_all[cn_state %like% '^AMP' & length > max_seg_length & (!is.na(purity) & cf < min_ccf) , filter := add_tag(filter, 'subclonal_amp')]
+    genes_all[cn_state == 'HOMDEL' & length > max_seg_length & genes_on_seg > max_gene_count, filter := add_tag(filter, 'unfocal_del')]
+    genes_all[cn_state == 'HOMDEL' & tsg == TRUE & length < max_seg_length, filter := 'RESCUE']
     
     # Clean up data frame
     genes_all = genes_all[, setnames(.SD,
@@ -147,10 +144,25 @@ gene_level_changes = function(facets_output,
 #     }
 # }
 
-# add_tag = function(filter, tag) {
-#     ifelse(filter == 'PASS',
-#            tag,
-#            paste(filter, tag, sep = ';'))
-# }
+#' @export
+get_gene_from_targetFile = function(targetFile) {
+    genes = suppressWarnings(fread(cmd = paste0('grep -v "^@" ', targetFile), 
+                            header = F,
+                            col.names = c("chrom", "start", "end", "strand", "name"))) %>%
+        filter(!grepl("^Tiling_|^FP_|_intron_|_Intron|_pseudo_|_MSI_|_tiling_|_promoter_|_downstream|_upstream|_intron|_3UTR|_5UTR|_Promoter|_Enhancer|lncRNA_|^IGH|-IGH|_Major_|Tiling2_|snp_|clinvar_|_3pr$|_5pr$", name)) %>%
+        mutate(chrom = gsub('chr', '', chrom),
+                gene = gsub(":.*$", "", gsub("_target_.*$", "", name))) %>%
+        group_by(gene, chrom) %>%
+        summarize(start = min(start),
+                    end = max(end)) %>%
+        ungroup() %>%
+        mutate(tsg = gene %in% tumor_suppressors$hugosymbol)
+    return(genes)
+}
 
-
+#' @export
+add_tag = function(filter, tag) {
+    ifelse(filter == 'PASS',
+           tag,
+           paste(filter, tag, sep = ';'))
+}

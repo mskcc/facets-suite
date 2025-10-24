@@ -12,17 +12,38 @@
 \url{https://www.ncbi.nlm.nih.gov/pubmed/26015868}
 }
 \usage{
-calculate_fraction_cna(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"))
+calculate_fraction_cna(
+  segs,
+  ploidy,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf")
+)
 
-calculate_loh(segs, snps, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"), hypoploidy_threshold = 0.5)
+calculate_loh(
+  segs,
+  snps,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"),
+  hypoploidy_threshold = 0.5
+)
 
-calculate_ntai(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"), min_size = 0, min_probes = 250)
+calculate_ntai(
+  segs,
+  ploidy,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"),
+  min_size = 0,
+  min_probes = 250
+)
 
-calculate_lst(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"), min_size = 1e+07, min_probes = 50)
+calculate_lst(
+  segs,
+  ploidy,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf"),
+  min_size = 1e+07,
+  min_probes = 50
+)
 
 calculate_hrdloh(segs, ploidy, algorithm = c("em", "cncf"))
 }

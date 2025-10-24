@@ -8,9 +8,18 @@
 #' @param ndepth Minimum depth in normal to retain SNP, see `facets` help.
 #' @param snp_nbhd Minimum basepair distance for SNPs, see `facets` help.
 #' @param min_nhet Minimum number of heterozygous SNPs on segment required for clustering, see `facets` help.
+#' @param het.thresh vaf threshold to call a SNP heterozygous
 #' @param genome Genome build.
 #' @param seed Seed value for random number generation, set to enable full reproducibility.
-#'
+#' @param facets_lib_path path to facets R library
+#' @param facets2n_lib_path path to facets2n R library
+#' @param referencePileup  facets2n option: Filepath to an optional snp-pileup generated pileup data of one or more reference normals.
+#' @param referenceLoess facets2n option: Filepath to an optional loess data, generated using the facets2n package, of one or more reference normals. The number of normals in this data should match that in the ReferencePileupFile, and should be in the same order.
+#' @param MandUnormal (logical) facets2n option: Is CNLR analysis to be peformed using unmatched reference normals?
+#' @param unmatched (logical) facets2n option: unmatched, use tumor for determination of heterzygous SNPs
+#' @param useMatchedX (logical) facets2n option: Force matched normal to be used for ChrX normalization?
+#' @param sampleid (character) optional, sample ID to use for CBS seg files
+#' @param outdir (character) optional, outdir for CBS cluster graphs
 #' @return A list object containing the following items. See \href{www.github.com/mskcc/facets}{FACETS documentation} for more details:
 #' \itemize{
 #'       \item{\code{snps}:} {SNPs used for copy-number segmentation, \code{het==1} for heterozygous loci.}
@@ -29,50 +38,104 @@
 #' library(pctGCdata)
 #' run_facets(test_read_counts, cval = 500, genome = 'hg38')
 #' }
-#' 
+#'
 #' @import facets
-#' @import pctGCdata
+#' @importFrom pctGCdata getGCpct
+#' @import facets2n
 
 #' @export run_facets
 run_facets = function(read_counts,
                       cval = 100,
                       dipLogR = NULL,
-                      ndepth = 35,
+                      ndepth = 25,
                       snp_nbhd = 250,
-                      min_nhet = 15,
+                      min_nhet = 10,
                       genome = c('hg18', 'hg19', 'hg38', 'mm9', 'mm10'),
                       seed = 100,
-                      facets_lib_path = '') {
-    
-    if ( facets_lib_path != '' ) {
+                      facets_lib_path = '',
+                      facets2n_lib_path = '',
+                      MandUnormal = FALSE,
+                      useMatchedX = FALSE,
+                      referencePileup=NULL,
+                      referenceLoess=NULL,
+                      unmatched = FALSE,
+                      cbs = FALSE,
+                      het_thresh=0.25,
+                      sample_id = NULL,
+                      outdir = NULL,
+                      donor_counts=NULL) {
+
+    if (facets_lib_path == '' & facets2n_lib_path == ''){
+      stop('path to facets library is missing, must supply path to either facets or facets2n',  call. = FALSE)
+    }
+    if (facets2n_lib_path != ''){
+      library(facets2n, lib.loc = facets2n_lib_path)
+      print(paste0('loaded facets2n version: ', packageVersion('facets2n')))
+    }else{
         library(facets, lib.loc = facets_lib_path)
-    } else {
-        library(facets) 
+        print(paste0('loaded facets version: ', packageVersion('facets')))
+        # Check input
+        missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts))
+        if (length(missing_cols) > 0) {
+          stop(paste0('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
+        }
+
     }
-    print(paste0('loaded facets version: ', packageVersion('facets')))
-    
-    # Check input 
-    missing_cols = setdiff(c('Chromosome', 'Position', 'NOR.DP', 'TUM.DP', 'NOR.RD', 'TUM.RD'), names(read_counts)) 
-    if (length(missing_cols) > 0) {
-        stop(paste0('Input missing column(s)', paste(missing_cols, collapse = ', '), '.'), call. = FALSE)
-    }
-    
+
     set.seed(seed)
     genome = match.arg(genome)
 
     # Run FACETS algorithm
-    dat = facets::preProcSample(read_counts, ndepth = ndepth, het.thresh = 0.25, snp.nbhd = snp_nbhd, cval = 25,
-                                gbuild = genome, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
-    out = facets::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
-    fit = facets::emcncf(out)
+    dat =  NULL
+    out = NULL
+    fit = NULL
+    if (facets2n_lib_path != ''){
+      setwd(outdir)
+      if (MandUnormal){
+        dat = facets2n::preProcSample(read_counts$rcmat, ndepth = ndepth, het.thresh = het_thresh, snp.nbhd = snp_nbhd, cval = cval,
+                                      gbuild = genome, hetscale = TRUE, unmatched = unmatched, ndepthmax = 5000,
+                                      spanT = read_counts$spanT, spanA = read_counts$spanA, spanX = read_counts$spanX, MandUnormal = MandUnormal, donorCounts=donor_counts)
+      }else{
+          dat = facets2n::preProcSample(read_counts, ndepth = ndepth, het.thresh = het_thresh, snp.nbhd = snp_nbhd, cval = cval,
+                           gbuild = genome, hetscale = TRUE, unmatched = unmatched, ndepthmax = 5000, donorCounts=donor_counts)
+      }
+      out = facets2n::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
+      fit = facets2n::emcncf(out, min.nhet = min_nhet)
+      
+      if(cbs){
+        seg.out = facets2n::segmentCBS(seglist=dat,make.plots = TRUE, sname = sample_id, outdir = outdir)
+      }
+      
+    }else{
+      dat = facets::preProcSample(read_counts, ndepth = ndepth, het.thresh = het_thresh, snp.nbhd = snp_nbhd, cval = cval,
+                                  gbuild = genome, hetscale = TRUE, unmatched = unmatched, ndepthmax = 5000)
+      out = facets::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
+      fit = facets::emcncf(out)
+    }
     
+
     # Fix bad NAs
     fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
     fit$cncf$lcn[fit$cncf$tcn == 1] = 0
     fit$cncf$lcn.em[fit$cncf$tcn.em == 1] = 0
     
+
+    if(cbs){
+      list(
+        snps = out$jointseg,
+        segs = fit$cncf,
+        purity = as.numeric(fit$purity),
+        ploidy = as.numeric(fit$ploidy),
+        dipLogR = out$dipLogR,
+        alBalLogR = out$alBalLogR,
+        flags = out$flags,
+        em_flags = fit$emflags,
+        loglik = fit$loglik,
+        segsCBS = seg.out
+      )
+    }else{
     # Generate output
-    list(
+      list(
         snps = out$jointseg,
         segs = fit$cncf,
         purity = as.numeric(fit$purity),
@@ -82,7 +145,8 @@ run_facets = function(read_counts,
         flags = out$flags,
         em_flags = fit$emflags,
         loglik = fit$loglik
-    )
+      )
+    }
 }
 
 ## load facets output from .Rds file or legacy run of .Rdata file
@@ -109,26 +173,26 @@ load_facets_output <- function(rds_rdata_file) {
 
 #' @export create_legacy_output
 create_legacy_output <- function(facets_output, directory, sample_id, counts_file, sel_run_type, run_details) {
-    
+
     sample_id = ifelse(sel_run_type == '', sample_id, paste0(sample_id, '_', sel_run_type))
     output_prefix = paste0(directory, '/', sample_id)
-    
+
     ### create cncf.txt
     facets_output$segs %>%
         mutate(ID=sample_id,
                loc.start = start,
                loc.end = end) %>%
-        select(ID, chrom, loc.start, loc.end, seg, num.mark, nhet, cnlr.median, mafR, 
-               segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn, 
+        select(ID, chrom, loc.start, loc.end, seg, num.mark, nhet, cnlr.median, mafR,
+               segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn,
                cf.em, tcn.em, lcn.em) %>%
         write.table(file=paste0(output_prefix, '.cncf.txt'), quote=F, row.names=F, sep='\t')
-    
+
     ### create .Rdata
     out =
         list(
             jointseg = facets_output$snps,
-            out = facets_output$segs %>% 
-                select(chrom, seg, num.mark, nhet, cnlr.median, mafR, 
+            out = facets_output$segs %>%
+                select(chrom, seg, num.mark, nhet, cnlr.median, mafR,
                        segclust, cnlr.median.clust, mafR.clust, cf, tcn, lcn),
             nX=23,
             chromlevels = c(1:22, "X"),
@@ -136,7 +200,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
             alBalLogR = facets_output$alBalLogR,
             IGV = NULL
         )
-    fit = 
+    fit =
         list(
             loglik = facets_output$loglik,
             purity = facets_output$purity,
@@ -147,11 +211,11 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
             emflags = facets_output$em_flags
         )
     save(out, fit, file=paste0(output_prefix, ".Rdata"), compress=T)
-    
+
     ### create .CNCF.png
     system(paste0('mv ', output_prefix, '.png ', output_prefix, '.CNCF.png'))
-    
-    #### create .out file 
+
+    #### create .out file
     purity_cval = cval = NA
     if(nrow(run_details) == 2) {
         cval        = (run_details %>% filter(run_type == 'hisens'))$cval[1]
@@ -160,7 +224,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
         cval   = run_details$cval[1]
         purity = run_details$purity[1]
     }
-    
+
     run = run_details %>% filter(run_type == sel_run_type) %>% head(n=1)
 
     out_txt = "# INPUT PARAMETERS GIVEN\n"
@@ -176,7 +240,7 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
     out_txt = paste0(out_txt, '# min.nhet = ', run$min_nhet,'\n')
     out_txt = paste0(out_txt, '# genome = hg19\n')
     out_txt = paste0(out_txt, '# tumor_id = \n')
-    
+
     out_txt = paste0(out_txt, '\n# LOADED MODULE INFO\n')
     out_txt = paste0(out_txt, '# Facets version = ', as.character(packageVersion('facets')) , '\n\n')
     out_txt = paste0(out_txt, '\n# FACETS OUTPUT\n')
@@ -186,7 +250,26 @@ create_legacy_output <- function(facets_output, directory, sample_id, counts_fil
     out_txt = paste0(out_txt, '# dipt = -1\n')
     out_txt = paste0(out_txt, '# loglik = \n')
     out_txt = paste0(out_txt, '# output flags\n')
-    out_txt = paste0(out_txt, '# ', run$flags,'\n\n')   
-  
+    out_txt = paste0(out_txt, '# ', run$flags,'\n\n')
+
     cat(out_txt, file=paste0(directory, '/', sample_id, '.out'))
+
+    #try default facets2n plotting, continue if no facets2n lib
+    tryCatch({
+      outfile = paste0(output_prefix, "_legacy.png")
+      plot_title = paste0(basename(output_prefix),
+                          ' | cval=', cval,
+                          ' | purity_cval=', purity_cval,
+                          ' | purity=', round(fit$purity, 2),
+                          ' | ploidy=', round(fit$ploidy, 2),
+                          ' | dipLogR=', round(fit$dipLogR, 2))
+      message(plot_title)
+      png(file = outfile, width = 9.75, height = 12, res = 330,units = 'in')
+      facets2n::plotSample(x = out, emfit = fit, plot.type = "both", sname = plot_title)
+      dev.off()
+    },
+    error= function(cond) {message(cond); return(NA)},
+    warning=function(cond) {message(cond); return(NA)},
+    finally = NULL
+    )
 }

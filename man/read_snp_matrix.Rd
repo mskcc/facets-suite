@@ -2,7 +2,7 @@
 % Please edit documentation in R/read-snp-matrix.R
 \name{read_snp_matrix}
 \alias{read_snp_matrix}
-\title{Read counts file}
+\title{Reads a gzipped output file from \code{snp-pileup}.}
 \source{
 \code{snp-pileup} is part of \href{www.github.com/mskcc/facets}{FACETS}.
 }

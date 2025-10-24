@@ -3,7 +3,6 @@
 \docType{package}
 \name{facetsSuite}
 \alias{facetsSuite}
-\alias{facetsSuite-package}
 \title{\code{facetsSuite} package}
 \description{
 Functions to run and parse output from \href{https://github.com/mskcc/facets}{FACETS}.

@@ -4,7 +4,9 @@
 \name{test_facets_output}
 \alias{test_facets_output}
 \title{Test FACETS output}
-\format{Output from \code{run-facets}.}
+\format{
+Output from \code{run-facets}.
+}
 \source{
 \url{portal.gdc.cancer.gov}
 }

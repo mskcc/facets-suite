@@ -57,7 +57,6 @@ check_fit = function(facets_output,
     
     fcna_output = calculate_fraction_cna(segs, facets_output$ploidy, genome, algorithm)
     wgd = fcna_output$genome_doubled
-    fga = fcna_output$fraction_cna
     
     segs[, `:=` (tcn.original = tcn, lcn.original = lcn, cf.original = cf,
                  tcn.em.original = tcn.em, lcn.em.original = lcn.em, cf.em.original = cf.em)] # these are retained since the parse_segs function consolidates cncf/em solutions
@@ -176,10 +175,10 @@ check_fit = function(facets_output,
         discordant_lcn = (lcn.em.original != lcn.original | (is.na(lcn.em.original) | is.na(lcn.original))) & !(is.na(lcn.em.original) & is.na(lcn.original))
     )][(discordant_tcn == TRUE | discordant_lcn == TRUE) & tcn < 10]
     discordant_stats = discordant_segs[, list(
-        n_discordant_tcn = sum(discordant_tcn),
-        length_discordant_tcn = sum(length[discordant_tcn ]),
-        n_discordant_lcn = sum(length[discordant_lcn]),
-        length_discordant_lcn = sum(length[discordant_lcn]),
+        n_discordant_tcn = sum(discordant_tcn & !discordant_lcn),
+        length_discordant_tcn = sum(length[discordant_tcn & !discordant_lcn]),
+        n_discordant_lcn = sum(length[!discordant_tcn & discordant_lcn]),
+        length_discordant_lcn = sum(length[!discordant_tcn & discordant_lcn]),
         n_discordant_both = sum(discordant_tcn & discordant_lcn),
         length_discordant_both = sum(length[discordant_tcn & discordant_lcn])
     )]
@@ -207,7 +206,6 @@ check_fit = function(facets_output,
         dipLogR_flag = dipLogR_flag,
         n_alternative_dipLogR = n_alt_dipLogR,
         wgd = wgd,
-        fga = fga,
         n_dip_bal_segs = n_dip_bal_segs,
         frac_dip_bal_segs = frac_dip_bal_segs,
         n_dip_imbal_segs = n_dip_imbal_segs,

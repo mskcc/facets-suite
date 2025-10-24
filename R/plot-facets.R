@@ -13,6 +13,7 @@
 #' @param plotX If \code{TRUE}, includes chromosome X.
 #' @param genome Genome build.
 #' @param highlight_gene Highlight gene(s), provide gene symbol or mapped positions (internally).
+#' @param adjust_dipLogR Normalize by sample dipLogR.
 #' @param method When available, choose between plotting solution from \code{em} or \code{cncf} algorithm.
 #' @param subset_snps Subset the SNP profile to reduce weight of plotting, supply a factor by which to reduce or \code{TRUE} for default.
 #' @param plot_chroms Chromosomes to plot when using \code{closeup_plot}.
@@ -36,6 +37,7 @@ cnlr_plot = function(facets_data,
                      plotX = FALSE,
                      genome = c('hg19', 'hg18', 'hg38'),
                      highlight_gene = NULL,
+                     adjust_dipLogR = TRUE,
                      subset_snps = NULL,
                      return_object = FALSE) {
     
@@ -63,9 +65,16 @@ cnlr_plot = function(facets_data,
     
     ymin = floor(min(segs$cnlr.median, na.rm = T))
     ymax = ceiling(max(segs$cnlr.median, na.rm = T))
-    if (ymin > -3) ymin = -3
-    if (ymax < 3) ymax = 3
-
+    if (ymin > -2) ymin = -2
+    if (ymax < 2) ymax = 2
+    
+    if (adjust_dipLogR) {
+        snps$cnlr = snps$cnlr - dipLogR
+        my_starts$cnlr_median = my_starts$cnlr_median - dipLogR
+        my_ends$cnlr_median = my_ends$cnlr_median - dipLogR
+        dipLogR = Inf
+    }
+    
     if (!is.null(subset_snps)) {
         if (subset_snps == TRUE) {
             snps = subset_snps(snps)
@@ -81,7 +90,7 @@ cnlr_plot = function(facets_data,
         geom_point(aes(y = cnlr, x = chr_maploc), pch = 19, col = pt_cols, size = .4) +
         scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
         scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin, ymax)) +
-        geom_hline(yintercept = dipLogR, color = 'sandybrown', size = .8) +
+        geom_hline(yintercept = 0, color = 'sandybrown', size = .8) +
         geom_segment(data = segs, aes(x = my_starts$chr_maploc, xend = my_ends$chr_maploc,
                                       y = my_starts$cnlr_median, yend = my_ends$cnlr_median),
                      col = 'red3', size = 1, lineend = 'butt') +
@@ -231,6 +240,8 @@ cf_plot = function(facets_data,
     
     starts = cumsum(c(1, segs$num.mark))[seq_along(segs$num.mark)]
     ends = cumsum(c(segs$num.mark))
+    my_starts = snps[starts, 'chr_maploc']
+    my_ends = snps[ends, 'chr_maploc']
     
     my_starts = snps[starts, 'chr_maploc']
     my_ends = snps[ends, 'chr_maploc']
@@ -288,15 +299,11 @@ icn_plot = function(facets_data,
         tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] = (5 + (tcnscaled[segs$tcn.em > 5 & !is.na(segs$tcn.em)] - 5) / 3)
         lcn = rep(segs$lcn.em, segs$num.mark)
         my_ylab = 'Integer copy number (EM)'        
-        axis_breaks = c(0:5, 5 + (sort(unique(segs[tcn.em >5, tcn.em])) - 5)/3)
-        axis_labels = c(0:5, sort(unique(segs[tcn.em >5, tcn.em])))
     } else if (method == 'cncf') {
         tcnscaled = segs$tcn
         tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] = (5 + (tcnscaled[segs$tcn > 5 & !is.na(segs$tcn)] - 5) / 3)
         lcn = rep(segs$lcn, segs$num.mark)
         my_ylab = 'Integer copy number (CNCF)'        
-        axis_breaks = c(0:5, 5 + (sort(unique(segs[tcn >5, tcn])) - 5)/3)
-        axis_labels = c(0:5, sort(unique(segs[tcn >5, tcn])))
     }
     tcn = rep(tcnscaled, segs$num.mark)
 
@@ -309,12 +316,14 @@ icn_plot = function(facets_data,
     my_lcn_starts = snps[starts, c('chr_maploc', 'lcn')]
     my_lcn_ends = snps[ends, c('chr_maploc', 'lcn')]
 
+    axis_breaks = c(0:5, 5 + (sort(unique(segs[tcn >5, tcn])) - 5)/3)
+    axis_labels = c(0:5, sort(unique(segs[tcn >5, tcn])))
     
     icn = ggplot(segs) +
         geom_segment(col = 'red', size = 1, 
                      aes(x = my_lcn_starts$chr_maploc, xend = my_lcn_ends$chr_maploc, 
                          y = my_lcn_starts$lcn, yend = my_lcn_ends$lcn)) +
-        geom_segment(col = 'black', size = 1, 
+        geom_segment(col = 'black', size = 0.8, 
                      aes(x = my_tcn_starts$chr_maploc, xend = my_tcn_ends$chr_maploc, 
                          y = my_tcn_starts$tcn, yend = my_tcn_ends$tcn)) +
         # scale_y_continuous(breaks=c(0:5, 5 + seq_len(35) / 3), labels = 0:40, limits = c(0, NA)) +
@@ -387,6 +396,99 @@ closeup_plot = function(facets_data,
     
 }
 
+#' @export
+#' @rdname plot_facets
+cnlr_cbs_plot = function(facets_data,
+                     colors = c('#0080FF', '#4CC4FF'),
+                     plotX = TRUE,
+                     genome = c('hg19', 'hg18', 'hg38'),
+                     highlight_gene = NULL,
+                     adjust_dipLogR = FALSE,
+                     subset_snps = NULL,
+                     return_object = FALSE) {
+    
+    genome = match.arg(genome, c('hg19', 'hg18', 'hg38'), several.ok = FALSE)
+    
+    snps = facets_data$snps
+    segs = facets_data$segsCBS
+    #dipLogR = facets_data$dipLogR
+    if (!plotX) {
+        snps = subset(snps, chrom < 23)
+        segs = subset(segs, chrom < 23)
+    }
+    
+    snps = get_cum_chr_maploc(snps, genome)
+    mid = snps$mid[names(snps$mid) %in% snps$snps$chrom]
+    centromeres = snps$centromeres
+    snps = snps$snps
+    
+    snps$cnlr_mean = rep(segs$cnlr.mean, segs$num.mark)
+    starts = cumsum(c(1, segs$num.mark))[seq_along(segs$num.mark)]
+    ends = cumsum(c(segs$num.mark))
+    my_starts = snps[starts, c('chr_maploc', 'cnlr_mean')]
+    my_ends = snps[ends, c('chr_maploc', 'cnlr_mean')]
+    
+    ymin = floor(min(segs$cnlr.mean, na.rm = T))
+    ymax = ceiling(max(segs$cnlr.mean, na.rm = T))
+    if (ymin > -2) ymin = -2
+    if (ymax < 2) ymax = 2
+    
+    if (adjust_dipLogR) {
+        snps$cnlr = snps$cnlr - dipLogR
+        my_starts$cnlr_median = my_starts$cnlr_mean - dipLogR
+        my_ends$cnlr_median = my_ends$cnlr_mean - dipLogR
+        dipLogR = Inf
+    }
+    
+    if (!is.null(subset_snps)) {
+        if (subset_snps == TRUE) {
+            snps = subset_snps(snps)
+        } else if (is.numeric(subset_snps)) {
+            snps = subset_snps(snps, subset_snps)
+        }
+    }
+    
+    pt_cols = colors[c(snps$chrom %% 2) + 1]
+    
+    # plot
+    cnlr = ggplot(snps) +
+        geom_point(aes(y = cnlr, x = chr_maploc), pch = 19, col = pt_cols, size = .4) +
+        scale_x_continuous(breaks = mid, labels = names(mid), expand = c(.01, 0)) +
+        scale_y_continuous(breaks = scales::pretty_breaks(), limits = c(ymin, ymax)) +
+        geom_hline(yintercept = min(segs$cl0.mean), color = 'sandybrown', size = .8) +
+        geom_segment(data = segs, aes(x = my_starts$chr_maploc, xend = my_ends$chr_maploc,
+                                      y = my_starts$cnlr_mean, yend = my_ends$cnlr_mean),
+                     col = 'red3', size = 1, lineend = 'butt') +
+        labs(x = NULL, y = 'Copy number log ratio') +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 0, size = 8, color = 'black'),
+              axis.text.y = element_text(angle = 0, size = 8, color = 'black'),
+              text = element_text(size = 10),
+              panel.grid.minor.x = element_line(colour = 'grey', size = .2),
+              panel.grid.major.x = element_line(colour = 'grey', size = 0),
+              plot.margin = unit(c(0, 1, 0, 0), 'lines'))
+    
+    # if highligthing gene
+    if (!is.null(highlight_gene)) {
+        if (is.character(highlight_gene)) {
+            highlight_gene = get_gene_position(highlight_gene)
+        }
+        snps$gene = FALSE
+        snps$gene[which(snps$chrom %in% highlight_gene$chrom &
+                            snps$chr_maploc >= highlight_gene$start &
+                            snps$chr_maploc <= highlight_gene$end)] = TRUE
+        cnlr = cnlr +
+            geom_vline(xintercept = highlight_gene$mid, color = 'palevioletred1') +
+            geom_point(data = filter(snps, gene == TRUE), aes(y = cnlr, x = chr_maploc), color = '#525252', size = .4) 
+    }
+    
+    if (return_object == TRUE) {
+        cnlr 
+    } else {
+        suppressMessages(print(cnlr))
+    }
+}
+
 # Helper functions ------------------------------------------------------------------------------------------------
 # Get positions of snps, running accros whole genome
 get_cum_chr_maploc = function(snps,
@@ -431,3 +533,4 @@ subset_snps = function(snps, by_factor = 5) {
     group_by(snps, chrom) %>% 
         sample_frac(1 / by_factor, replace = FALSE)
 }
+

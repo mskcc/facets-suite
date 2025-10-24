@@ -30,16 +30,15 @@ RUN cd /tmp \
 # Clean up tmp
 RUN rm -rf /tmp/*
 
-# Add Facets Suite to the container
-RUN mkdir /facets-suite
-ADD . /facets-suite
-RUN cd /facets-suite && \
-    Rscript -e "devtools::install()"
-ENV PATH=/facets-suite:$PATH
+# Download facetsSuite repo
+RUN wget -O facets-suite-${FACETSSUITE_VERSION}.zip https://github.com/mskcc/facets-suite/archive/${FACETSSUITE_VERSION}.zip \
+    && unzip facets-suite-${FACETSSUITE_VERSION}.zip \
+    && mv facets-suite-${FACETSSUITE_VERSION}/*-wrapper.R /usr/bin \
+    && chmod +x /usr/bin/*wrapper.R
 
-# install Facets
-RUN wget https://github.com/mskcc/facets/archive/v0.5.14.zip -O facets_v0.5.14.zip && \
-    unzip facets_v0.5.14.zip && \
-    rm -f facets_v0.5.14.zip && \
-    cd facets-0.5.14 && \
-    Rscript -e "devtools::install()"
+# Install package
+RUN cd facets-suite-${FACETSSUITE_VERSION} \
+    && Rscript -e "devtools::install()"
+
+# Always run Rscript as vanilla
+RUN export Rscript="Rscript --vanilla"

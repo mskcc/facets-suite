@@ -7,26 +7,66 @@
 \alias{cf_plot}
 \alias{icn_plot}
 \alias{closeup_plot}
+\alias{cnlr_cbs_plot}
 \title{Plot FACETS output}
 \usage{
-cnlr_plot(facets_data, colors = c("#0080FF", "#4CC4FF"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
-  adjust_diplogr = TRUE, subset_snps = NULL, return_object = FALSE)
+cnlr_plot(
+  facets_data,
+  colors = c("#0080FF", "#4CC4FF"),
+  plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"),
+  highlight_gene = NULL,
+  adjust_dipLogR = TRUE,
+  subset_snps = NULL,
+  return_object = FALSE
+)
 
-valor_plot(facets_data, colors = c("#0080FF", "#4CC4FF"),
-  plotX = FALSE, genome = c("hg19", "hg18", "hg38"),
-  highlight_gene = NULL, subset_snps = NULL, return_object = FALSE)
+valor_plot(
+  facets_data,
+  colors = c("#0080FF", "#4CC4FF"),
+  plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"),
+  highlight_gene = NULL,
+  subset_snps = NULL,
+  return_object = FALSE
+)
 
-cf_plot(facets_data, method = c("em", "cncf"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"), return_object = FALSE)
+cf_plot(
+  facets_data,
+  method = c("em", "cncf"),
+  plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"),
+  return_object = FALSE
+)
 
-icn_plot(facets_data, method = c("em", "cncf"), plotX = FALSE,
-  genome = c("hg19", "hg18", "hg38"), highlight_gene = NULL,
-  return_object = FALSE)
+icn_plot(
+  facets_data,
+  method = c("em", "cncf"),
+  plotX = FALSE,
+  genome = c("hg19", "hg18", "hg38"),
+  highlight_gene = NULL,
+  return_object = FALSE
+)
 
-closeup_plot(facets_data, highlight_gene = NULL, plot_chroms = NULL,
-  method = c("em", "cncf"), genome = c("hg19", "hg18", "hg38"),
-  return_object = FALSE)
+closeup_plot(
+  facets_data,
+  highlight_gene = NULL,
+  plot_chroms = NULL,
+  method = c("em", "cncf"),
+  genome = c("hg19", "hg18", "hg38"),
+  return_object = FALSE
+)
+
+cnlr_cbs_plot(
+  facets_data,
+  colors = c("#0080FF", "#4CC4FF"),
+  plotX = TRUE,
+  genome = c("hg19", "hg18", "hg38"),
+  highlight_gene = NULL,
+  adjust_dipLogR = FALSE,
+  subset_snps = NULL,
+  return_object = FALSE
+)
 }
 \arguments{
 \item{facets_data}{Output object from \code{run_facets}.}
@@ -39,7 +79,7 @@ closeup_plot(facets_data, highlight_gene = NULL, plot_chroms = NULL,
 
 \item{highlight_gene}{Highlight gene(s), provide gene symbol or mapped positions (internally).}
 
-\item{adjust_diplogr}{Normalize by sample dipLogR.}
+\item{adjust_dipLogR}{Normalize by sample dipLogR.}
 
 \item{subset_snps}{Subset the SNP profile to reduce weight of plotting, supply a factor by which to reduce or \code{TRUE} for default.}
 

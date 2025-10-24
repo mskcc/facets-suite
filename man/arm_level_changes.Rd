@@ -7,8 +7,12 @@
 \url{https://www.ncbi.nlm.nih.gov/pubmed/29622463}
 }
 \usage{
-arm_level_changes(segs, ploidy, genome = c("hg19", "hg18", "hg38"),
-  algorithm = c("em", "cncf"))
+arm_level_changes(
+  segs,
+  ploidy,
+  genome = c("hg19", "hg18", "hg38"),
+  algorithm = c("em", "cncf")
+)
 }
 \arguments{
 \item{segs}{FACETS segmentation output.}

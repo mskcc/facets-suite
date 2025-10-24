@@ -11,11 +11,16 @@ facetsSuite is an R package with functions to run [FACETS](https://github.com/ms
 
 You can install facetsSuite in R from this repository with:
 
+First, follow the [instructions for installing FACETS](https://github.com/mskcc/facets).
+
+FACETS2N (https://github.com/rptashkin/facets2n) can be installed as:
 ``` r
-devtools::install_github("mskcc/facets-suite")
+devtools::install_github("rptashkin/facets2n", ref= "master")
 ```
 
-Also follow the [instructions for installing FACETS](https://github.com/mskcc/facets).
+``` r
+devtools::install_github("taylor-lab/facets-suite", ref = "feature/facets2N")
+```
 
 _Note: For the wrapper script `snp-pileup-wrapper.R` you need to specify the variable `snp_pileup_path` in the script to point to the installation path of snp-pileup _**or**_ set the environment variable SNP_PILEUP. Alternatively, the [docker](README.md#run-wrappers-from-container) image contains the executable._
 
@@ -54,20 +59,27 @@ Most use of this package can be done from the command line using three wrapper s
         --normal-bam normal.bam \
         --tumor-bam tumor.bam \
         --output-prefix <prefix for output file, preferrably tumorSample__normalSample>
+        --unmatched-normal-BAMS <full path to unmatched BAMs for logR normalization>
     ```
     The input VCF file should contain polymorphic SNPs, so that FACETS can infer changes in allelic configuration at genomic loci from changes in allele ratios. [dbSNP](https://www.ncbi.nlm.nih.gov/snp/) is a good source for this. By default, `snp-pileup` also estimates the read depth in the input BAM files every 50th base.
 
 - `run-facets-wrapper.R`:\
-    This wrapper takes above SNP "pileup" as input and executes the FACETS algorithm. The ouputs are in the form of Rdata objects, TXT files, and PNGs of the samples overall copy-number profile. The wrapper allows for running FACETS in a two-pass mode, where first a "purity" run estimates the overall segmentation profile, sample purity and ploidy, and subsequently the dipLogR value from this run seeds a "high-sensitivity" run which may detect more focal events. To run in the two-pass mode, specify the input arguments prefixed by `purity`. The cval (`--purity-cval` and `--cval`) parameters tune the segmentation coarseness.\
+    This wrapper takes above SNP "pileup" as input and executes the FACETS algorithm. The ouputs are in the form of Rdata objects, TXT files, and PNGs of the samples overall copy-number profile. The wrapper allows for running FACETS in a two-pass mode, where first a "purity" run estimates the overall segmentation profile, sample purity and ploidy, and subsequently the dipLogR value from this run seeds a "high-sensitivity" run which may detect more focal events. To run in the two-pass mode, specify the input arguments prefixed by `purity`. The cval (`--purity-cval` and `--cval`) parameters tune the segmentation coarseness. One of --facets2n-lib-path or --facets-lib-path is required to run with either facets2n or facets.\
     Example command:
     ```shell
     run-facets-wrapper.R \
         --counts-file tumor_normal.snp_pileup.gz \
         --sample-id tumorID__normalID \
-        --purity-cval 1000 --cval 500 \
-        --everything
+        --purity-cval 150 --cval 50 \
+        --everything \
+        --purity-min-nhet 10 \
+        --legacy-output \
+        --facets2n-lib-path (optional) <R lib path where facets2n installed> \
+        --facets-lib-path (optional) <R lib path where facets installed> \
+        --reference-snp-pileup (optional) <path to snp-pileup generated counts file for reference normals> \
+        --reference-loess-file (optional) <path to facets2n generated loess file for reference normals>
     ```
-    The above command runs FACETS in the two-pass mode, first at cval 1000, then at cval 500 based on the sample-specific baseline found at the higher cval. The full suite of analysis and QC is run with the `--everything` flag. If no output directory is specified, a directory named `sample-id` is created.
+    The above command runs FACETS in the two-pass mode, first at cval 150, then at cval 50 based on the sample-specific baseline found at the higher cval. The full suite of analysis and QC is run with the `--everything` flag. If no output directory is specified, a directory named `sample-id` is created.
 
 - `annotate-maf-wrapper.R`:\
     This script estimates the cancer-cell fractions (CCFs) of somatic mutations using purity and ploidy estimates from FACETS. It requires a input MAF file and a mapping of sample names in the MAF file (column `Tumor_Sample_Barcode`) to FACETS output RDS files (i.e. file paths). Alternatively, it can be run in a single-sample mode by pointing direct to the RDS and providing a MAF file with only mutation calls for the given sample.\
