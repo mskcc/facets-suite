@@ -236,10 +236,10 @@ arm_level_changes_dmp = function(segs,
     #fix for AMP with NA lcn
     segs = segs %>%
       mutate(
-        cn_state = case_when(tcn>5 & is.na(lcn) ~ "AMP", TRUE ~ cn_state),
-        cn_state_num = case_when(tcn>5 & is.na(lcn) ~ "2", TRUE ~ cn_state_num)
-      )
-    
+        cn_state = case_when(tcn - ploidy > 4  ~ "AMP", TRUE ~ cn_state),
+        cn_state_num = case_when(tcn - ploidy > 4   ~ "2", TRUE ~ cn_state_num)
+      )   
+ 
     #correct X for patient sex
     segs = segs %>%
         mutate(cn_state = case_when(chrom==23 & sex=="Male" & tcn==1 ~ "DIPLOID",

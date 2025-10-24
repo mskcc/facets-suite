@@ -1,4 +1,6 @@
-#!/dmp/resources/prod/tools/system/anaconda2/envs/FACETS-PROD/bin/Rscript
+#!/usr/bin/env Rscript
+
+print(Sys.getenv())
 suppressPackageStartupMessages({
     library(argparse)
 })

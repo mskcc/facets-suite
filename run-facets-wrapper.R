@@ -1,4 +1,6 @@
-#!/dmp/resources/prod/tools/system/anaconda2/envs/FACETS-PROD/bin/Rscript
+#!/usr/bin/env Rscript
+
+print(Sys.getenv())
 suppressPackageStartupMessages({
     library(facetsSuite)
     library(argparse)
@@ -61,7 +63,7 @@ parser$add_argument('-rx', '--refX', required = FALSE, action="store_true",
 parser$add_argument('-fl', '--facets-lib-path', required = FALSE,
                     default = '', help = 'path to the facets library. must supply either --facets-lib-path or --facets2n-lib-path')
 parser$add_argument('-f2l', '--facets2n-lib-path', required = FALSE,
-                    default = '', help = 'path to the facets2n library. must supply either --facets-lib-path or --facets2n-lib-path')
+                    default ='/usr/local/lib/R/library/', help = 'path to the facets2n library. must supply either --facets-lib-path or --facets2n-lib-path')
 parser$add_argument('-refc', '--reference-snp-pileup', required = FALSE,
                     default = NULL, help = 'A snp-pileup generated pileup data frame (of reference normals) with sample columns that match with the ReferenceLoess object.')
 parser$add_argument('-refl', '--reference-loess-file', required = FALSE,

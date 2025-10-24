@@ -92,6 +92,7 @@ gene_level_changes = function(facets_output,
                                       copy_number_states$map_string, copy_number_states$call,
                                       warn_missing = FALSE)]
     genes_all[, cn_state := ifelse(!cn_state %in% copy_number_states$call, 'INDETERMINATE', cn_state)]
+    genes_all[, cn_state := ifelse(tcn - ploidy > 4, 'AMP', cn_state)]
     genes_all[, cn_state := ifelse(tcn>5 & is.na(lcn), 'AMP', cn_state)]
     
     # Test on cnlr against baseline
